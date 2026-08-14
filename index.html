@@ -3,12 +3,26 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BUBA — Bebidas que se ven venir</title>
-  <meta name="description" content="BUBA: bebidas con color y sabor reales, hechas en Argentina. Comprá online o sumate como distribuidor mayorista.">
+  <title>BUBA — Cocktail frutal con vodka premium</title>
+  <meta name="description" content="BUBA: cocktail frutal elaborado con vodka premium, en lata esférica de 210 ml. Comprá online o sumate como distribuidor mayorista. Solo +18.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0b0c'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='900' font-family='Arial' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
+
+  <!-- ============ VERIFICACIÓN DE EDAD ============ -->
+  <div class="agegate" id="agegate" hidden>
+    <div class="agegate__box">
+      <p class="agegate__logo">BUBA<span class="logo__dot">.</span></p>
+      <h2>¿Sos mayor de 18?</h2>
+      <p class="agegate__sub">Para entrar tenés que tener 18 años o más.</p>
+      <div class="agegate__actions">
+        <button class="btn btn--solid" id="age-yes">Sí, soy mayor</button>
+        <button class="btn btn--outline" id="age-no">No</button>
+      </div>
+      <p class="agegate__legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+    </div>
+  </div>
 
   <!-- ============ HEADER / NAV ============ -->
   <header class="header" id="top">
@@ -44,38 +58,34 @@
     <section class="hero">
       <div class="container hero__inner">
         <div class="hero__copy reveal">
-          <p class="eyebrow">Hecha en Argentina</p>
+          <p class="eyebrow">Cocktail frutal · Vodka premium</p>
           <h1 class="hero__title">El color<br>se toma.</h1>
           <p class="hero__sub">
-            BUBA es la bebida que no necesita presentarse: color real, sabor
-            profundo y nada que esconder. La ves y ya sabés que no es una más.
+            BUBA es el cocktail listo para tomar que no necesita presentarse:
+            fruta, vodka premium y una lata esférica que se ve venir de lejos.
+            Enfriás, abrís y listo.
           </p>
           <div class="hero__cta">
             <a href="#sabores" class="btn btn--solid">Comprar ahora</a>
             <a href="#mayoristas" class="btn btn--ghost">Soy mayorista →</a>
           </div>
           <ul class="hero__badges">
-            <li>Ingredientes reales</li>
-            <li>Sin conservantes</li>
+            <li>Vodka premium</li>
+            <li>210 ml · 10% vol.</li>
             <li>Envíos a todo el país</li>
           </ul>
         </div>
 
         <div class="hero__media reveal">
-          <!-- Visor 360: cuando estén las fotos reales, cargarlas en assets/img/360/
-               como frame-01.webp ... frame-NN.webp y ajustar FRAME_COUNT en js/main.js.
-               Mientras tanto muestra una lata simulada que también gira. -->
-          <div class="viewer" id="viewer360" aria-label="Vista 360 de la lata BUBA. Arrastrá para girar.">
-            <div class="viewer__stage" id="viewer-stage">
-              <div class="can" id="can-placeholder">
-                <div class="can__body">
-                  <div class="can__label" id="can-label">
-                    <span>BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · BUBA · </span>
-                  </div>
-                  <div class="can__shine"></div>
-                </div>
-                <div class="can__top"></div>
-              </div>
+          <!-- Visor 360: gira la foto real de la lata con un mapeo esférico.
+               Las latas y su geometría se configuran en CANS (js/main.js). -->
+          <div class="viewer" id="viewer360">
+            <div class="viewer__stage" id="viewer-stage" aria-label="Vista 360 de la lata BUBA. Arrastrá para girar.">
+              <canvas id="viewer-canvas"></canvas>
+            </div>
+            <div class="viewer__flavors" id="viewer-flavors">
+              <button data-can="blueberry" class="is-active">Blueberry Limeade</button>
+              <button data-can="peach">Golden Peach</button>
             </div>
             <p class="viewer__hint">↔ Arrastrá para girar la lata</p>
           </div>
@@ -86,8 +96,8 @@
     <!-- ============ MARQUEE ============ -->
     <div class="marquee" aria-hidden="true">
       <div class="marquee__track">
-        <span>BUBA • SABOR REAL • COLOR REAL • SIN CONSERVANTES • HECHA EN ARGENTINA • ENVÍOS A TODO EL PAÍS • </span>
-        <span>BUBA • SABOR REAL • COLOR REAL • SIN CONSERVANTES • HECHA EN ARGENTINA • ENVÍOS A TODO EL PAÍS • </span>
+        <span>BUBA • COCKTAIL FRUTAL • VODKA PREMIUM • 210 ML • 10% VOL. • HECHO EN ARGENTINA • SOLO +18 • </span>
+        <span>BUBA • COCKTAIL FRUTAL • VODKA PREMIUM • 210 ML • 10% VOL. • HECHO EN ARGENTINA • SOLO +18 • </span>
       </div>
     </div>
 
@@ -97,39 +107,39 @@
         <div class="section__head reveal">
           <p class="eyebrow">Beneficios</p>
           <h2>Por qué BUBA</h2>
-          <p class="section__sub">Menos verso, más bebida. Esto es lo que te llevás en cada lata.</p>
+          <p class="section__sub">Menos verso, más cocktail. Esto es lo que te llevás en cada lata.</p>
         </div>
 
         <div class="grid grid--3">
           <article class="card reveal">
             <div class="card__num">01</div>
-            <h3>Ingredientes reales</h3>
-            <p>Fórmulas simples, sin saborizantes truchos. Lo que dice la etiqueta es lo que hay adentro.</p>
+            <h3>Vodka premium</h3>
+            <p>Elaborado con vodka premium de verdad. Un trago bien hecho, no una mezcla misteriosa.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">02</div>
-            <h3>Color natural</h3>
-            <p>El color de BUBA sale de sus ingredientes, no de un laboratorio. Por eso brilla distinto.</p>
+            <h3>Sabor frutal real</h3>
+            <p>Cocktail frutal con sabor a fruta, no a esencia. Dulzor justo, refresca sin empalagar.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">03</div>
-            <h3>Sin conservantes</h3>
-            <p>Producción en tandas chicas para que llegue fresca, no para que dure años en una góndola.</p>
+            <h3>Color que habla</h3>
+            <p>El azul eléctrico, el dorado… los colores de BUBA hacen todo el trabajo. La ves y ya sabés.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">04</div>
-            <h3>Dulzor justo</h3>
-            <p>Dulzor justo, sin ahogar el sabor en azúcar. Refresca sin empalagar.</p>
+            <h3>Listo para tomar</h3>
+            <p>Sin coctelera, sin receta, sin vueltas. Enfriás la lata, la abrís y el trago ya está hecho.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">05</div>
-            <h3>Hecha acá</h3>
-            <p>De viñedos argentinos a tu heladera. Producto nacional de punta a punta.</p>
+            <h3>Lata esférica única</h3>
+            <p>210 ml en una esfera que no se parece a nada en la góndola. En la mesa también se luce.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">06</div>
-            <h3>Envío a todo el país</h3>
-            <p>Pedís online, te llega a la puerta. Y si sos comercio, tenemos logística mayorista.</p>
+            <h3>Hecho en Argentina</h3>
+            <p>Producto nacional con envíos a todo el país. Y logística mayorista para comercios.</p>
           </article>
         </div>
       </div>
@@ -141,7 +151,7 @@
         <div class="section__head reveal">
           <p class="eyebrow">Tienda</p>
           <h2>Elegí tu color</h2>
-          <p class="section__sub">Cada sabor tiene su color. Cada color, su momento.</p>
+          <p class="section__sub">Cada sabor tiene su color. Cada color, su momento. Venta solo a mayores de 18.</p>
         </div>
 
         <div class="grid grid--4" id="products">
@@ -154,25 +164,25 @@
     <section class="section" id="nosotros">
       <div class="container split">
         <div class="split__media reveal">
-          <!-- Placeholder: reemplazar por foto real (viñedo / producción / equipo) -->
-          <div class="photo photo--tall" data-flavor="tinta">
-            <span class="photo__label">FOTO NOSOTROS / VIÑEDO</span>
+          <!-- Placeholder: reemplazar por foto real (producción / equipo / lifestyle) -->
+          <div class="photo photo--tall" data-flavor="blueberry">
+            <span class="photo__label">FOTO NOSOTROS / PRODUCCIÓN</span>
           </div>
         </div>
         <div class="split__copy reveal">
           <p class="eyebrow">Nosotros</p>
           <h2>Empezamos con una pregunta simple</h2>
           <p>
-            ¿Por qué todas las bebidas se ven iguales? Góndolas enteras de latas
-            grises con promesas gigantes y fórmulas que nadie entiende.
+            ¿Por qué todos los tragos listos para tomar se ven iguales? Góndolas
+            enteras de latas idénticas, con mucha promesa y poco adentro.
           </p>
           <p>
-            BUBA nace para cambiar eso: bebidas con color y sabor reales,
-            producidas en Argentina en tandas chicas y probadas una por una.
-            Que el producto hable por su color, y que la etiqueta diga poco
-            porque la bebida dice todo.
+            BUBA nace para cambiar eso: un cocktail frutal elaborado con vodka
+            premium, en una lata esférica que no se confunde con nada. Que el
+            producto hable por su color, y que la etiqueta diga poco porque el
+            trago dice todo.
           </p>
-          <a href="#sabores" class="btn btn--solid">Probala vos</a>
+          <a href="#sabores" class="btn btn--solid">Probalo vos</a>
         </div>
       </div>
     </section>
@@ -190,15 +200,14 @@
               <tr>
                 <th></th>
                 <th class="compare__buba">BUBA</th>
-                <th>Bebidas comunes</th>
+                <th>Otros tragos en lata</th>
               </tr>
             </thead>
             <tbody>
-              <tr><td>Sabor</td><td class="compare__buba">Ingredientes reales</td><td>Saborizantes</td></tr>
-              <tr><td>Color</td><td class="compare__buba">Natural</td><td>Colorantes artificiales</td></tr>
-              <tr><td>Azúcar</td><td class="compare__buba">Dulzor de la fruta</td><td>Agregada, alta</td></tr>
-              <tr><td>Conservantes</td><td class="compare__buba">Cero</td><td>Varios</td></tr>
-              <tr><td>Producción</td><td class="compare__buba">Tandas chicas, fresca</td><td>Industrial masiva</td></tr>
+              <tr><td>Alcohol</td><td class="compare__buba">Vodka premium, 10% vol.</td><td>Mezclas de dudoso origen</td></tr>
+              <tr><td>Sabor</td><td class="compare__buba">Frutal real</td><td>Esencias artificiales</td></tr>
+              <tr><td>Color</td><td class="compare__buba">Vibrante, se ve venir</td><td>Lata gris más</td></tr>
+              <tr><td>Formato</td><td class="compare__buba">Esfera única de 210 ml</td><td>Lata común</td></tr>
               <tr><td>Origen</td><td class="compare__buba">Argentina</td><td>Depende</td></tr>
             </tbody>
           </table>
@@ -214,7 +223,7 @@
             <p class="eyebrow">Mayoristas & distribuidores</p>
             <h2>Llevá BUBA a tu comercio</h2>
             <p class="mayorista__sub">
-              ¿Tenés un kiosco, almacén, bar, restaurante o distribuidora?
+              ¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora?
               Trabajamos con precios mayoristas, entregas programadas y material
               de marca para tu punto de venta.
             </p>
@@ -233,7 +242,7 @@
             <p class="mayorista__note">Respondemos el mismo día, de lunes a sábado.</p>
           </div>
           <div class="mayorista__media reveal">
-            <!-- Placeholder: reemplazar por foto de pallets / cajas / punto de venta -->
+            <!-- Placeholder: reemplazar por foto de cajas / punto de venta -->
             <div class="photo photo--tall" data-flavor="pack">
               <span class="photo__label">FOTO CAJAS / DISTRIBUCIÓN</span>
             </div>
@@ -247,19 +256,19 @@
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow">Testimonios</p>
-          <h2>Lo que dicen los que ya la probaron</h2>
+          <h2>Lo que dicen los que ya lo probaron</h2>
         </div>
         <div class="grid grid--3">
           <blockquote class="quote reveal">
-            <p>“La pedí por el color, me quedé por el sabor. Es otra cosa.”</p>
+            <p>“Lo pedí por el color, me quedé por el sabor. El Blueberry Limeade es otra cosa.”</p>
             <footer>— Caro, Buenos Aires</footer>
           </blockquote>
           <blockquote class="quote reveal">
-            <p>“Tengo un bar y vuela: la gente la pide por el nombre. Reponemos todas las semanas.”</p>
+            <p>“Tengo un bar y vuela: la gente lo pide por el nombre y la latita redonda. Reponemos todas las semanas.”</p>
             <footer>— Nico, Córdoba · Cliente mayorista</footer>
           </blockquote>
           <blockquote class="quote reveal">
-            <p>“Se nota que es fruta de verdad. Refresca y no empalaga como los jugos comunes.”</p>
+            <p>“Se nota el vodka de calidad y la fruta real. Frío está buenísimo, y no empalaga.”</p>
             <footer>— Flor, Rosario</footer>
           </blockquote>
         </div>
@@ -277,27 +286,27 @@
         <div class="faq reveal">
           <details class="faq__item">
             <summary>¿Qué es BUBA?</summary>
-            <p>Una bebida con ingredientes reales hecha en Argentina: color natural, dulzor justo y nada de conservantes. Se produce en tandas chicas.</p>
+            <p>Un cocktail frutal elaborado con vodka premium, listo para tomar, en una lata esférica de 210 ml con 10% de alcohol. Hecho en Argentina.</p>
           </details>
           <details class="faq__item">
-            <summary>¿Tiene alcohol?</summary>
-            <p>No. BUBA es una bebida sin alcohol, apta para todas las edades.</p>
+            <summary>¿Cuánto alcohol tiene?</summary>
+            <p>10% vol. Es una bebida alcohólica: la venta es exclusiva para mayores de 18 años. Beber con moderación.</p>
+          </details>
+          <details class="faq__item">
+            <summary>¿Cómo se toma?</summary>
+            <p>Bien fría. Enfriá la lata en la heladera (o unos minutos en el freezer), abrí y listo: el trago ya viene hecho.</p>
           </details>
           <details class="faq__item">
             <summary>¿Hacen envíos a todo el país?</summary>
-            <p>Sí. Despachamos a todo el territorio argentino. El costo y el tiempo de entrega se coordinan al confirmar tu pedido según tu código postal.</p>
-          </details>
-          <details class="faq__item">
-            <summary>¿Cómo se conserva?</summary>
-            <p>Guardala en la heladera y tomala fría. Al no tener conservantes, respetá la fecha indicada en el envase.</p>
+            <p>Sí. Despachamos a todo el territorio argentino. El costo y el tiempo de entrega se coordinan al confirmar tu pedido según tu código postal. Quien recibe debe ser mayor de 18.</p>
           </details>
           <details class="faq__item">
             <summary>¿Cómo compro?</summary>
-            <p>Elegís tus variedades en <a href="#sabores">Sabores</a>, las agregás al carrito y confirmás. Te contactamos por WhatsApp para coordinar pago y envío.</p>
+            <p>Elegís tus sabores en <a href="#sabores">Sabores</a>, los agregás al carrito y confirmás. Te contactamos por WhatsApp para coordinar pago y envío.</p>
           </details>
           <details class="faq__item">
             <summary>¿Venden por mayor?</summary>
-            <p>Sí, tenemos precios y logística para comercios y distribuidoras. Escribinos directo desde la sección <a href="#mayoristas">Mayoristas</a>.</p>
+            <p>Sí, tenemos precios y logística para bares, comercios y distribuidoras. Escribinos directo desde la sección <a href="#mayoristas">Mayoristas</a>.</p>
           </details>
         </div>
       </div>
@@ -309,7 +318,7 @@
         <div class="section__head reveal">
           <p class="eyebrow">Contacto</p>
           <h2>Enterate antes que nadie</h2>
-          <p class="section__sub">Nuevas variedades, tandas limitadas y descuentos. Sin spam, palabra.</p>
+          <p class="section__sub">Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.</p>
         </div>
         <form class="newsletter reveal" id="newsletter-form">
           <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
@@ -333,7 +342,7 @@
     <div class="container footer__inner">
       <div class="footer__brand">
         <a href="#top" class="logo">BUBA<span class="logo__dot">.</span></a>
-        <p>Bebidas que se ven venir. Hecha en Argentina.<br>bubadrinks.com.ar</p>
+        <p>Cocktail frutal con vodka premium.<br>Hecho en Argentina. bubadrinks.com.ar</p>
       </div>
       <nav class="footer__nav">
         <a href="#beneficios">Beneficios</a>
@@ -349,6 +358,7 @@
       </div>
     </div>
     <div class="container footer__legal">
+      <p class="footer__warning">Beber con moderación. Prohibida su venta a menores de 18 años. No compartir este contenido con menores.</p>
       <p>© 2026 BUBA. Todos los derechos reservados.</p>
     </div>
   </footer>
@@ -376,7 +386,7 @@
         <strong id="cart-total">$0</strong>
       </div>
       <button class="btn btn--solid btn--block" id="cart-checkout">Confirmar pedido</button>
-      <p class="cart__note">Al confirmar te contactamos por WhatsApp para coordinar pago y envío.</p>
+      <p class="cart__note">Venta solo a mayores de 18. Al confirmar te contactamos por WhatsApp para coordinar pago y envío.</p>
     </div>
   </aside>
 

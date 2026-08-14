@@ -41,13 +41,13 @@ const WHATSAPP_NUMBER = "5491122334455"; // código de país + número, sin "+"
 Con eso se activan automáticamente: el pedido del carrito, el botón de mayoristas, el link de contacto y el botón flotante. Los mensajes prellenados (`WA_MSG_GENERAL`, `WA_MSG_MAYORISTA`) también se editan ahí.
 
 ### 2. Visor 360 de la lata
-El visor ya funciona con una lata simulada (se puede arrastrar para girar). Para usar las fotos reales:
+El visor gira las **fotos reales** de las latas (Blueberry Limeade y Golden Peach) con un mapeo esférico en canvas: vaivén automático + arrastre manual. Para agregar un sabor nuevo:
 
-1. Sacá **24 o 36 fotos** de la lata girando sobre su eje (mismo encuadre, misma luz, fondo neutro), o exportá los frames desde un render 3D.
-2. Guardalas como `assets/img/360/frame-01.webp`, `frame-02.webp`, etc.
-3. En `js/main.js` poné `const FRAME_COUNT = 24;` (o la cantidad que sea).
+1. Guardá la foto (fondo transparente, lata centrada) en `assets/img/`.
+2. Agregá una entrada en `CANS` de `js/main.js` con `cx/cy/r` (centro y radio de la esfera como fracción del ancho/alto de la imagen) y `warpTop` (desde qué altura empieza el giro, para que la tapa quede quieta).
+3. Agregá el botón correspondiente en `#viewer-flavors` de `index.html`.
 
-El visor detecta las fotos, elimina la lata simulada y pasa a girar con las imágenes reales.
+Las fotos originales en alta resolución (con el 10% ya corregido) quedan en `assets/img/*.png`; la web usa las versiones `.webp`.
 
 ### 3. Logo
 Reemplazá el texto "BUBA." del header y footer por el logo real:
@@ -72,20 +72,29 @@ Sitio 100% estático, sin dependencias ni build:
 - Abrí `index.html` en el navegador, o
 - Servila con `python3 -m http.server` y entrá a `http://localhost:8000`
 
-## Publicar y conectar el dominio (bubadrinks.com.ar)
+## Publicar y conectar el dominio (bubadrinks.com.ar, comprado en NIC.ar)
 
-1. **Activar GitHub Pages**: en GitHub → **Settings → Pages → Source: Deploy from a branch → Branch: main / (root)**.
-2. **Dominio**: el archivo `CNAME` de este repo ya dice `bubadrinks.com.ar`. En **Settings → Pages → Custom domain** escribí `bubadrinks.com.ar` y guardá.
-3. **DNS en NIC Argentina / tu proveedor DNS**: creá estos registros:
+NIC.ar solo registra el dominio: **no** aloja registros DNS. Hay que delegarlo a un servicio de DNS (Cloudflare es gratis) y apuntarlo a GitHub Pages:
 
-   | Tipo  | Nombre | Valor |
-   |-------|--------|-------|
-   | A     | @      | 185.199.108.153 |
-   | A     | @      | 185.199.109.153 |
-   | A     | @      | 185.199.110.153 |
-   | A     | @      | 185.199.111.153 |
-   | CNAME | www    | davidsued1.github.io |
+**Paso 1 — Cloudflare (gratis):**
+1. Crear cuenta en cloudflare.com → "Add a domain" → `bubadrinks.com.ar` (plan Free).
+2. Cloudflare te da 2 nameservers (algo como `ana.ns.cloudflare.com` y `bob.ns.cloudflare.com`).
 
-4. Esperá la propagación (de minutos a unas horas) y activá **Enforce HTTPS** en Settings → Pages.
+**Paso 2 — NIC.ar:**
+1. Entrar a nic.ar con clave fiscal / usuario.
+2. Ir al dominio → **Delegaciones** → borrar las delegaciones actuales y cargar los 2 nameservers de Cloudflare.
+3. Esperar la propagación (puede tardar de minutos a 48 hs).
 
-> Nota: NIC.ar no maneja los registros DNS directamente; el dominio tiene que estar delegado a un DNS (por ejemplo, el del hosting, Cloudflare gratis, o DonWeb). Ahí es donde se cargan los registros de la tabla.
+**Paso 3 — Registros DNS en Cloudflare** (modo "DNS only", nube gris):
+
+| Tipo  | Nombre | Valor |
+|-------|--------|-------|
+| A     | @      | 185.199.108.153 |
+| A     | @      | 185.199.109.153 |
+| A     | @      | 185.199.110.153 |
+| A     | @      | 185.199.111.153 |
+| CNAME | www    | davidsued1.github.io |
+
+**Paso 4 — GitHub Pages:**
+1. En GitHub → **Settings → Pages → Source: Deploy from a branch → Branch: main / (root)**.
+2. En **Custom domain** escribir `bubadrinks.com.ar` (el archivo `CNAME` del repo ya lo tiene) y activar **Enforce HTTPS** cuando esté disponible.

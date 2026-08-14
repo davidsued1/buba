@@ -17,11 +17,10 @@
   --container: 1160px;
   --header-h: 74px;
 
-  /* Colores SOLO para placeholders de fotos de producto (la uva pone el color) */
-  --ph-tinta:  radial-gradient(120% 120% at 30% 20%, #a4508b 0%, #5f0a87 55%, #2c0735 100%);
-  --ph-rosada: radial-gradient(120% 120% at 30% 20%, #ff8fa3 0%, #e0526f 55%, #7a1f3d 100%);
-  --ph-blanca: radial-gradient(120% 120% at 30% 20%, #e9f5a3 0%, #b4c95a 55%, #5c6e1e 100%);
-  --ph-pack:   linear-gradient(150deg, #5f0a87 0%, #e0526f 50%, #b4c95a 100%);
+  /* Colores SOLO para placeholders de fotos que faltan */
+  --ph-blueberry: radial-gradient(120% 120% at 30% 20%, #3fc3ef 0%, #1596c8 55%, #0a4d6e 100%);
+  --ph-peach:     radial-gradient(120% 120% at 30% 20%, #ffb94d 0%, #e8920a 55%, #8a5203 100%);
+  --ph-pack:      linear-gradient(135deg, #1596c8 0%, #0b6e96 45%, #e8920a 55%, #c86e04 100%);
 }
 
 * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -184,25 +183,54 @@ h3 { font-size: 1.25rem; }
   position: relative;
   border-radius: var(--radius);
   background:
-    radial-gradient(60% 55% at 50% 42%, rgba(164, 80, 139, 0.22), transparent 70%),
+    radial-gradient(60% 55% at 50% 42%, rgba(255, 255, 255, 0.06), transparent 70%),
     var(--bg-card);
   border: 1px solid var(--line);
-  padding: 40px 24px 24px;
+  padding: 32px 24px 20px;
   user-select: none;
   touch-action: pan-y;
 }
 .viewer__stage {
-  height: 430px;
+  height: 440px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: grab;
 }
 .viewer__stage:active { cursor: grabbing; }
-.viewer__stage img { height: 100%; object-fit: contain; pointer-events: none; }
+.viewer__stage canvas {
+  height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 30px 40px rgba(0, 0, 0, 0.55));
+}
+.viewer__flavors {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 18px;
+  flex-wrap: wrap;
+}
+.viewer__flavors button {
+  padding: 9px 18px;
+  border-radius: 999px;
+  border: 1.5px solid var(--gray-600);
+  background: transparent;
+  color: var(--gray-300);
+  font-weight: 700;
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+.viewer__flavors button:hover { border-color: var(--white); color: var(--white); }
+.viewer__flavors button.is-active {
+  background: var(--white);
+  color: var(--bg);
+  border-color: var(--white);
+}
 .viewer__hint {
   text-align: center;
-  font-size: 0.78rem;
+  font-size: 0.75rem;
   font-weight: 600;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -210,51 +238,47 @@ h3 { font-size: 1.25rem; }
   margin-top: 14px;
 }
 
-/* Lata simulada (placeholder hasta tener las fotos 360 reales) */
-.can { position: relative; width: 190px; }
-.can__top {
-  position: absolute;
-  top: -7px;
-  left: 8px;
-  right: 8px;
-  height: 22px;
-  border-radius: 50%;
-  background: linear-gradient(180deg, #d9d9d9, #7a7a7a);
-  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.45);
-}
-.can__body {
-  position: relative;
-  height: 380px;
-  border-radius: 26px 26px 30px 30px / 18px 18px 22px 22px;
-  overflow: hidden;
-  background: radial-gradient(140% 100% at 30% 15%, #a4508b 0%, #5f0a87 55%, #240530 100%);
-  box-shadow:
-    0 30px 60px rgba(0, 0, 0, 0.55),
-    inset 12px 0 24px rgba(255, 255, 255, 0.08),
-    inset -16px 0 30px rgba(0, 0, 0, 0.55);
-}
-.can__label {
-  position: absolute;
+/* ---------- Verificación de edad ---------- */
+.agegate {
+  position: fixed;
   inset: 0;
+  z-index: 100;
+  background: rgba(6, 6, 7, 0.94);
+  backdrop-filter: blur(14px);
   display: flex;
   align-items: center;
-  white-space: nowrap;
-  font-size: 3rem;
-  font-weight: 900;
-  letter-spacing: 0.04em;
-  color: rgba(255, 255, 255, 0.92);
-  will-change: transform;
+  justify-content: center;
+  padding: 24px;
 }
-.can__shine {
-  position: absolute;
-  inset: 0;
-  background: linear-gradient(90deg,
-    rgba(0, 0, 0, 0.35) 0%,
-    transparent 22%,
-    rgba(255, 255, 255, 0.16) 38%,
-    transparent 55%,
-    rgba(0, 0, 0, 0.4) 100%);
-  pointer-events: none;
+.agegate__box {
+  max-width: 440px;
+  width: 100%;
+  text-align: center;
+  background: var(--bg-card);
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+  padding: 48px 36px;
+}
+.agegate__logo {
+  font-size: 2rem;
+  font-weight: 900;
+  letter-spacing: -0.04em;
+  margin-bottom: 20px;
+}
+.agegate__box h2 { margin-bottom: 10px; }
+.agegate__sub { color: var(--gray-400); margin-bottom: 28px; }
+.agegate__actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  flex-wrap: wrap;
+  margin-bottom: 28px;
+}
+.agegate__legal {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--gray-600);
 }
 
 /* ---------- Placeholders de fotos ---------- */
@@ -279,10 +303,9 @@ h3 { font-size: 1.25rem; }
   text-align: center;
 }
 .photo--tall { min-height: 520px; }
-.photo[data-flavor="tinta"]  { background: var(--ph-tinta); }
-.photo[data-flavor="rosada"] { background: var(--ph-rosada); }
-.photo[data-flavor="blanca"] { background: var(--ph-blanca); }
-.photo[data-flavor="pack"]   { background: var(--ph-pack); }
+.photo[data-flavor="blueberry"] { background: var(--ph-blueberry); }
+.photo[data-flavor="peach"]     { background: var(--ph-peach); }
+.photo[data-flavor="pack"]      { background: var(--ph-pack); }
 
 /* ---------- Marquee ---------- */
 .marquee {
@@ -346,6 +369,38 @@ h3 { font-size: 1.25rem; }
 }
 .product:hover { transform: translateY(-4px); border-color: var(--gray-600); }
 .product .photo { border-radius: 0; min-height: 250px; }
+.product__media {
+  height: 250px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 22px;
+  background: radial-gradient(70% 60% at 50% 45%, rgba(255, 255, 255, 0.05), transparent 70%);
+}
+.product__media img {
+  max-height: 100%;
+  max-width: 100%;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 22px rgba(0, 0, 0, 0.5));
+  transition: transform 0.25s ease;
+}
+.product:hover .product__media img { transform: scale(1.05) rotate(-2deg); }
+.product__media--soon {
+  color: var(--gray-600);
+  font-size: 4rem;
+  font-weight: 900;
+}
+.product--soon { opacity: 0.75; }
+.product__soon-tag {
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  color: var(--gray-400);
+  border: 1px solid var(--gray-600);
+  border-radius: 999px;
+  padding: 6px 14px;
+}
 .product__body { padding: 20px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
 .product__name { font-size: 1.05rem; }
 .product__desc { font-size: 0.85rem; color: var(--gray-400); flex: 1; }
@@ -507,6 +562,13 @@ h3 { font-size: 1.25rem; }
   padding-bottom: 20px;
 }
 .footer__legal p { color: var(--gray-600); font-size: 0.8rem; }
+.footer__warning {
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-weight: 700;
+  color: var(--gray-400) !important;
+  margin-bottom: 8px;
+}
 
 /* ---------- Botón flotante WhatsApp ---------- */
 .whatsapp-float {
@@ -577,6 +639,8 @@ h3 { font-size: 1.25rem; }
   height: 48px;
   border-radius: 10px;
   flex-shrink: 0;
+  object-fit: contain;
+  background: var(--bg-card);
 }
 .cart-item__info { flex: 1; }
 .cart-item__name { font-weight: 700; font-size: 0.92rem; }
@@ -622,8 +686,6 @@ h3 { font-size: 1.25rem; }
   .grid--3 { grid-template-columns: repeat(2, 1fr); }
   .hero__inner { grid-template-columns: 1fr; gap: 40px; }
   .viewer__stage { height: 360px; }
-  .can { width: 160px; }
-  .can__body { height: 320px; }
   .split, .mayorista { grid-template-columns: 1fr; gap: 40px; }
   .footer__inner { grid-template-columns: 1fr 1fr; }
 }
