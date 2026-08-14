@@ -20,7 +20,7 @@
         <button class="btn btn--solid" id="age-yes">Sí, soy mayor</button>
         <button class="btn btn--outline" id="age-no">No</button>
       </div>
-      <p class="agegate__legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+      <p class="agegate__legal" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
     </div>
   </div>
 
@@ -58,9 +58,9 @@
     <section class="hero">
       <div class="container hero__inner">
         <div class="hero__copy reveal">
-          <p class="eyebrow">Cocktail frutal · Vodka premium</p>
-          <h1 class="hero__title">El color<br>se toma.</h1>
-          <p class="hero__sub">
+          <p class="eyebrow" data-txt="heroEyebrow">Cocktail frutal · Vodka premium</p>
+          <h1 class="hero__title" data-txt="heroTitle">El color<br>se toma.</h1>
+          <p class="hero__sub" data-txt="heroSub">
             BUBA es el cocktail listo para tomar que no necesita presentarse:
             fruta, vodka premium y una lata esférica que se ve venir de lejos.
             Enfriás, abrís y listo.
@@ -77,17 +77,17 @@
         </div>
 
         <div class="hero__media reveal">
-          <!-- Visor 360: gira la foto real de la lata con un mapeo esférico.
-               Las latas y su geometría se configuran en CANS (js/main.js). -->
+          <!-- Visor 360: gira la foto real (cuerpo esférico + tapa) en canvas.
+               Geometría por lata en CANS (js/main.js). -->
           <div class="viewer" id="viewer360">
-            <div class="viewer__stage" id="viewer-stage" aria-label="Vista 360 de la lata BUBA. Arrastrá para girar.">
+            <div class="viewer__stage" id="viewer-stage" aria-label="Vista 360 de la lata BUBA. Arrastrá para girarla.">
               <canvas id="viewer-canvas"></canvas>
             </div>
             <div class="viewer__flavors" id="viewer-flavors">
               <button data-can="blueberry" class="is-active">Blueberry Limeade</button>
               <button data-can="peach">Golden Peach</button>
             </div>
-            <p class="viewer__hint">↔ Arrastrá para girar la lata</p>
+            <p class="viewer__hint">↔ Agarrá la lata y hacela girar</p>
           </div>
         </div>
       </div>
@@ -106,8 +106,8 @@
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow">Beneficios</p>
-          <h2>Por qué BUBA</h2>
-          <p class="section__sub">Menos verso, más cocktail. Esto es lo que te llevás en cada lata.</p>
+          <h2 data-txt="benefitsTitle">Por qué BUBA</h2>
+          <p class="section__sub" data-txt="benefitsSub">Menos verso, más cocktail. Esto es lo que te llevás en cada lata.</p>
         </div>
 
         <div class="grid grid--3">
@@ -150,12 +150,12 @@
       <div class="container">
         <div class="section__head reveal">
           <p class="eyebrow">Tienda</p>
-          <h2>Elegí tu color</h2>
-          <p class="section__sub">Cada sabor tiene su color. Cada color, su momento. Venta solo a mayores de 18.</p>
+          <h2 data-txt="shopTitle">Elegí tu color</h2>
+          <p class="section__sub" data-txt="shopSub">Cada sabor tiene su color. Cada color, su momento. Venta solo a mayores de 18.</p>
         </div>
 
         <div class="grid grid--4" id="products">
-          <!-- Las tarjetas de producto se generan desde js/main.js -->
+          <!-- Las tarjetas de producto se generan desde js/main.js con datos del panel -->
         </div>
       </div>
     </section>
@@ -171,12 +171,12 @@
         </div>
         <div class="split__copy reveal">
           <p class="eyebrow">Nosotros</p>
-          <h2>Empezamos con una pregunta simple</h2>
-          <p>
+          <h2 data-txt="aboutTitle">Empezamos con una pregunta simple</h2>
+          <p data-txt="aboutP1">
             ¿Por qué todos los tragos listos para tomar se ven iguales? Góndolas
             enteras de latas idénticas, con mucha promesa y poco adentro.
           </p>
-          <p>
+          <p data-txt="aboutP2">
             BUBA nace para cambiar eso: un cocktail frutal elaborado con vodka
             premium, en una lata esférica que no se confunde con nada. Que el
             producto hable por su color, y que la etiqueta diga poco porque el
@@ -216,13 +216,13 @@
     </section>
 
     <!-- ============ MAYORISTAS / DISTRIBUIDORES ============ -->
-    <section class="section section--invert" id="mayoristas">
+    <section class="section section--dark" id="mayoristas">
       <div class="container">
         <div class="mayorista">
           <div class="mayorista__copy reveal">
             <p class="eyebrow">Mayoristas & distribuidores</p>
-            <h2>Llevá BUBA a tu comercio</h2>
-            <p class="mayorista__sub">
+            <h2 data-txt="wholesaleTitle">Llevá BUBA a tu comercio</h2>
+            <p class="mayorista__sub" data-txt="wholesaleSub">
               ¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora?
               Trabajamos con precios mayoristas, entregas programadas y material
               de marca para tu punto de venta.
@@ -234,10 +234,10 @@
               <li>Atención directa, sin intermediarios</li>
             </ul>
             <div class="mayorista__cta">
-              <a href="#" class="btn btn--dark" id="wholesale-whatsapp" target="_blank" rel="noopener">
+              <a href="#" class="btn btn--light" id="wholesale-whatsapp" target="_blank" rel="noopener">
                 Hablar por WhatsApp
               </a>
-              <a href="mailto:mayoristas@bubadrinks.com.ar" class="btn btn--ghost-dark">mayoristas@bubadrinks.com.ar</a>
+              <a href="mailto:mayoristas@bubadrinks.com.ar" class="btn btn--ghost-light" id="wholesale-email">mayoristas@bubadrinks.com.ar</a>
             </div>
             <p class="mayorista__note">Respondemos el mismo día, de lunes a sábado.</p>
           </div>
@@ -298,11 +298,11 @@
           </details>
           <details class="faq__item">
             <summary>¿Hacen envíos a todo el país?</summary>
-            <p>Sí. Despachamos a todo el territorio argentino. El costo y el tiempo de entrega se coordinan al confirmar tu pedido según tu código postal. Quien recibe debe ser mayor de 18.</p>
+            <p>Sí: moto en el día para CABA y GBA, y Correo Argentino o Andreani para el resto del país. El costo se calcula en el checkout. Quien recibe debe ser mayor de 18.</p>
           </details>
           <details class="faq__item">
-            <summary>¿Cómo compro?</summary>
-            <p>Elegís tus sabores en <a href="#sabores">Sabores</a>, los agregás al carrito y confirmás. Te contactamos por WhatsApp para coordinar pago y envío.</p>
+            <summary>¿Cómo compro y cómo pago?</summary>
+            <p>Elegís tus sabores en <a href="#sabores">Sabores</a>, los agregás al carrito y completás el checkout con tus datos y tu dirección. Podés pagar con Mercado Pago o coordinar por WhatsApp.</p>
           </details>
           <details class="faq__item">
             <summary>¿Venden por mayor?</summary>
@@ -317,8 +317,8 @@
       <div class="container container--narrow">
         <div class="section__head reveal">
           <p class="eyebrow">Contacto</p>
-          <h2>Enterate antes que nadie</h2>
-          <p class="section__sub">Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.</p>
+          <h2 data-txt="contactTitle">Enterate antes que nadie</h2>
+          <p class="section__sub" data-txt="contactSub">Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.</p>
         </div>
         <form class="newsletter reveal" id="newsletter-form">
           <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
@@ -328,9 +328,9 @@
         <div class="contact-direct reveal">
           <a href="#" id="contact-whatsapp" target="_blank" rel="noopener">WhatsApp directo</a>
           <span>·</span>
-          <a href="mailto:hola@bubadrinks.com.ar">hola@bubadrinks.com.ar</a>
+          <a href="mailto:hola@bubadrinks.com.ar" id="contact-email">hola@bubadrinks.com.ar</a>
           <span>·</span>
-          <a href="https://instagram.com/buba.drinks" target="_blank" rel="noopener">@buba.drinks</a>
+          <a href="https://instagram.com/buba.drinks" target="_blank" rel="noopener" id="contact-ig">@buba.drinks</a>
         </div>
       </div>
     </section>
@@ -341,8 +341,8 @@
   <footer class="footer">
     <div class="container footer__inner">
       <div class="footer__brand">
-        <a href="#top" class="logo">BUBA<span class="logo__dot">.</span></a>
-        <p>Cocktail frutal con vodka premium.<br>Hecho en Argentina. bubadrinks.com.ar</p>
+        <a href="#top" class="logo logo--light">BUBA<span class="logo__dot">.</span></a>
+        <p data-txt="footerTagline">Cocktail frutal con vodka premium.<br>Hecho en Argentina. bubadrinks.com.ar</p>
       </div>
       <nav class="footer__nav">
         <a href="#beneficios">Beneficios</a>
@@ -352,13 +352,13 @@
         <a href="#faq">FAQ</a>
       </nav>
       <div class="footer__contact">
-        <p>hola@bubadrinks.com.ar</p>
-        <p>mayoristas@bubadrinks.com.ar</p>
-        <p>@buba.drinks</p>
+        <p id="footer-email">hola@bubadrinks.com.ar</p>
+        <p id="footer-email-mayoristas">mayoristas@bubadrinks.com.ar</p>
+        <p id="footer-ig">@buba.drinks</p>
       </div>
     </div>
     <div class="container footer__legal">
-      <p class="footer__warning">Beber con moderación. Prohibida su venta a menores de 18 años. No compartir este contenido con menores.</p>
+      <p class="footer__warning" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
       <p>© 2026 BUBA. Todos los derechos reservados.</p>
     </div>
   </footer>
@@ -382,14 +382,104 @@
     </div>
     <div class="cart__foot">
       <div class="cart__total">
-        <span>Total</span>
+        <span>Subtotal</span>
         <strong id="cart-total">$0</strong>
       </div>
-      <button class="btn btn--solid btn--block" id="cart-checkout">Confirmar pedido</button>
-      <p class="cart__note">Venta solo a mayores de 18. Al confirmar te contactamos por WhatsApp para coordinar pago y envío.</p>
+      <button class="btn btn--solid btn--block" id="cart-checkout">Iniciar compra</button>
+      <p class="cart__note">Venta solo a mayores de 18. El envío se calcula en el próximo paso.</p>
     </div>
   </aside>
 
+  <!-- ============ CHECKOUT ============ -->
+  <div class="checkout-overlay" id="checkout-overlay" hidden></div>
+  <div class="checkout" id="checkout" role="dialog" aria-label="Finalizar compra" hidden>
+    <div class="checkout__head">
+      <div class="checkout__steps" id="checkout-steps">
+        <span class="is-active" data-step="1">1 · Tus datos</span>
+        <span data-step="2">2 · Envío</span>
+        <span data-step="3">3 · Pago</span>
+      </div>
+      <button class="cart__close" id="checkout-close" aria-label="Cerrar checkout">✕</button>
+    </div>
+
+    <div class="checkout__body">
+      <!-- Paso 1: datos + dirección -->
+      <form class="checkout__step" id="step-1">
+        <h3>¿Quién recibe?</h3>
+        <div class="form-grid">
+          <label>Nombre y apellido<input type="text" id="f-name" required autocomplete="name"></label>
+          <label>Email<input type="email" id="f-email" required autocomplete="email"></label>
+          <label>Teléfono (WhatsApp)<input type="tel" id="f-phone" required autocomplete="tel" placeholder="11 2233 4455"></label>
+        </div>
+        <h3>¿A dónde lo enviamos?</h3>
+        <div class="form-grid">
+          <label class="span-2">Calle y número<input type="text" id="f-street" required autocomplete="street-address"></label>
+          <label>Piso / Depto (opcional)<input type="text" id="f-apt"></label>
+          <label>Ciudad / Localidad<input type="text" id="f-city" required></label>
+          <label>Provincia
+            <select id="f-province" required>
+              <option value="">Elegí…</option>
+              <option>CABA</option><option>Buenos Aires</option><option>Catamarca</option>
+              <option>Chaco</option><option>Chubut</option><option>Córdoba</option>
+              <option>Corrientes</option><option>Entre Ríos</option><option>Formosa</option>
+              <option>Jujuy</option><option>La Pampa</option><option>La Rioja</option>
+              <option>Mendoza</option><option>Misiones</option><option>Neuquén</option>
+              <option>Río Negro</option><option>Salta</option><option>San Juan</option>
+              <option>San Luis</option><option>Santa Cruz</option><option>Santa Fe</option>
+              <option>Santiago del Estero</option><option>Tierra del Fuego</option><option>Tucumán</option>
+            </select>
+          </label>
+          <label>Código postal<input type="text" id="f-cp" required inputmode="numeric" placeholder="1414"></label>
+        </div>
+        <button type="button" class="btn btn--outline btn--sm" id="geo-btn">📍 Usar mi ubicación actual</button>
+        <span class="geo-status" id="geo-status"></span>
+        <label class="label-block">Notas para la entrega (opcional)<textarea id="f-notes" rows="2" placeholder="Ej: tocar timbre del PH, dejar en portería…"></textarea></label>
+        <div class="checkout__nav">
+          <button type="submit" class="btn btn--solid">Continuar → Envío</button>
+        </div>
+      </form>
+
+      <!-- Paso 2: método de envío -->
+      <div class="checkout__step" id="step-2" hidden>
+        <h3>Elegí cómo te llega</h3>
+        <div class="ship-options" id="ship-options"></div>
+        <div class="checkout__nav">
+          <button type="button" class="btn btn--ghost" id="back-1">← Volver</button>
+          <button type="button" class="btn btn--solid" id="next-3" disabled>Continuar → Pago</button>
+        </div>
+      </div>
+
+      <!-- Paso 3: resumen + pago -->
+      <div class="checkout__step" id="step-3" hidden>
+        <h3>Resumen del pedido</h3>
+        <div class="summary" id="summary"></div>
+        <div class="promo-row">
+          <input type="text" id="promo-input" placeholder="Código de descuento">
+          <button type="button" class="btn btn--outline btn--sm" id="promo-apply">Aplicar</button>
+          <span class="promo-status" id="promo-status"></span>
+        </div>
+        <div class="pay-actions">
+          <button type="button" class="btn btn--solid btn--block" id="pay-mp">Pagar con Mercado Pago</button>
+          <button type="button" class="btn btn--outline btn--block" id="pay-wa">Coordinar pago por WhatsApp</button>
+        </div>
+        <p class="cart__note" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+        <div class="checkout__nav">
+          <button type="button" class="btn btn--ghost" id="back-2">← Volver</button>
+        </div>
+      </div>
+
+      <!-- Confirmación -->
+      <div class="checkout__step checkout__done" id="step-done" hidden>
+        <div class="done-icon">✓</div>
+        <h3>¡Pedido registrado!</h3>
+        <p id="done-msg"></p>
+        <p class="done-code" id="done-code"></p>
+        <button type="button" class="btn btn--solid" id="done-close">Listo</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/store-defaults.js"></script>
   <script src="js/main.js"></script>
 </body>
 </html>

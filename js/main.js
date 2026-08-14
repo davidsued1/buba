@@ -1,124 +1,158 @@
 /* ==========================================================================
-   BUBA — Lógica de la landing
-   - Configuración de contacto (WhatsApp) y catálogo de productos
-   - Verificación de edad (+18)
-   - Visor 360: gira la foto real de la lata con un mapeo esférico en canvas
-   - Carrito con persistencia en localStorage + pedido por WhatsApp
-   - Menú mobile, animaciones de aparición, newsletter
+   BUBA — Web pública
+   - Datos de la tienda: defaults + data/store.json (publicado por el panel)
+     + localStorage (cambios locales del panel). Todo editable desde /admin.
+   - Visor 360: rotación física completa de la lata (cuerpo esférico con
+     envoltura continua + tapa girando) sobre la foto real, en canvas.
+   - Carrito + checkout completo: datos, dirección (con geolocalización),
+     método de envío, promociones, Mercado Pago (vía backend) o WhatsApp.
    ========================================================================== */
 
-/* ---------- Configuración ---------- */
+/* ---------- Utilidades ---------- */
+const $ = (id) => document.getElementById(id);
+const money = (n) => "$" + Math.round(n).toLocaleString("es-AR");
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) =>
+  ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 
-// Número de WhatsApp que recibe pedidos y consultas.
-// Código de país + número, sin "+" ni espacios. Ejemplo Argentina: "5491122334455".
-const WHATSAPP_NUMBER = "";
-
-const WA_MSG_GENERAL = "¡Hola BUBA! Quiero hacerles una consulta.";
-const WA_MSG_MAYORISTA =
-  "¡Hola BUBA! Tengo un comercio y me interesa vender sus cocktails. ¿Me pasan info de precios mayoristas?";
-
-// Latas del visor 360. cx/cy/r describen la esfera dentro de la foto
-// (fracciones del ancho/alto). warpTop: desde qué altura (fracción) empieza
-// a girar la imagen (más arriba queda quieta la tapa metálica).
-const CANS = {
-  blueberry: {
-    src: "assets/img/blueberry.webp",
-    cx: 0.499, cy: 0.490, r: 0.497,
-    warpTop: 0.30,
-  },
-  peach: {
-    src: "assets/img/peach.webp",
-    cx: 0.499, cy: 0.509, r: 0.494,
-    warpTop: 0.26,
-  },
-};
-
-const PRODUCTS = [
-  {
-    id: "blueberry",
-    name: "BUBA Blueberry Limeade",
-    desc: "Azul eléctrico. Arándano y lima con vodka premium.",
-    price: 3500,
-    img: "assets/img/blueberry.webp",
-  },
-  {
-    id: "peach",
-    name: "BUBA Golden Peach",
-    desc: "Dorado intenso. Durazno maduro con vodka premium.",
-    price: 3500,
-    img: "assets/img/peach.webp",
-  },
-  {
-    id: "pack",
-    name: "Pack Degustación x8",
-    desc: "Cuatro de cada sabor. El punto de partida ideal.",
-    price: 26000,
-    img: null,
-    swatch: "linear-gradient(135deg, #1596c8 0%, #0b6e96 45%, #e8920a 55%, #c86e04 100%)",
-  },
-];
-
-// Sabores que todavía no salieron (tarjetas "próximamente")
-const COMING_SOON = ["Nuevo sabor 03", "Nuevo sabor 04"];
-
-const money = (n) => "$" + n.toLocaleString("es-AR");
-
-const waLink = (msg) =>
-  WHATSAPP_NUMBER
-    ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
-    : null;
-
-/* ---------- Almacenamiento seguro (no rompe en incógnito/sandbox) ---------- */
 function lsGet(key) {
   try { return localStorage.getItem(key); } catch { return null; }
 }
 function lsSet(key, value) {
   try { localStorage.setItem(key, value); } catch { /* sin persistencia */ }
 }
+function lsJSON(key) {
+  try { return JSON.parse(lsGet(key)); } catch { return null; }
+}
+
+/* ---------- Resolución de datos de la tienda ---------- */
+let STORE = window.BUBA_DEFAULTS;
+
+async function resolveStore() {
+  let store = window.BUBA_DEFAULTS;
+  try {
+    const r = await fetch("data/store.json", { cache: "no-store" });
+    if (r.ok) store = mergeStore(store, await r.json());
+  } catch { /* offline o file:// → defaults */ }
+  const local = lsJSON("buba-store");
+  if (local) store = mergeStore(store, local);
+  return store;
+}
+
+// merge superficial por sección: cada bloque del panel reemplaza al default
+function mergeStore(base, over) {
+  const out = { ...base };
+  for (const k of ["config", "texts"]) {
+    if (over[k]) out[k] = { ...base[k], ...over[k] };
+  }
+  for (const k of ["products", "shipping", "promos", "comingSoon"]) {
+    if (Array.isArray(over[k])) out[k] = over[k];
+  }
+  if (over.version) out.version = over.version;
+  return out;
+}
+
+/* ---------- Aplicar textos y contactos administrables ---------- */
+function applyTexts() {
+  document.querySelectorAll("[data-txt]").forEach((el) => {
+    const val = STORE.texts[el.dataset.txt];
+    if (!val) return;
+    el.textContent = "";
+    String(val).split("\n").forEach((line, i) => {
+      if (i) el.appendChild(document.createElement("br"));
+      el.appendChild(document.createTextNode(line));
+    });
+  });
+
+  const c = STORE.config;
+  const ig = (c.instagram || "").replace(/^@/, "");
+  if ($("contact-ig")) {
+    $("contact-ig").textContent = "@" + ig;
+    $("contact-ig").href = "https://instagram.com/" + ig;
+  }
+  if ($("footer-ig")) $("footer-ig").textContent = "@" + ig;
+  [["contact-email", c.emailGeneral], ["wholesale-email", c.emailMayoristas]].forEach(([id, mail]) => {
+    if ($(id)) { $(id).textContent = mail; $(id).href = "mailto:" + mail; }
+  });
+  if ($("footer-email")) $("footer-email").textContent = c.emailGeneral;
+  if ($("footer-email-mayoristas")) $("footer-email-mayoristas").textContent = c.emailMayoristas;
+}
+
+const waLink = (msg) =>
+  STORE.config.whatsapp
+    ? `https://wa.me/${STORE.config.whatsapp}?text=${encodeURIComponent(msg)}`
+    : null;
+
+function setupWhatsAppLinks() {
+  const MSG_GENERAL = "¡Hola BUBA! Quiero hacerles una consulta.";
+  const MSG_MAYORISTA = "¡Hola BUBA! Tengo un comercio y me interesa vender sus cocktails. ¿Me pasan info de precios mayoristas?";
+  [["wholesale-whatsapp", MSG_MAYORISTA], ["contact-whatsapp", MSG_GENERAL], ["float-whatsapp", MSG_GENERAL]]
+    .forEach(([id, msg]) => {
+      const el = $(id);
+      if (!el) return;
+      const url = waLink(msg);
+      if (url) el.href = url;
+      else el.addEventListener("click", (e) => {
+        e.preventDefault();
+        alert("El WhatsApp de la tienda todavía no está configurado (se carga desde el panel /admin).");
+      });
+    });
+}
 
 /* ---------- Verificación de edad ---------- */
-const AGE_KEY = "buba-adult";
-
 function setupAgeGate() {
-  const gate = document.getElementById("agegate");
-  if (lsGet(AGE_KEY) === "1") return;
-
+  const gate = $("agegate");
+  if (lsGet("buba-adult") === "1") return;
   gate.hidden = false;
   document.body.style.overflow = "hidden";
-
-  document.getElementById("age-yes").addEventListener("click", () => {
-    lsSet(AGE_KEY, "1");
+  $("age-yes").addEventListener("click", () => {
+    lsSet("buba-adult", "1");
     gate.hidden = true;
     document.body.style.overflow = "";
   });
-
-  document.getElementById("age-no").addEventListener("click", () => {
+  $("age-no").addEventListener("click", () => {
     gate.querySelector(".agegate__box").innerHTML =
       '<p class="agegate__logo">BUBA<span class="logo__dot">.</span></p>' +
       "<h2>Volvé en unos años</h2>" +
       '<p class="agegate__sub">Este sitio es solo para mayores de 18 años.</p>' +
-      '<p class="agegate__legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>';
+      '<p class="agegate__legal">' + esc(STORE.texts.legal) + "</p>";
   });
 }
 
-/* ---------- Visor 360 (mapeo esférico sobre la foto real) ---------- */
+/* ==========================================================================
+   VISOR 360 — rotación física completa de la lata
+   El cuerpo es una esfera: cada píxel se reproyecta según su longitud
+   aparente (la textura envuelve; la lata es igual de ambos lados, así que
+   el patrón se repite cada media vuelta y una vuelta entera vuelve exacto
+   al inicio). La tapa es una elipse que rota en su plano (gira la anilla).
+   Sin trigonometría por píxel: todo precalculado, solo sumas y productos.
+   ========================================================================== */
+const CANS = {
+  blueberry: {
+    src: "assets/img/blueberry.webp",
+    sphere: { cx: 0.499, cy: 0.490, r: 0.497 },
+    lid: { ex: 0.505, ey: 0.125, rx: 0.385, ry: 0.095 },
+  },
+  peach: {
+    src: "assets/img/peach.webp",
+    sphere: { cx: 0.499, cy: 0.509, r: 0.494 },
+    lid: { ex: 0.500, ey: 0.110, rx: 0.370, ry: 0.105 },
+  },
+};
+
 function setupViewer() {
-  const stage = document.getElementById("viewer-stage");
-  const canvas = document.getElementById("viewer-canvas");
+  const stage = $("viewer-stage");
+  const canvas = $("viewer-canvas");
   if (!stage || !canvas) return;
 
-  const ctx = canvas.getContext("2d", { willReadFrequently: true });
-  const cache = {}; // por sabor: { src ImageData, LUT esférica, tamaño }
-  const MAX_ANGLE = 0.6;   // tope de giro manual (rad)
-  const AUTO_AMP = 0.4;    // amplitud del vaivén automático (rad)
+  const ctx = canvas.getContext("2d");
+  const cache = {};
+  const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   let active = null;
-  let theta = 0;           // ángulo actual (se acerca suavemente a target)
-  let target = 0;
-  let manual = false;      // true mientras el usuario arrastra
+  let theta = 0;
+  let vel = 0;
   let dragging = false;
-  let lastX = 0;
-  let reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
-  let rafId = null;
+  let lastX = 0, lastT = 0;
+  let idleAt = 0;
 
   function buildCan(key, cb) {
     if (cache[key]) return cb(cache[key]);
@@ -126,43 +160,49 @@ function setupViewer() {
     const img = new Image();
     img.src = cfg.src;
     img.onload = () => {
-      // renderizar a la resolución del stage (más liviano que la foto entera)
       const H = Math.min(560, Math.max(380, stage.clientHeight || 460));
       const W = Math.round((img.width / img.height) * H);
       const off = document.createElement("canvas");
-      off.width = W;
-      off.height = H;
-      const octx = off.getContext("2d");
-      octx.drawImage(img, 0, 0, W, H);
-      const src = octx.getImageData(0, 0, W, H);
+      off.width = W; off.height = H;
+      off.getContext("2d").drawImage(img, 0, 0, W, H);
+      const src = off.getContext("2d").getImageData(0, 0, W, H);
 
-      // LUT: para cada píxel de la esfera, su latitud/longitud aparente.
-      // fade: el giro entra en rampa desde la tapa hacia abajo (sin costura).
-      const cx = cfg.cx * W, cy = cfg.cy * H, r = cfg.r * W;
-      const topY = Math.round(cfg.warpTop * H);
-      const band = 0.2 * H;
-      const idx = [], lon = [], rho = [], fade = [];
-      for (let y = Math.max(0, topY); y < H; y++) {
-        const t = Math.min(1, (y - topY) / band);
-        const f = t * t * (3 - 2 * t); // smoothstep
+      const cx = cfg.sphere.cx * W, cy = cfg.sphere.cy * H, r = cfg.sphere.r * W;
+      const ex = cfg.lid.ex * W, ey = cfg.lid.ey * H, rx = cfg.lid.rx * W, ry = cfg.lid.ry * H;
+
+      // --- cuerpo esférico ---
+      const bIdx = [], bLon = [], bSin = [], bCos = [], bRho = [];
+      // --- tapa (elipse) ---
+      const lIdx = [], lUx = [], lUy = [];
+
+      for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
-          const nx = (x - cx) / r;
-          const ny = (y - cy) / r;
-          if (nx * nx + ny * ny > 0.999) continue;
-          const cosLat = Math.sqrt(1 - ny * ny); // radio del paralelo a esta altura
-          if (cosLat < 0.03) continue;
-          idx.push(y * W + x);
-          lon.push(Math.asin(Math.max(-1, Math.min(1, nx / cosLat))));
-          rho.push(r * cosLat);
-          fade.push(f);
+          const eu = (x - ex) / rx, ev = (y - ey) / ry;
+          if (eu * eu + ev * ev <= 1) {
+            lIdx.push(y * W + x);
+            lUx.push(eu);
+            lUy.push(ev);
+            continue;
+          }
+          const nx = (x - cx) / r, ny = (y - cy) / r;
+          if (nx * nx + ny * ny > 0.998) continue;
+          const cosLat = Math.sqrt(1 - ny * ny);
+          if (cosLat < 0.04) continue;
+          const lon = Math.asin(Math.max(-1, Math.min(1, nx / cosLat)));
+          bIdx.push(y * W + x);
+          bLon.push(lon);
+          bSin.push(Math.sin(lon));
+          bCos.push(Math.cos(lon));
+          bRho.push(r * cosLat);
         }
       }
+
       cache[key] = {
-        src, W, H, cx,
-        idx: Int32Array.from(idx),
-        lon: Float32Array.from(lon),
-        rho: Float32Array.from(rho),
-        fade: Float32Array.from(fade),
+        src, W, H, cx, ex, ey, rx, ry,
+        bIdx: Int32Array.from(bIdx), bLon: Float32Array.from(bLon),
+        bSin: Float32Array.from(bSin), bCos: Float32Array.from(bCos),
+        bRho: Float32Array.from(bRho),
+        lIdx: Int32Array.from(lIdx), lUx: Float32Array.from(lUx), lUy: Float32Array.from(lUy),
       };
       cb(cache[key]);
     };
@@ -170,68 +210,131 @@ function setupViewer() {
 
   function render() {
     if (!active) return;
-    const { src, W, H, cx, idx, lon, rho, fade } = active;
-    canvas.width = W;
-    canvas.height = H;
+    const { src, W, H, cx, ex, ey, rx, ry, bIdx, bLon, bSin, bCos, bRho, lIdx, lUx, lUy } = active;
+    canvas.width = W; canvas.height = H;
 
     const out = ctx.createImageData(W, H);
-    out.data.set(src.data); // base: foto original (tapa y bordes quietos)
-
+    out.data.set(src.data);
     const s = src.data, o = out.data;
-    const LIM = Math.PI / 2 - 0.06; // en el borde la textura se comprime, no se corta
-    for (let i = 0; i < idx.length; i++) {
-      let L = lon[i] + theta * fade[i];
-      if (L > LIM) L = LIM;
-      else if (L < -LIM) L = -LIM;
-      const p = idx[i];
-      const sx = Math.round(cx + rho[i] * Math.sin(L));
-      const sp = ((p / W) | 0) * W + Math.max(0, Math.min(W - 1, sx));
-      const q = p * 4, sq = sp * 4;
-      o[q] = s[sq]; o[q + 1] = s[sq + 1]; o[q + 2] = s[sq + 2]; o[q + 3] = s[sq + 3];
+
+    const PI = Math.PI, HALF = PI / 2;
+    const cosT = Math.cos(theta), sinT = Math.sin(theta);
+    const SEAM = 0.22; // banda de fundido en el borde para envolver sin cortes
+
+    // --- cuerpo: longitud desplazada, envuelta cada media vuelta ---
+    for (let i = 0; i < bIdx.length; i++) {
+      const t = bLon[i] + theta;
+      // sin(lon + theta) sin llamar a Math.sin por píxel
+      let sL = bSin[i] * cosT + bCos[i] * sinT;
+      // envolver al hemisferio visible: cada π el patrón se repite
+      const k = Math.floor((t + HALF) / PI);
+      if (k & 1) sL = -sL;
+      const L1 = t - k * PI;               // longitud envuelta, en [-π/2, π/2)
+      const p = bIdx[i], row = (p / W) | 0;
+      const rho = bRho[i];
+
+      let sx = cx + rho * sL;
+      // fundido cerca del borde con la muestra del lado opuesto (continuidad)
+      const d = HALF - Math.abs(L1);
+      let w2 = 0;
+      if (d < SEAM) w2 = 0.5 * (1 - d / SEAM);
+
+      // muestreo bilineal en x
+      const x0 = Math.max(0, Math.min(W - 1, Math.floor(sx)));
+      const x1 = Math.min(W - 1, x0 + 1);
+      const fx = Math.min(1, Math.max(0, sx - x0));
+      const a0 = (row * W + x0) * 4, a1 = (row * W + x1) * 4;
+      let rC = s[a0] + (s[a1] - s[a0]) * fx;
+      let gC = s[a0 + 1] + (s[a1 + 1] - s[a0 + 1]) * fx;
+      let bC = s[a0 + 2] + (s[a1 + 2] - s[a0 + 2]) * fx;
+      let aC = s[a0 + 3] + (s[a1 + 3] - s[a0 + 3]) * fx;
+
+      if (w2 > 0) {
+        const sx2 = cx - rho * sL;
+        const b0 = (row * W + Math.max(0, Math.min(W - 1, Math.round(sx2)))) * 4;
+        rC = rC * (1 - w2) + s[b0] * w2;
+        gC = gC * (1 - w2) + s[b0 + 1] * w2;
+        bC = bC * (1 - w2) + s[b0 + 2] * w2;
+        aC = aC * (1 - w2) + s[b0 + 3] * w2;
+      }
+
+      const q = p * 4;
+      o[q] = rC; o[q + 1] = gC; o[q + 2] = bC; o[q + 3] = aC;
     }
+
+    // --- tapa: rotación en el plano de la elipse (gira la anilla) ---
+    for (let i = 0; i < lIdx.length; i++) {
+      const ux = lUx[i], uy = lUy[i];
+      const su = ux * cosT + uy * sinT;
+      const sv = uy * cosT - ux * sinT;
+      const sx = ex + su * rx, sy = ey + sv * ry;
+      const x0 = Math.max(0, Math.min(W - 1, Math.floor(sx)));
+      const y0 = Math.max(0, Math.min(H - 1, Math.floor(sy)));
+      const x1 = Math.min(W - 1, x0 + 1), y1 = Math.min(H - 1, y0 + 1);
+      const fx = sx - x0, fy = sy - y0;
+      const a00 = (y0 * W + x0) * 4, a10 = (y0 * W + x1) * 4;
+      const a01 = (y1 * W + x0) * 4, a11 = (y1 * W + x1) * 4;
+      const q = lIdx[i] * 4;
+      for (let ch = 0; ch < 4; ch++) {
+        const top = s[a00 + ch] + (s[a10 + ch] - s[a00 + ch]) * fx;
+        const bot = s[a01 + ch] + (s[a11 + ch] - s[a01 + ch]) * fx;
+        o[q + ch] = top + (bot - top) * fy;
+      }
+    }
+
     ctx.putImageData(out, 0, 0);
   }
 
+  let lastTheta = -1;
   function loop(now) {
-    if (!manual && !reduceMotion) {
-      // vaivén automático suave
-      target = AUTO_AMP * Math.sin((now || 0) / 1400);
+    if (dragging) {
+      // el drag actualiza theta directamente
+    } else if (Math.abs(vel) > 0.0004) {
+      theta += vel;
+      vel *= 0.95; // inercia al soltar
+      idleAt = now;
+    } else if (!reduceMotion && now - idleAt > 1600) {
+      theta += 0.005; // giro continuo automático
     }
-    const prev = theta;
-    theta += (target - theta) * 0.12;
-    if (active && Math.abs(theta - prev) > 0.0004) render();
-    rafId = requestAnimationFrame(loop);
+    if (active && theta !== lastTheta) {
+      render();
+      lastTheta = theta;
+    }
+    requestAnimationFrame(loop);
   }
 
   function show(key) {
     buildCan(key, (can) => {
       active = can;
-      render();
+      lastTheta = -1;
     });
   }
 
-  // Interacción: arrastrar para girar (con tope elástico a los costados)
   stage.addEventListener("pointerdown", (e) => {
     dragging = true;
-    manual = true;
+    vel = 0;
     lastX = e.clientX;
+    lastT = performance.now();
     stage.setPointerCapture(e.pointerId);
   });
   stage.addEventListener("pointermove", (e) => {
     if (!dragging || !active) return;
-    target = Math.max(-MAX_ANGLE, Math.min(MAX_ANGLE, target + (e.clientX - lastX) * 0.008));
+    const dx = e.clientX - lastX;
+    const dt = Math.max(1, performance.now() - lastT);
+    const dTheta = dx / (active.rx * 1.4); // sensación de agarrar la esfera
+    theta += dTheta;
+    vel = (dTheta / dt) * 16; // velocidad para la inercia
     lastX = e.clientX;
+    lastT = performance.now();
   });
   const endDrag = () => {
     dragging = false;
-    // al soltar, volver despacio al vaivén automático
-    setTimeout(() => { manual = false; }, 1200);
+    idleAt = performance.now();
   };
   stage.addEventListener("pointerup", endDrag);
   stage.addEventListener("pointercancel", endDrag);
 
-  // Selector de sabor
-  const flavorBox = document.getElementById("viewer-flavors");
+  const flavorBox = $("viewer-flavors");
   flavorBox.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-can]");
     if (!btn) return;
@@ -241,195 +344,382 @@ function setupViewer() {
   });
 
   show("blueberry");
-  loop();
-
-  // pausar el giro cuando la pestaña no está visible
-  document.addEventListener("visibilitychange", () => {
-    if (document.hidden) cancelAnimationFrame(rafId);
-    else loop();
-  });
+  requestAnimationFrame(loop);
 }
 
-/* ---------- Render de productos ---------- */
+/* ==========================================================================
+   TIENDA + CARRITO
+   ========================================================================== */
+const activeProducts = () => STORE.products.filter((p) => p.active !== false);
+const findProduct = (id) => STORE.products.find((p) => p.id === id);
+
 function renderProducts() {
-  const grid = document.getElementById("products");
-  const cards = PRODUCTS.map(
-    (p) => `
-    <article class="product reveal">
-      ${
-        p.img
-          ? `<div class="product__media"><img src="${p.img}" alt="${p.name}" loading="lazy"></div>`
-          : `<div class="photo" data-flavor="${p.id}"><span class="photo__label">FOTO ${p.name.toUpperCase()}</span></div>`
-      }
+  const grid = $("products");
+  const cards = activeProducts().map((p) => {
+    const out = (p.stock ?? 0) <= 0;
+    return `
+    <article class="product reveal is-visible">
+      ${p.img
+        ? `<div class="product__media"><img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy"></div>`
+        : `<div class="photo" data-flavor="${esc(p.id)}"><span class="photo__label">FOTO ${esc(p.name).toUpperCase()}</span></div>`}
       <div class="product__body">
-        <h3 class="product__name">${p.name}</h3>
-        <p class="product__desc">${p.desc}</p>
+        <h3 class="product__name">${esc(p.name)}</h3>
+        <p class="product__desc">${esc(p.desc)}</p>
         <div class="product__row">
           <span class="product__price">${money(p.price)}</span>
-          <button class="btn btn--outline btn--sm" data-add="${p.id}">Agregar</button>
+          ${out
+            ? '<span class="product__stock-tag">Sin stock</span>'
+            : `<button class="btn btn--outline btn--sm" data-add="${esc(p.id)}">Agregar</button>`}
         </div>
       </div>
-    </article>`
-  );
+    </article>`;
+  });
 
-  const soon = COMING_SOON.map(
-    (name) => `
-    <article class="product product--soon reveal">
+  const soon = (STORE.comingSoon || []).map((name) => `
+    <article class="product product--soon reveal is-visible">
       <div class="product__media product__media--soon"><span>?</span></div>
       <div class="product__body">
-        <h3 class="product__name">${name}</h3>
+        <h3 class="product__name">${esc(name)}</h3>
         <p class="product__desc">Muy pronto. Suscribite abajo para enterarte antes que nadie.</p>
         <div class="product__row"><span class="product__soon-tag">Próximamente</span></div>
       </div>
-    </article>`
-  );
+    </article>`);
 
   grid.innerHTML = cards.concat(soon).join("");
 }
 
 /* ---------- Carrito ---------- */
-const CART_KEY = "buba-cart";
+let cart = lsJSON("buba-cart") || {};
 
-function loadCart() {
-  try {
-    return JSON.parse(lsGet(CART_KEY)) || {};
-  } catch {
-    return {};
-  }
-}
-
-function saveCart(cart) {
-  lsSet(CART_KEY, JSON.stringify(cart));
-}
-
-let cart = loadCart();
-
-function cartEntries() {
-  return Object.entries(cart)
-    .map(([id, qty]) => ({ product: PRODUCTS.find((p) => p.id === id), qty }))
+const cartEntries = () =>
+  Object.entries(cart)
+    .map(([id, qty]) => ({ product: findProduct(id), qty }))
     .filter((e) => e.product && e.qty > 0);
-}
 
-function cartTotal() {
-  return cartEntries().reduce((sum, e) => sum + e.product.price * e.qty, 0);
-}
-
-function cartCount() {
-  return cartEntries().reduce((sum, e) => sum + e.qty, 0);
-}
+const cartSubtotal = () => cartEntries().reduce((s, e) => s + e.product.price * e.qty, 0);
+const cartCount = () => cartEntries().reduce((s, e) => s + e.qty, 0);
 
 function updateCartUI() {
-  document.getElementById("cart-count").textContent = cartCount();
-  document.getElementById("cart-total").textContent = money(cartTotal());
+  $("cart-count").textContent = cartCount();
+  $("cart-total").textContent = money(cartSubtotal());
 
-  const box = document.getElementById("cart-items");
   const entries = cartEntries();
-
   if (!entries.length) {
-    box.innerHTML =
+    $("cart-items").innerHTML =
       '<p class="cart__empty">Todavía no agregaste nada.<br>Tu color te está esperando.</p>';
     return;
   }
-
-  box.innerHTML = entries
-    .map(
-      ({ product: p, qty }) => `
-      <div class="cart-item">
-        ${
-          p.img
-            ? `<img class="cart-item__swatch" src="${p.img}" alt="">`
-            : `<div class="cart-item__swatch" style="background:${p.swatch}"></div>`
-        }
-        <div class="cart-item__info">
-          <div class="cart-item__name">${p.name}</div>
-          <div class="cart-item__price">${money(p.price)} c/u</div>
-        </div>
-        <div class="cart-item__qty">
-          <button data-dec="${p.id}" aria-label="Quitar uno">−</button>
-          <span>${qty}</span>
-          <button data-inc="${p.id}" aria-label="Agregar uno">+</button>
-        </div>
-      </div>`
-    )
-    .join("");
+  $("cart-items").innerHTML = entries.map(({ product: p, qty }) => `
+    <div class="cart-item">
+      ${p.img
+        ? `<img class="cart-item__swatch" src="${esc(p.img)}" alt="">`
+        : '<div class="cart-item__swatch"></div>'}
+      <div class="cart-item__info">
+        <div class="cart-item__name">${esc(p.name)}</div>
+        <div class="cart-item__price">${money(p.price)} c/u</div>
+      </div>
+      <div class="cart-item__qty">
+        <button data-dec="${esc(p.id)}" aria-label="Quitar uno">−</button>
+        <span>${qty}</span>
+        <button data-inc="${esc(p.id)}" aria-label="Agregar uno">+</button>
+      </div>
+    </div>`).join("");
 }
 
 function addToCart(id, delta = 1) {
-  cart[id] = Math.max(0, (cart[id] || 0) + delta);
-  if (cart[id] === 0) delete cart[id];
-  saveCart(cart);
+  const p = findProduct(id);
+  if (!p) return;
+  const next = Math.max(0, (cart[id] || 0) + delta);
+  if (delta > 0 && next > (p.stock ?? 0)) {
+    alert(`Solo quedan ${p.stock} unidades de ${p.name}.`);
+    return;
+  }
+  cart[id] = next;
+  if (!next) delete cart[id];
+  lsSet("buba-cart", JSON.stringify(cart));
   updateCartUI();
 }
 
-/* ---------- Drawer del carrito ---------- */
-const cartEl = document.getElementById("cart");
-const overlayEl = document.getElementById("cart-overlay");
+function openCart() { $("cart").hidden = false; $("cart-overlay").hidden = false; document.body.style.overflow = "hidden"; }
+function closeCart() { $("cart").hidden = true; $("cart-overlay").hidden = true; document.body.style.overflow = ""; }
 
-function openCart() {
-  cartEl.hidden = false;
-  overlayEl.hidden = false;
+/* ==========================================================================
+   CHECKOUT
+   ========================================================================== */
+const checkoutState = { step: 1, customer: null, shipping: null, promo: null, geo: null };
+
+function openCheckout() {
+  if (!cartEntries().length) return;
+  closeCart();
+  gotoStep(1);
+  $("checkout").hidden = false;
+  $("checkout-overlay").hidden = false;
   document.body.style.overflow = "hidden";
 }
-
-function closeCart() {
-  cartEl.hidden = true;
-  overlayEl.hidden = true;
+function closeCheckout() {
+  $("checkout").hidden = true;
+  $("checkout-overlay").hidden = true;
   document.body.style.overflow = "";
 }
 
-/* ---------- Checkout ---------- */
-function checkout() {
-  const entries = cartEntries();
-  if (!entries.length) return;
-
-  const lines = entries.map(
-    ({ product: p, qty }) => `• ${qty}x ${p.name} — ${money(p.price * qty)}`
-  );
-  const message =
-    "¡Hola BUBA! Quiero hacer este pedido:\n\n" +
-    lines.join("\n") +
-    `\n\nTotal: ${money(cartTotal())}\n\nSoy mayor de 18 años.`;
-
-  const url = waLink(message);
-  if (url) {
-    window.open(url, "_blank");
-  } else {
-    alert(message + "\n\n(Configurá WHATSAPP_NUMBER en js/main.js para enviar el pedido directo por WhatsApp.)");
-  }
+function gotoStep(n) {
+  checkoutState.step = n;
+  ["step-1", "step-2", "step-3", "step-done"].forEach((id, i) => {
+    $(id).hidden = (i + 1) !== n && !(n === 4 && id === "step-done");
+  });
+  if (n === 4) { $("step-1").hidden = $("step-2").hidden = $("step-3").hidden = true; $("step-done").hidden = false; }
+  document.querySelectorAll("#checkout-steps span").forEach((s) => {
+    const step = Number(s.dataset.step);
+    s.classList.toggle("is-active", step === n);
+    s.classList.toggle("is-done", step < n);
+  });
+  if (n === 2) renderShipOptions();
+  if (n === 3) renderSummary();
 }
 
-/* ---------- Links de WhatsApp ---------- */
-function setupWhatsAppLinks() {
-  const targets = [
-    ["wholesale-whatsapp", WA_MSG_MAYORISTA],
-    ["contact-whatsapp", WA_MSG_GENERAL],
-    ["float-whatsapp", WA_MSG_GENERAL],
-  ];
-  targets.forEach(([id, msg]) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    const url = waLink(msg);
-    if (url) {
-      el.href = url;
-    } else {
-      el.addEventListener("click", (e) => {
-        e.preventDefault();
-        alert("Configurá WHATSAPP_NUMBER en js/main.js para activar los botones de WhatsApp.");
-      });
-    }
+/* ---------- Paso 1: datos ---------- */
+function collectCustomer() {
+  return {
+    name: $("f-name").value.trim(),
+    email: $("f-email").value.trim(),
+    phone: $("f-phone").value.trim(),
+    address: {
+      street: $("f-street").value.trim(),
+      apt: $("f-apt").value.trim(),
+      city: $("f-city").value.trim(),
+      province: $("f-province").value,
+      cp: $("f-cp").value.trim(),
+      notes: $("f-notes").value.trim(),
+      geo: checkoutState.geo,
+    },
+  };
+}
+
+function setupGeo() {
+  $("geo-btn").addEventListener("click", () => {
+    const status = $("geo-status");
+    if (!navigator.geolocation) { status.textContent = "Tu navegador no soporta geolocalización."; return; }
+    status.textContent = "Buscando tu ubicación…";
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        checkoutState.geo = {
+          lat: Number(pos.coords.latitude.toFixed(6)),
+          lng: Number(pos.coords.longitude.toFixed(6)),
+        };
+        status.textContent = `✓ Ubicación capturada (${checkoutState.geo.lat}, ${checkoutState.geo.lng})`;
+      },
+      () => { status.textContent = "No pudimos acceder a tu ubicación. Completá la dirección a mano."; },
+      { timeout: 8000 }
+    );
   });
 }
 
-/* ---------- Menú mobile ---------- */
-function setupMobileMenu() {
-  const burger = document.getElementById("hamburger");
-  const nav = document.getElementById("nav");
+/* ---------- Paso 2: envío ---------- */
+function shipPrice(method) {
+  const free = STORE.config.freeShippingFrom;
+  if (free > 0 && cartSubtotal() >= free) return 0;
+  return method.price;
+}
 
+function renderShipOptions() {
+  const box = $("ship-options");
+  const methods = STORE.shipping.filter((m) => m.active !== false);
+  box.innerHTML = methods.map((m) => {
+    const price = shipPrice(m);
+    return `
+    <label class="ship-option${checkoutState.shipping?.id === m.id ? " is-selected" : ""}">
+      <input type="radio" name="ship" value="${esc(m.id)}" ${checkoutState.shipping?.id === m.id ? "checked" : ""}>
+      <div class="ship-option__info">
+        <div class="ship-option__name">${esc(m.name)}</div>
+        <div class="ship-option__eta">${esc(m.eta)}</div>
+      </div>
+      <div class="ship-option__price ${price === 0 ? "is-free" : ""}">${price === 0 ? "GRATIS" : money(price)}</div>
+    </label>`;
+  }).join("");
+
+  box.querySelectorAll("input[name=ship]").forEach((input) => {
+    input.addEventListener("change", () => {
+      const m = methods.find((x) => x.id === input.value);
+      checkoutState.shipping = { id: m.id, name: m.name, eta: m.eta, price: shipPrice(m) };
+      box.querySelectorAll(".ship-option").forEach((el) => el.classList.remove("is-selected"));
+      input.closest(".ship-option").classList.add("is-selected");
+      $("next-3").disabled = false;
+    });
+  });
+  $("next-3").disabled = !checkoutState.shipping;
+}
+
+/* ---------- Paso 3: resumen + promos + pago ---------- */
+function promoDiscount() {
+  const p = checkoutState.promo;
+  if (!p) return 0;
+  return p.type === "percent" ? cartSubtotal() * (p.value / 100) : Math.min(p.value, cartSubtotal());
+}
+
+function orderTotal() {
+  return cartSubtotal() - promoDiscount() + (checkoutState.shipping?.price ?? 0);
+}
+
+function renderSummary() {
+  const rows = cartEntries().map(({ product: p, qty }) =>
+    `<div class="summary__row"><span>${qty} × ${esc(p.name)}</span><strong>${money(p.price * qty)}</strong></div>`);
+  rows.push(`<div class="summary__row"><span>Subtotal</span><strong>${money(cartSubtotal())}</strong></div>`);
+  if (checkoutState.promo) {
+    rows.push(`<div class="summary__row"><span>Descuento (${esc(checkoutState.promo.code)})</span><strong class="discount">− ${money(promoDiscount())}</strong></div>`);
+  }
+  const ship = checkoutState.shipping;
+  rows.push(`<div class="summary__row"><span>Envío · ${esc(ship.name)}</span><strong>${ship.price === 0 ? "GRATIS" : money(ship.price)}</strong></div>`);
+  rows.push(`<div class="summary__row total"><span>Total</span><span>${money(orderTotal())}</span></div>`);
+  $("summary").innerHTML = rows.join("");
+}
+
+function setupPromo() {
+  $("promo-apply").addEventListener("click", () => {
+    const code = $("promo-input").value.trim().toUpperCase();
+    const status = $("promo-status");
+    const promo = (STORE.promos || []).find((p) => p.active !== false && p.code.toUpperCase() === code);
+    if (promo) {
+      checkoutState.promo = promo;
+      status.textContent = "✓ Descuento aplicado";
+      status.className = "promo-status ok";
+    } else {
+      checkoutState.promo = null;
+      status.textContent = "Código inválido";
+      status.className = "promo-status err";
+    }
+    renderSummary();
+  });
+}
+
+/* ---------- Crear la orden ---------- */
+function buildOrder(payMethod) {
+  return {
+    code: "BUBA-" + Date.now().toString(36).toUpperCase() + Math.random().toString(36).slice(2, 5).toUpperCase(),
+    createdAt: new Date().toISOString(),
+    items: cartEntries().map(({ product: p, qty }) => ({ id: p.id, name: p.name, price: p.price, qty })),
+    customer: checkoutState.customer,
+    shipping: checkoutState.shipping,
+    promo: checkoutState.promo ? { code: checkoutState.promo.code, discount: Math.round(promoDiscount()) } : null,
+    subtotal: cartSubtotal(),
+    total: Math.round(orderTotal()),
+    payMethod,
+    status: "pendiente",
+  };
+}
+
+function persistOrder(order) {
+  const orders = lsJSON("buba-orders") || [];
+  orders.unshift(order);
+  lsSet("buba-orders", JSON.stringify(orders));
+
+  // descontar stock (queda reflejado en el panel)
+  const store = JSON.parse(JSON.stringify(STORE));
+  order.items.forEach((it) => {
+    const p = store.products.find((x) => x.id === it.id);
+    if (p) p.stock = Math.max(0, (p.stock ?? 0) - it.qty);
+  });
+  lsSet("buba-store", JSON.stringify(store));
+  STORE = store;
+  renderProducts();
+}
+
+function finishOrder(order, msg) {
+  persistOrder(order);
+  cart = {};
+  lsSet("buba-cart", JSON.stringify(cart));
+  updateCartUI();
+  $("done-msg").textContent = msg;
+  $("done-code").textContent = "Nº de pedido: " + order.code;
+  gotoStep(4);
+}
+
+function orderWaMessage(order) {
+  const lines = order.items.map((it) => `• ${it.qty}x ${it.name} — ${money(it.price * it.qty)}`);
+  const a = order.customer.address;
+  return (
+    `¡Hola BUBA! Quiero confirmar mi pedido ${order.code}:\n\n` +
+    lines.join("\n") +
+    (order.promo ? `\nDescuento ${order.promo.code}: −${money(order.promo.discount)}` : "") +
+    `\nEnvío: ${order.shipping.name} — ${order.shipping.price === 0 ? "GRATIS" : money(order.shipping.price)}` +
+    `\nTotal: ${money(order.total)}\n\n` +
+    `Soy ${order.customer.name} (${order.customer.phone}).\n` +
+    `Dirección: ${a.street}${a.apt ? " " + a.apt : ""}, ${a.city}, ${a.province} (CP ${a.cp}).` +
+    (a.notes ? `\nNotas: ${a.notes}` : "") +
+    `\n\nSoy mayor de 18 años.`
+  );
+}
+
+/* ---------- Pago ---------- */
+async function payWithMP() {
+  const order = buildOrder("mercadopago");
+  const api = STORE.config.apiBase;
+  if (!api) {
+    finishOrder(order,
+      "Registramos tu pedido. El pago online con Mercado Pago se está terminando de configurar: " +
+      "te vamos a contactar por WhatsApp o email para completar el pago.");
+    return;
+  }
+  const btn = $("pay-mp");
+  btn.disabled = true;
+  btn.textContent = "Conectando con Mercado Pago…";
+  try {
+    const res = await fetch(api.replace(/\/$/, "") + "/api/create-preference", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    persistOrder(order);
+    window.location.href = data.init_point;
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Pagar con Mercado Pago";
+    alert("No pudimos conectar con Mercado Pago (" + err.message + "). Probá de nuevo o coordiná por WhatsApp.");
+  }
+}
+
+function payWithWhatsApp() {
+  const order = buildOrder("whatsapp");
+  const url = waLink(orderWaMessage(order));
+  finishOrder(order,
+    url
+      ? "Te abrimos WhatsApp con el detalle del pedido para coordinar pago y entrega."
+      : "Registramos tu pedido. Te vamos a contactar para coordinar pago y entrega.");
+  if (url) window.open(url, "_blank");
+}
+
+/* ---------- Wiring del checkout ---------- */
+function setupCheckout() {
+  $("cart-checkout").addEventListener("click", openCheckout);
+  $("checkout-close").addEventListener("click", closeCheckout);
+  $("checkout-overlay").addEventListener("click", closeCheckout);
+
+  $("step-1").addEventListener("submit", (e) => {
+    e.preventDefault();
+    checkoutState.customer = collectCustomer();
+    gotoStep(2);
+  });
+  $("back-1").addEventListener("click", () => gotoStep(1));
+  $("next-3").addEventListener("click", () => gotoStep(3));
+  $("back-2").addEventListener("click", () => gotoStep(2));
+  $("pay-mp").addEventListener("click", payWithMP);
+  $("pay-wa").addEventListener("click", payWithWhatsApp);
+  $("done-close").addEventListener("click", closeCheckout);
+  setupGeo();
+  setupPromo();
+}
+
+/* ==========================================================================
+   MISC
+   ========================================================================== */
+function setupMobileMenu() {
+  const burger = $("hamburger");
+  const nav = $("nav");
   burger.addEventListener("click", () => {
     const open = nav.classList.toggle("is-open");
     burger.setAttribute("aria-expanded", String(open));
   });
-
   nav.querySelectorAll("a").forEach((a) =>
     a.addEventListener("click", () => {
       nav.classList.remove("is-open");
@@ -438,37 +728,33 @@ function setupMobileMenu() {
   );
 }
 
-/* ---------- Animaciones de aparición ---------- */
 function setupReveal() {
-  const observer = new IntersectionObserver(
-    (items) => {
-      items.forEach((item) => {
-        if (item.isIntersecting) {
-          item.target.classList.add("is-visible");
-          observer.unobserve(item.target);
-        }
-      });
-    },
-    { threshold: 0.12 }
-  );
+  const observer = new IntersectionObserver((items) => {
+    items.forEach((item) => {
+      if (item.isIntersecting) {
+        item.target.classList.add("is-visible");
+        observer.unobserve(item.target);
+      }
+    });
+  }, { threshold: 0.12 });
   document.querySelectorAll(".reveal").forEach((el) => observer.observe(el));
 }
 
-/* ---------- Newsletter ---------- */
 function setupNewsletter() {
-  const form = document.getElementById("newsletter-form");
-  const ok = document.getElementById("newsletter-ok");
-  form.addEventListener("submit", (e) => {
+  $("newsletter-form").addEventListener("submit", (e) => {
     e.preventDefault();
     // Conectar acá con el servicio de mailing (Mailchimp, Brevo, etc.)
-    form.hidden = true;
-    ok.hidden = false;
+    $("newsletter-form").hidden = true;
+    $("newsletter-ok").hidden = false;
   });
 }
 
 /* ---------- Init ---------- */
-document.addEventListener("DOMContentLoaded", () => {
+document.addEventListener("DOMContentLoaded", async () => {
+  STORE = await resolveStore();
+
   setupAgeGate();
+  applyTexts();
   renderProducts();
   updateCartUI();
   setupViewer();
@@ -476,23 +762,20 @@ document.addEventListener("DOMContentLoaded", () => {
   setupMobileMenu();
   setupNewsletter();
   setupReveal();
+  setupCheckout();
 
-  document.getElementById("cart-open").addEventListener("click", openCart);
-  document.getElementById("cart-close").addEventListener("click", closeCart);
-  overlayEl.addEventListener("click", closeCart);
-  document.getElementById("cart-checkout").addEventListener("click", checkout);
+  $("cart-open").addEventListener("click", openCart);
+  $("cart-close").addEventListener("click", closeCart);
+  $("cart-overlay").addEventListener("click", closeCart);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") closeCart();
+    if (e.key === "Escape") { closeCart(); closeCheckout(); }
   });
 
   document.body.addEventListener("click", (e) => {
     const add = e.target.closest("[data-add]");
     const inc = e.target.closest("[data-inc]");
     const dec = e.target.closest("[data-dec]");
-    if (add) {
-      addToCart(add.dataset.add, 1);
-      openCart();
-    }
+    if (add) { addToCart(add.dataset.add, 1); openCart(); }
     if (inc) addToCart(inc.dataset.inc, 1);
     if (dec) addToCart(dec.dataset.dec, -1);
   });
