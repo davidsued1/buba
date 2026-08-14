@@ -74,7 +74,21 @@ function applyTexts() {
     if ($(id)) { $(id).textContent = mail; $(id).href = "mailto:" + mail; }
   });
   if ($("footer-email")) $("footer-email").textContent = c.emailGeneral;
-  if ($("footer-email-mayoristas")) $("footer-email-mayoristas").textContent = c.emailMayoristas;
+  const fm = $("footer-email-mayoristas");
+  if (fm) {
+    const dup = c.emailMayoristas === c.emailGeneral;
+    fm.hidden = dup;
+    if (!dup) fm.textContent = c.emailMayoristas;
+  }
+  if ($("footer-wa")) $("footer-wa").textContent = formatWa(c.whatsapp);
+  const cw = $("contact-whatsapp");
+  if (cw && c.whatsapp) cw.textContent = "WhatsApp " + formatWa(c.whatsapp);
+}
+
+// "5491161143631" → "+54 9 11 6114-3631"
+function formatWa(num) {
+  const m = String(num || "").match(/^549(\d{2})(\d{4})(\d{4})$/);
+  return m ? `+54 9 ${m[1]} ${m[2]}-${m[3]}` : (num ? "+" + num : "");
 }
 
 const waLink = (msg) =>
@@ -521,10 +535,28 @@ function shipPrice(method) {
   return method.price;
 }
 
+// Zona según provincia + código postal: caba | gba | interior
+function detectZone(province, cp) {
+  const n = parseInt(String(cp).replace(/\D/g, ""), 10) || 0;
+  if (province === "CABA" || (n >= 1000 && n <= 1499)) return "caba";
+  if (province === "Buenos Aires" && n >= 1500 && n <= 2000) return "gba";
+  return "interior";
+}
+
+const ZONE_LABELS = { caba: "CABA", gba: "GBA", interior: "Interior del país" };
+
 function renderShipOptions() {
   const box = $("ship-options");
-  const methods = STORE.shipping.filter((m) => m.active !== false);
-  box.innerHTML = methods.map((m) => {
+  const addr = checkoutState.customer?.address || {};
+  const zone = detectZone(addr.province, addr.cp);
+  let methods = STORE.shipping.filter((m) => m.active !== false);
+  // la moto solo llega a CABA y GBA
+  methods = methods.filter((m) => m.id !== "moto" || zone !== "interior");
+  if (checkoutState.shipping && !methods.some((m) => m.id === checkoutState.shipping.id)) {
+    checkoutState.shipping = null;
+  }
+  const zoneNote = `<p class="ship-zone">Enviando a: <strong>${esc(addr.city || "")}, ${esc(addr.province || "")}</strong> (zona ${ZONE_LABELS[zone]})</p>`;
+  box.innerHTML = zoneNote + methods.map((m) => {
     const price = shipPrice(m);
     return `
     <label class="ship-option${checkoutState.shipping?.id === m.id ? " is-selected" : ""}">
@@ -750,6 +782,17 @@ function setupNewsletter() {
 }
 
 /* ---------- Init ---------- */
+// Si el panel (otra pestaña del mismo sitio) guarda cambios, la web se
+// actualiza en vivo sin recargar.
+window.addEventListener("storage", async (e) => {
+  if (e.key !== "buba-store") return;
+  STORE = await resolveStore();
+  applyTexts();
+  renderProducts();
+  updateCartUI();
+  setupWhatsAppLinks();
+});
+
 document.addEventListener("DOMContentLoaded", async () => {
   STORE = await resolveStore();
 

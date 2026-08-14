@@ -519,10 +519,9 @@ function renderSettings(box) {
     <div class="panel">
       <h3>Datos de contacto de la tienda</h3>
       <div class="form-grid">
-        <label>WhatsApp (con código de país, sin +)<input id="c-wa" value="${esc(STORE.config.whatsapp)}" placeholder="5491122334455"></label>
+        <label>WhatsApp (con código de país, sin +)<input id="c-wa" value="${esc(STORE.config.whatsapp)}" placeholder="5491161143631"></label>
         <label>Instagram (sin @)<input id="c-ig" value="${esc(STORE.config.instagram)}"></label>
-        <label>Email general<input id="c-email" value="${esc(STORE.config.emailGeneral)}"></label>
-        <label>Email mayoristas<input id="c-email-m" value="${esc(STORE.config.emailMayoristas)}"></label>
+        <label class="span-2">Email de la tienda<input id="c-email" value="${esc(STORE.config.emailGeneral)}"></label>
       </div>
     </div>
     <div class="panel">
@@ -555,7 +554,7 @@ function renderSettings(box) {
     STORE.config.whatsapp = $("c-wa").value.trim();
     STORE.config.instagram = $("c-ig").value.trim().replace(/^@/, "");
     STORE.config.emailGeneral = $("c-email").value.trim();
-    STORE.config.emailMayoristas = $("c-email-m").value.trim();
+    STORE.config.emailMayoristas = $("c-email").value.trim();
     STORE.config.apiBase = $("c-api").value.trim();
     STORE.config.adminPin = $("c-pin").value.trim() || "buba2026";
     lsSet("buba-admin-gh", { token: $("gh-token").value.trim(), repo: $("gh-repo").value.trim(), branch: $("gh-branch").value.trim() || "main" });

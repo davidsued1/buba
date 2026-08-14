@@ -12,10 +12,10 @@ window.BUBA_DEFAULTS = {
 
   config: {
     storeName: "BUBA",
-    whatsapp: "",                 // ej: "5491122334455"
+    whatsapp: "5491161143631",    // +54 9 11 6114-3631
     instagram: "buba.drinks",
-    emailGeneral: "hola@bubadrinks.com.ar",
-    emailMayoristas: "mayoristas@bubadrinks.com.ar",
+    emailGeneral: "bubadrinks0@gmail.com",
+    emailMayoristas: "bubadrinks0@gmail.com",
     apiBase: "",                  // URL del backend (Mercado Pago). Vacío = modo demo
     freeShippingFrom: 40000,      // envío gratis desde este subtotal (0 = nunca)
     adminPin: "buba2026",         // PIN de acceso al panel

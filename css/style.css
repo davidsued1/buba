@@ -585,6 +585,8 @@ h3 { font-size: 1.25rem; }
   color: #9b9b9b !important;
   margin-bottom: 8px;
 }
+.footer__admin { color: #6f6f74; }
+.footer__admin:hover { color: #ffffff; }
 
 /* ---------- Botón flotante WhatsApp ---------- */
 .whatsapp-float {
@@ -758,6 +760,7 @@ h3 { font-size: 1.25rem; }
 .checkout__nav .btn:only-child { margin-left: auto; }
 
 .ship-options { display: flex; flex-direction: column; gap: 10px; }
+.ship-zone { font-size: 0.85rem; color: var(--gray-600); margin-bottom: 4px; }
 .ship-option {
   display: flex;
   align-items: center;
