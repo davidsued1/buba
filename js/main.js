@@ -133,23 +133,24 @@ function setupAgeGate() {
 }
 
 /* ==========================================================================
-   VISOR 360 — rotación física completa de la lata
-   El cuerpo es una esfera: cada píxel se reproyecta según su longitud
-   aparente (la textura envuelve; la lata es igual de ambos lados, así que
-   el patrón se repite cada media vuelta y una vuelta entera vuelve exacto
-   al inicio). La tapa es una elipse que rota en su plano (gira la anilla).
-   Sin trigonometría por píxel: todo precalculado, solo sumas y productos.
+   VISOR 360 — la lata queda FIJA, lo impreso gira alrededor
+   La foto de la lata (vidrio, líquido, brillos, tapa) no se toca: es la
+   base estática. El texto impreso se separó en una capa aparte
+   (assets/img/*-label.webp) y es lo único que se reproyecta sobre la
+   esfera: se desliza, se comprime en el borde, desaparece (del otro lado
+   la lata no dice nada) y reaparece al completar la vuelta. En 360° vuelve
+   exactamente a la posición inicial.
    ========================================================================== */
 const CANS = {
   blueberry: {
-    src: "assets/img/blueberry.webp",
+    base: "assets/img/blueberry-base.webp",
+    label: "assets/img/blueberry-label.webp",
     sphere: { cx: 0.499, cy: 0.490, r: 0.497 },
-    lid: { ex: 0.505, ey: 0.125, rx: 0.385, ry: 0.095 },
   },
   peach: {
-    src: "assets/img/peach.webp",
+    base: "assets/img/peach-base.webp",
+    label: "assets/img/peach-label.webp",
     sphere: { cx: 0.499, cy: 0.509, r: 0.494 },
-    lid: { ex: 0.500, ey: 0.110, rx: 0.370, ry: 0.105 },
   },
 };
 
@@ -168,135 +169,103 @@ function setupViewer() {
   let lastX = 0, lastT = 0;
   let idleAt = 0;
 
+  function loadImg(src) {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.onload = () => resolve(img);
+      img.src = src;
+    });
+  }
+
   function buildCan(key, cb) {
     if (cache[key]) return cb(cache[key]);
     const cfg = CANS[key];
-    const img = new Image();
-    img.src = cfg.src;
-    img.onload = () => {
+    Promise.all([loadImg(cfg.base), loadImg(cfg.label)]).then(([baseImg, labelImg]) => {
       const H = Math.min(560, Math.max(380, stage.clientHeight || 460));
-      const W = Math.round((img.width / img.height) * H);
-      const off = document.createElement("canvas");
-      off.width = W; off.height = H;
-      off.getContext("2d").drawImage(img, 0, 0, W, H);
-      const src = off.getContext("2d").getImageData(0, 0, W, H);
+      const W = Math.round((baseImg.width / baseImg.height) * H);
 
+      // base estática (lista para dibujar tal cual)
+      const baseCv = document.createElement("canvas");
+      baseCv.width = W; baseCv.height = H;
+      baseCv.getContext("2d").drawImage(baseImg, 0, 0, W, H);
+
+      // capa de texto, como datos para muestrear
+      const labCv = document.createElement("canvas");
+      labCv.width = W; labCv.height = H;
+      labCv.getContext("2d").drawImage(labelImg, 0, 0, W, H);
+      const label = labCv.getContext("2d").getImageData(0, 0, W, H);
+
+      // canvas del texto rotado (se redibuja en cada frame)
+      const overlayCv = document.createElement("canvas");
+      overlayCv.width = W; overlayCv.height = H;
+
+      // LUT de la esfera: seno/coseno de la longitud de cada píxel
       const cx = cfg.sphere.cx * W, cy = cfg.sphere.cy * H, r = cfg.sphere.r * W;
-      const ex = cfg.lid.ex * W, ey = cfg.lid.ey * H, rx = cfg.lid.rx * W, ry = cfg.lid.ry * H;
-
-      // --- cuerpo esférico ---
-      const bIdx = [], bLon = [], bSin = [], bCos = [], bRho = [];
-      // --- tapa (elipse) ---
-      const lIdx = [], lUx = [], lUy = [];
-
+      const idx = [], sinL = [], cosL = [], rho = [];
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
-          const eu = (x - ex) / rx, ev = (y - ey) / ry;
-          if (eu * eu + ev * ev <= 1) {
-            lIdx.push(y * W + x);
-            lUx.push(eu);
-            lUy.push(ev);
-            continue;
-          }
           const nx = (x - cx) / r, ny = (y - cy) / r;
           if (nx * nx + ny * ny > 0.998) continue;
           const cosLat = Math.sqrt(1 - ny * ny);
           if (cosLat < 0.04) continue;
           const lon = Math.asin(Math.max(-1, Math.min(1, nx / cosLat)));
-          bIdx.push(y * W + x);
-          bLon.push(lon);
-          bSin.push(Math.sin(lon));
-          bCos.push(Math.cos(lon));
-          bRho.push(r * cosLat);
+          idx.push(y * W + x);
+          sinL.push(Math.sin(lon));
+          cosL.push(Math.cos(lon));
+          rho.push(r * cosLat);
         }
       }
 
       cache[key] = {
-        src, W, H, cx, ex, ey, rx, ry,
-        bIdx: Int32Array.from(bIdx), bLon: Float32Array.from(bLon),
-        bSin: Float32Array.from(bSin), bCos: Float32Array.from(bCos),
-        bRho: Float32Array.from(bRho),
-        lIdx: Int32Array.from(lIdx), lUx: Float32Array.from(lUx), lUy: Float32Array.from(lUy),
+        baseCv, label, overlayCv, W, H, cx, r,
+        idx: Int32Array.from(idx),
+        sinL: Float32Array.from(sinL),
+        cosL: Float32Array.from(cosL),
+        rho: Float32Array.from(rho),
       };
       cb(cache[key]);
-    };
+    });
   }
 
   function render() {
     if (!active) return;
-    const { src, W, H, cx, ex, ey, rx, ry, bIdx, bLon, bSin, bCos, bRho, lIdx, lUx, lUy } = active;
+    const { baseCv, label, overlayCv, W, H, cx, idx, sinL, cosL, rho } = active;
     canvas.width = W; canvas.height = H;
 
-    const out = ctx.createImageData(W, H);
-    out.data.set(src.data);
-    const s = src.data, o = out.data;
-
-    const PI = Math.PI, HALF = PI / 2;
     const cosT = Math.cos(theta), sinT = Math.sin(theta);
-    const SEAM = 0.22; // banda de fundido en el borde para envolver sin cortes
+    const s = label.data;
+    const octx = overlayCv.getContext("2d");
+    const out = octx.createImageData(W, H);
+    const o = out.data;
 
-    // --- cuerpo: longitud desplazada, envuelta cada media vuelta ---
-    for (let i = 0; i < bIdx.length; i++) {
-      const t = bLon[i] + theta;
-      // sin(lon + theta) sin llamar a Math.sin por píxel
-      let sL = bSin[i] * cosT + bCos[i] * sinT;
-      // envolver al hemisferio visible: cada π el patrón se repite
-      const k = Math.floor((t + HALF) / PI);
-      if (k & 1) sL = -sL;
-      const L1 = t - k * PI;               // longitud envuelta, en [-π/2, π/2)
-      const p = bIdx[i], row = (p / W) | 0;
-      const rho = bRho[i];
+    for (let i = 0; i < idx.length; i++) {
+      // longitud original del punto que hoy se ve en este píxel
+      const sinL0 = sinL[i] * cosT - cosL[i] * sinT;
+      const cosL0 = cosL[i] * cosT + sinL[i] * sinT;
+      if (cosL0 <= 0.02) continue; // ese punto está en la parte de atrás: sin texto
 
-      let sx = cx + rho * sL;
-      // fundido cerca del borde con la muestra del lado opuesto (continuidad)
-      const d = HALF - Math.abs(L1);
-      let w2 = 0;
-      if (d < SEAM) w2 = 0.5 * (1 - d / SEAM);
-
-      // muestreo bilineal en x
+      const p = idx[i], row = (p / W) | 0;
+      const sx = cx + rho[i] * sinL0;
       const x0 = Math.max(0, Math.min(W - 1, Math.floor(sx)));
       const x1 = Math.min(W - 1, x0 + 1);
       const fx = Math.min(1, Math.max(0, sx - x0));
       const a0 = (row * W + x0) * 4, a1 = (row * W + x1) * 4;
-      let rC = s[a0] + (s[a1] - s[a0]) * fx;
-      let gC = s[a0 + 1] + (s[a1 + 1] - s[a0 + 1]) * fx;
-      let bC = s[a0 + 2] + (s[a1 + 2] - s[a0 + 2]) * fx;
-      let aC = s[a0 + 3] + (s[a1 + 3] - s[a0 + 3]) * fx;
 
-      if (w2 > 0) {
-        const sx2 = cx - rho * sL;
-        const b0 = (row * W + Math.max(0, Math.min(W - 1, Math.round(sx2)))) * 4;
-        rC = rC * (1 - w2) + s[b0] * w2;
-        gC = gC * (1 - w2) + s[b0 + 1] * w2;
-        bC = bC * (1 - w2) + s[b0 + 2] * w2;
-        aC = aC * (1 - w2) + s[b0 + 3] * w2;
-      }
+      const aC = s[a0 + 3] + (s[a1 + 3] - s[a0 + 3]) * fx;
+      if (aC < 2) continue; // acá no hay texto impreso: la base queda intacta
 
+      const fade = Math.min(1, cosL0 / 0.12); // se desvanece justo en el borde
       const q = p * 4;
-      o[q] = rC; o[q + 1] = gC; o[q + 2] = bC; o[q + 3] = aC;
+      o[q] = s[a0] + (s[a1] - s[a0]) * fx;
+      o[q + 1] = s[a0 + 1] + (s[a1 + 1] - s[a0 + 1]) * fx;
+      o[q + 2] = s[a0 + 2] + (s[a1 + 2] - s[a0 + 2]) * fx;
+      o[q + 3] = aC * fade;
     }
 
-    // --- tapa: rotación en el plano de la elipse (gira la anilla) ---
-    for (let i = 0; i < lIdx.length; i++) {
-      const ux = lUx[i], uy = lUy[i];
-      const su = ux * cosT + uy * sinT;
-      const sv = uy * cosT - ux * sinT;
-      const sx = ex + su * rx, sy = ey + sv * ry;
-      const x0 = Math.max(0, Math.min(W - 1, Math.floor(sx)));
-      const y0 = Math.max(0, Math.min(H - 1, Math.floor(sy)));
-      const x1 = Math.min(W - 1, x0 + 1), y1 = Math.min(H - 1, y0 + 1);
-      const fx = sx - x0, fy = sy - y0;
-      const a00 = (y0 * W + x0) * 4, a10 = (y0 * W + x1) * 4;
-      const a01 = (y1 * W + x0) * 4, a11 = (y1 * W + x1) * 4;
-      const q = lIdx[i] * 4;
-      for (let ch = 0; ch < 4; ch++) {
-        const top = s[a00 + ch] + (s[a10 + ch] - s[a00 + ch]) * fx;
-        const bot = s[a01 + ch] + (s[a11 + ch] - s[a01 + ch]) * fx;
-        o[q + ch] = top + (bot - top) * fy;
-      }
-    }
-
-    ctx.putImageData(out, 0, 0);
+    octx.putImageData(out, 0, 0);
+    ctx.clearRect(0, 0, W, H);
+    ctx.drawImage(baseCv, 0, 0);      // la lata, quieta, con su color intacto
+    ctx.drawImage(overlayCv, 0, 0);   // el texto, girando alrededor
   }
 
   let lastTheta = -1;
@@ -335,7 +304,7 @@ function setupViewer() {
     if (!dragging || !active) return;
     const dx = e.clientX - lastX;
     const dt = Math.max(1, performance.now() - lastT);
-    const dTheta = dx / (active.rx * 1.4); // sensación de agarrar la esfera
+    const dTheta = dx / (active.r * 1.1); // sensación de agarrar la esfera
     theta += dTheta;
     vel = (dTheta / dt) * 16; // velocidad para la inercia
     lastX = e.clientX;
