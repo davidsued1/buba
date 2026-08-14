@@ -1,54 +1,64 @@
 /* ==========================================================================
    BUBA — Lógica de la landing
-   - Catálogo de productos (editar acá precios, sabores y descripciones)
-   - Carrito con persistencia en localStorage
-   - Checkout por WhatsApp (configurar número en WHATSAPP_NUMBER)
+   - Configuración de contacto (WhatsApp) y catálogo de productos
+   - Visor 360 de la lata (drag para girar; usa fotos reales si existen)
+   - Carrito con persistencia en localStorage + pedido por WhatsApp
    - Menú mobile, animaciones de aparición, newsletter
    ========================================================================== */
 
-// Número de WhatsApp para recibir pedidos (código de país + número, sin "+").
-// Ejemplo Argentina: "5491122334455". Dejarlo vacío muestra el resumen del pedido.
+/* ---------- Configuración ---------- */
+
+// Número de WhatsApp que recibe pedidos y consultas.
+// Código de país + número, sin "+" ni espacios. Ejemplo Argentina: "5491122334455".
 const WHATSAPP_NUMBER = "";
+
+// Mensajes prellenados según desde dónde escriben.
+const WA_MSG_GENERAL = "¡Hola BUBA! Quiero hacerles una consulta.";
+const WA_MSG_MAYORISTA =
+  "¡Hola BUBA! Tengo un comercio y me interesa vender sus bebidas. ¿Me pasan info de precios mayoristas?";
+
+// Visor 360: cantidad de fotos reales en assets/img/360/ (frame-01.webp, frame-02.webp, ...).
+// Con 0 se muestra la lata simulada. Recomendado: 24 o 36 fotos.
+const FRAME_COUNT = 0;
+const FRAME_PATH = (i) => `assets/img/360/frame-${String(i).padStart(2, "0")}.webp`;
 
 const PRODUCTS = [
   {
-    id: "frutilla",
-    name: "BUBA Frutilla",
-    desc: "Roja intensa. Frutilla real, dulzor justo.",
+    id: "tinta",
+    name: "BUBA Uva Tinta",
+    desc: "Violeta profunda. La uva en su versión más intensa.",
     price: 2500,
-    swatch: "linear-gradient(160deg, #ff4d6d, #ff8fa3)",
+    swatch: "radial-gradient(120% 120% at 30% 20%, #a4508b, #5f0a87 55%, #2c0735)",
   },
   {
-    id: "mango",
-    name: "BUBA Mango",
-    desc: "Amarilla vibrante. Tropical sin empalagar.",
+    id: "rosada",
+    name: "BUBA Uva Rosada",
+    desc: "Rosa vibrante. Fresca, liviana, la favorita del verano.",
     price: 2500,
-    swatch: "linear-gradient(160deg, #ffb703, #ffd166)",
+    swatch: "radial-gradient(120% 120% at 30% 20%, #ff8fa3, #e0526f 55%, #7a1f3d)",
   },
   {
-    id: "menta",
-    name: "BUBA Menta-Lima",
-    desc: "Verde eléctrica. La más refrescante de todas.",
+    id: "blanca",
+    name: "BUBA Uva Blanca",
+    desc: "Dorada y sutil. Dulzor delicado, sabor elegante.",
     price: 2500,
-    swatch: "linear-gradient(160deg, #06d6a0, #7ae7c7)",
-  },
-  {
-    id: "mora",
-    name: "BUBA Mora",
-    desc: "Violeta profunda. Frutos oscuros, sabor serio.",
-    price: 2500,
-    swatch: "linear-gradient(160deg, #7209b7, #b5179e)",
+    swatch: "radial-gradient(120% 120% at 30% 20%, #e9f5a3, #b4c95a 55%, #5c6e1e)",
   },
   {
     id: "pack",
-    name: "Pack Degustación x8",
-    desc: "Dos de cada sabor. El punto de partida ideal.",
-    price: 18000,
-    swatch: "linear-gradient(160deg, #ff4d6d 0%, #ffb703 34%, #06d6a0 67%, #7209b7 100%)",
+    name: "Pack Degustación x12",
+    desc: "Cuatro de cada variedad. El punto de partida ideal.",
+    price: 27000,
+    swatch: "linear-gradient(150deg, #5f0a87, #e0526f 50%, #b4c95a)",
   },
 ];
 
 const money = (n) => "$" + n.toLocaleString("es-AR");
+
+const waLink = (msg) =>
+  WHATSAPP_NUMBER
+    ? `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`
+    : null;
 
 /* ---------- Render de productos ---------- */
 function renderProducts() {
@@ -70,6 +80,97 @@ function renderProducts() {
       </div>
     </article>`
   ).join("");
+}
+
+/* ---------- Visor 360 ---------- */
+function setupViewer() {
+  const stage = document.getElementById("viewer-stage");
+  if (!stage) return;
+
+  const DRAG_SENSITIVITY = 4; // px de arrastre por paso de giro
+
+  let frames = [];
+  let current = 0;
+  let dragging = false;
+  let lastX = 0;
+  let idleSpin = null;
+
+  const label = document.getElementById("can-label");
+  let labelOffset = 0;
+
+  // Giro del placeholder: desplaza la "etiqueta" para simular rotación.
+  function spinPlaceholder(delta) {
+    if (!label) return;
+    labelOffset = (labelOffset - delta) % label.scrollWidth;
+    label.style.transform = `translateX(${labelOffset}px)`;
+  }
+
+  // Giro con fotos reales: cambia el frame visible.
+  function showFrame(i) {
+    const n = frames.length;
+    current = ((i % n) + n) % n;
+    frames.forEach((img, idx) => (img.style.display = idx === current ? "block" : "none"));
+  }
+
+  function step(delta) {
+    if (frames.length) showFrame(current + Math.sign(delta));
+    else spinPlaceholder(delta * 2);
+  }
+
+  // Rotación automática suave cuando nadie interactúa.
+  function startIdleSpin() {
+    stopIdleSpin();
+    idleSpin = setInterval(() => step(1), frames.length ? 120 : 40);
+  }
+  function stopIdleSpin() {
+    if (idleSpin) clearInterval(idleSpin);
+    idleSpin = null;
+  }
+
+  // Carga de fotos reales si están configuradas.
+  if (FRAME_COUNT > 0) {
+    let loaded = 0;
+    for (let i = 1; i <= FRAME_COUNT; i++) {
+      const img = new Image();
+      img.src = FRAME_PATH(i);
+      img.alt = `Lata BUBA, vista ${i}`;
+      img.style.display = "none";
+      img.onload = () => {
+        if (++loaded === FRAME_COUNT) {
+          document.getElementById("can-placeholder")?.remove();
+          frames.forEach((f) => stage.appendChild(f));
+          showFrame(0);
+        }
+      };
+      frames.push(img);
+    }
+  }
+
+  stage.addEventListener("pointerdown", (e) => {
+    dragging = true;
+    lastX = e.clientX;
+    stopIdleSpin();
+    stage.setPointerCapture(e.pointerId);
+  });
+  stage.addEventListener("pointermove", (e) => {
+    if (!dragging) return;
+    const dx = e.clientX - lastX;
+    if (Math.abs(dx) >= DRAG_SENSITIVITY) {
+      step(dx);
+      lastX = e.clientX;
+    }
+  });
+  const endDrag = () => {
+    if (!dragging) return;
+    dragging = false;
+    startIdleSpin();
+  };
+  stage.addEventListener("pointerup", endDrag);
+  stage.addEventListener("pointercancel", endDrag);
+
+  if (!window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    startIdleSpin();
+  }
 }
 
 /* ---------- Carrito ---------- */
@@ -112,7 +213,7 @@ function updateCartUI() {
 
   if (!entries.length) {
     box.innerHTML =
-      '<p class="cart__empty">Todavía no agregaste nada.<br>Tu color te está esperando.</p>';
+      '<p class="cart__empty">Todavía no agregaste nada.<br>Tu uva te está esperando.</p>';
     return;
   }
 
@@ -171,15 +272,35 @@ function checkout() {
     lines.join("\n") +
     `\n\nTotal: ${money(cartTotal())}`;
 
-  if (WHATSAPP_NUMBER) {
-    window.open(
-      `https://wa.me/${WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
-      "_blank"
-    );
+  const url = waLink(message);
+  if (url) {
+    window.open(url, "_blank");
   } else {
     // Sin número configurado: mostramos el resumen para enviarlo a mano.
     alert(message + "\n\n(Configurá WHATSAPP_NUMBER en js/main.js para enviar el pedido directo por WhatsApp.)");
   }
+}
+
+/* ---------- Links de WhatsApp ---------- */
+function setupWhatsAppLinks() {
+  const targets = [
+    ["wholesale-whatsapp", WA_MSG_MAYORISTA],
+    ["contact-whatsapp", WA_MSG_GENERAL],
+    ["float-whatsapp", WA_MSG_GENERAL],
+  ];
+  targets.forEach(([id, msg]) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    const url = waLink(msg);
+    if (url) {
+      el.href = url;
+    } else {
+      el.addEventListener("click", (e) => {
+        e.preventDefault();
+        alert("Configurá WHATSAPP_NUMBER en js/main.js para activar los botones de WhatsApp.");
+      });
+    }
+  });
 }
 
 /* ---------- Menú mobile ---------- */
@@ -232,6 +353,8 @@ function setupNewsletter() {
 document.addEventListener("DOMContentLoaded", () => {
   renderProducts();
   updateCartUI();
+  setupViewer();
+  setupWhatsAppLinks();
   setupMobileMenu();
   setupNewsletter();
   setupReveal();
