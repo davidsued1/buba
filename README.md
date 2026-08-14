@@ -1,6 +1,6 @@
 # BUBA — Web
 
-Landing page + tienda para **BUBA, bebida de uva**. Diseño oscuro premium en **negros opacos, blancos y grises**: la paleta base es neutra a propósito, para que el color de las bebidas (las fotos) sea el protagonista.
+Landing page + tienda para **BUBA**. Diseño oscuro premium en **negros opacos, blancos y grises**: la paleta base es neutra a propósito, para que el color de las bebidas (las fotos) sea el protagonista.
 
 Dominio: **bubadrinks.com.ar** (ver "Conectar el dominio" abajo).
 
@@ -20,7 +20,7 @@ CNAME                 → Dominio para GitHub Pages
 1. **Hero + visor 360** — Título grande, CTAs (comprar / mayorista) y la lata girable
 2. **Marquee** — Cinta blanca animada con mensajes de marca
 3. **Beneficios** — Grilla de 6 beneficios
-4. **Sabores / Tienda** — Variedades de uva con precio, "Agregar" y carrito
+4. **Sabores / Tienda** — Productos con precio, "Agregar" y carrito
 5. **Nosotros** — Historia de la marca
 6. **Comparativa** — BUBA vs. bebidas comunes
 7. **Mayoristas** — Sección invertida (fondo blanco) con CTA de WhatsApp y email para distribuidores

@@ -25,29 +25,29 @@ const FRAME_PATH = (i) => `assets/img/360/frame-${String(i).padStart(2, "0")}.we
 const PRODUCTS = [
   {
     id: "tinta",
-    name: "BUBA Uva Tinta",
-    desc: "Violeta profunda. La uva en su versión más intensa.",
+    name: "BUBA Violeta",
+    desc: "Profunda e intensa. La más jugada de todas.",
     price: 2500,
     swatch: "radial-gradient(120% 120% at 30% 20%, #a4508b, #5f0a87 55%, #2c0735)",
   },
   {
     id: "rosada",
-    name: "BUBA Uva Rosada",
-    desc: "Rosa vibrante. Fresca, liviana, la favorita del verano.",
+    name: "BUBA Rosa",
+    desc: "Vibrante y fresca. La favorita del verano.",
     price: 2500,
     swatch: "radial-gradient(120% 120% at 30% 20%, #ff8fa3, #e0526f 55%, #7a1f3d)",
   },
   {
     id: "blanca",
-    name: "BUBA Uva Blanca",
-    desc: "Dorada y sutil. Dulzor delicado, sabor elegante.",
+    name: "BUBA Dorada",
+    desc: "Sutil y elegante. Dulzor delicado.",
     price: 2500,
     swatch: "radial-gradient(120% 120% at 30% 20%, #e9f5a3, #b4c95a 55%, #5c6e1e)",
   },
   {
     id: "pack",
     name: "Pack Degustación x12",
-    desc: "Cuatro de cada variedad. El punto de partida ideal.",
+    desc: "Cuatro de cada sabor. El punto de partida ideal.",
     price: 27000,
     swatch: "linear-gradient(150deg, #5f0a87, #e0526f 50%, #b4c95a)",
   },
@@ -213,7 +213,7 @@ function updateCartUI() {
 
   if (!entries.length) {
     box.innerHTML =
-      '<p class="cart__empty">Todavía no agregaste nada.<br>Tu uva te está esperando.</p>';
+      '<p class="cart__empty">Todavía no agregaste nada.<br>Tu color te está esperando.</p>';
     return;
   }
 
