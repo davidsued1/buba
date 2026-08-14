@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUBA — Bebidas que se ven venir</title>
+  <meta name="description" content="BUBA: bebidas con colores que hablan solos. Sabores intensos, ingredientes reales. Pedí la tuya online.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230a0a0a'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='900' font-family='Arial' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ HEADER / NAV ============ -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="#top" class="logo" aria-label="BUBA inicio">BUBA<span class="logo__dot">.</span></a>
+
+      <nav class="nav" id="nav">
+        <a href="#beneficios">Beneficios</a>
+        <a href="#sabores">Sabores</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#faq">FAQ</a>
+        <a href="#contacto">Contacto</a>
+      </nav>
+
+      <div class="header__actions">
+        <button class="btn btn--outline btn--cart" id="cart-open" aria-label="Abrir carrito">
+          Carrito <span class="cart-count" id="cart-count">0</span>
+        </button>
+        <button class="hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+
+    <!-- ============ HERO ============ -->
+    <section class="hero">
+      <div class="container hero__inner">
+        <div class="hero__copy reveal">
+          <p class="eyebrow">Nueva tanda disponible</p>
+          <h1 class="hero__title">El color<br>se toma.</h1>
+          <p class="hero__sub">
+            BUBA es la bebida que no necesita presentarse: la ves y ya sabés.
+            Sabores intensos, ingredientes reales y un color que hace todo el trabajo.
+          </p>
+          <div class="hero__cta">
+            <a href="#sabores" class="btn btn--solid">Comprar ahora</a>
+            <a href="#beneficios" class="btn btn--ghost">Ver beneficios ↓</a>
+          </div>
+          <ul class="hero__badges">
+            <li>Sin conservantes</li>
+            <li>Hecho en Argentina</li>
+            <li>Envíos a todo el país</li>
+          </ul>
+        </div>
+
+        <div class="hero__media reveal">
+          <!-- Placeholder: reemplazar por foto real del producto -->
+          <div class="photo photo--hero" data-flavor="frutilla">
+            <span class="photo__label">FOTO PRODUCTO</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ MARQUEE ============ -->
+    <div class="marquee" aria-hidden="true">
+      <div class="marquee__track">
+        <span>BUBA • SABOR REAL • COLOR REAL • SIN CONSERVANTES • ENVÍOS A TODO EL PAÍS • </span>
+        <span>BUBA • SABOR REAL • COLOR REAL • SIN CONSERVANTES • ENVÍOS A TODO EL PAÍS • </span>
+      </div>
+    </div>
+
+    <!-- ============ BENEFICIOS ============ -->
+    <section class="section" id="beneficios">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Beneficios</p>
+          <h2>Por qué BUBA</h2>
+          <p class="section__sub">Menos verso, más bebida. Esto es lo que te llevás en cada lata.</p>
+        </div>
+
+        <div class="grid grid--3">
+          <article class="card reveal">
+            <div class="card__num">01</div>
+            <h3>Ingredientes reales</h3>
+            <p>Fruta de verdad y fórmulas simples. Si no lo podés pronunciar, no lo ponemos.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__num">02</div>
+            <h3>Color natural</h3>
+            <p>El color de BUBA sale de sus ingredientes, no de un laboratorio. Por eso brilla distinto.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__num">03</div>
+            <h3>Sin conservantes</h3>
+            <p>Producción en tandas chicas para que llegue fresca, no para que dure años en una góndola.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__num">04</div>
+            <h3>Bajo en azúcar</h3>
+            <p>Dulzor justo. Refresca sin dejarte pesado ni con culpa.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__num">05</div>
+            <h3>Hecha acá</h3>
+            <p>Producto argentino, de punta a punta. Del productor a tu heladera.</p>
+          </article>
+          <article class="card reveal">
+            <div class="card__num">06</div>
+            <h3>Envío a todo el país</h3>
+            <p>Pedís online, te llega a la puerta. Packs pensados para que viaje segura.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ SABORES / TIENDA ============ -->
+    <section class="section section--gray" id="sabores">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Tienda</p>
+          <h2>Elegí tu color</h2>
+          <p class="section__sub">Cada sabor tiene su color. Cada color, su momento.</p>
+        </div>
+
+        <div class="grid grid--4" id="products">
+          <!-- Las tarjetas de producto se generan desde js/main.js -->
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ NOSOTROS ============ -->
+    <section class="section" id="nosotros">
+      <div class="container split">
+        <div class="split__media reveal">
+          <!-- Placeholder: reemplazar por foto del equipo / producción -->
+          <div class="photo photo--tall" data-flavor="mango">
+            <span class="photo__label">FOTO NOSOTROS</span>
+          </div>
+        </div>
+        <div class="split__copy reveal">
+          <p class="eyebrow">Nosotros</p>
+          <h2>Empezamos con una pregunta simple</h2>
+          <p>
+            ¿Por qué todas las bebidas se ven iguales? Góndolas enteras de latas grises
+            con promesas gigantes. Nosotros fuimos para el otro lado: que el producto
+            hable por su color, y que la etiqueta diga poco porque la bebida dice todo.
+          </p>
+          <p>
+            BUBA nace en Argentina, se produce en tandas chicas y se prueba una por una.
+            Sin apuro, sin atajos.
+          </p>
+          <a href="#sabores" class="btn btn--solid">Probala vos</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ COMPARATIVA ============ -->
+    <section class="section section--dark">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">La diferencia</p>
+          <h2>BUBA vs. el resto</h2>
+        </div>
+        <div class="table-wrap reveal">
+          <table class="compare">
+            <thead>
+              <tr>
+                <th></th>
+                <th class="compare__buba">BUBA</th>
+                <th>Bebidas comunes</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr><td>Color</td><td class="compare__buba">Natural, de la fruta</td><td>Colorantes artificiales</td></tr>
+              <tr><td>Azúcar</td><td class="compare__buba">Baja, dulzor justo</td><td>Alta</td></tr>
+              <tr><td>Conservantes</td><td class="compare__buba">Cero</td><td>Varios</td></tr>
+              <tr><td>Producción</td><td class="compare__buba">Tandas chicas, fresca</td><td>Industrial masiva</td></tr>
+              <tr><td>Origen</td><td class="compare__buba">Argentina</td><td>Depende</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ TESTIMONIOS ============ -->
+    <section class="section" id="testimonios">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Testimonios</p>
+          <h2>Lo que dicen los que ya la probaron</h2>
+        </div>
+        <div class="grid grid--3">
+          <blockquote class="quote reveal">
+            <p>“La pedí por el color, me quedé por el sabor. La de frutilla es otra cosa.”</p>
+            <footer>— Caro, Buenos Aires</footer>
+          </blockquote>
+          <blockquote class="quote reveal">
+            <p>“Llegó en dos días a Córdoba, heladísima idea el pack. Ya pedí el segundo.”</p>
+            <footer>— Nico, Córdoba</footer>
+          </blockquote>
+          <blockquote class="quote reveal">
+            <p>“Se nota que no tiene química. Refresca de verdad y no empalaga.”</p>
+            <footer>— Flor, Rosario</footer>
+          </blockquote>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ FAQ ============ -->
+    <section class="section section--gray" id="faq">
+      <div class="container container--narrow">
+        <div class="section__head reveal">
+          <p class="eyebrow">FAQ</p>
+          <h2>Preguntas frecuentes</h2>
+        </div>
+
+        <div class="faq reveal">
+          <details class="faq__item">
+            <summary>¿Qué es BUBA?</summary>
+            <p>Una bebida con ingredientes reales, baja en azúcar y con colores naturales que salen de la fruta. Se produce en Argentina en tandas chicas.</p>
+          </details>
+          <details class="faq__item">
+            <summary>¿Hacen envíos a todo el país?</summary>
+            <p>Sí. Despachamos a todo el territorio argentino. El costo y el tiempo de entrega se calculan al confirmar tu pedido según tu código postal.</p>
+          </details>
+          <details class="faq__item">
+            <summary>¿Cómo se conserva?</summary>
+            <p>Guardala en la heladera y consumila fría. Al no tener conservantes, te recomendamos tomarla dentro de la fecha indicada en el envase.</p>
+          </details>
+          <details class="faq__item">
+            <summary>¿Tiene azúcar agregada?</summary>
+            <p>Usamos el mínimo indispensable para lograr un dulzor justo. Mucho menos que una gaseosa tradicional.</p>
+          </details>
+          <details class="faq__item">
+            <summary>¿Cómo compro?</summary>
+            <p>Elegís tus sabores en la sección <a href="#sabores">Sabores</a>, los agregás al carrito y confirmás el pedido. Te contactamos para coordinar pago y envío.</p>
+          </details>
+          <details class="faq__item">
+            <summary>¿Venden por mayor?</summary>
+            <p>Sí, tenemos precios especiales para comercios y eventos. Escribinos desde la sección <a href="#contacto">Contacto</a>.</p>
+          </details>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============ CONTACTO / NEWSLETTER ============ -->
+    <section class="section" id="contacto">
+      <div class="container container--narrow">
+        <div class="section__head reveal">
+          <p class="eyebrow">Contacto</p>
+          <h2>Enterate antes que nadie</h2>
+          <p class="section__sub">Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.</p>
+        </div>
+        <form class="newsletter reveal" id="newsletter-form">
+          <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
+          <button type="submit" class="btn btn--solid">Sumarme</button>
+        </form>
+        <p class="newsletter__ok" id="newsletter-ok" hidden>¡Listo! Ya estás en la lista. 🖤</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="#top" class="logo logo--light">BUBA<span class="logo__dot">.</span></a>
+        <p>Bebidas que se ven venir.<br>Hecho en Argentina.</p>
+      </div>
+      <nav class="footer__nav">
+        <a href="#beneficios">Beneficios</a>
+        <a href="#sabores">Sabores</a>
+        <a href="#nosotros">Nosotros</a>
+        <a href="#faq">FAQ</a>
+      </nav>
+      <div class="footer__contact">
+        <p>ventas@buba.com.ar</p>
+        <p>@buba.bebidas</p>
+      </div>
+    </div>
+    <div class="container footer__legal">
+      <p>© 2026 BUBA. Todos los derechos reservados.</p>
+    </div>
+  </footer>
+
+  <!-- ============ CARRITO (drawer) ============ -->
+  <div class="cart-overlay" id="cart-overlay" hidden></div>
+  <aside class="cart" id="cart" aria-label="Carrito de compras" hidden>
+    <div class="cart__head">
+      <h3>Tu pedido</h3>
+      <button class="cart__close" id="cart-close" aria-label="Cerrar carrito">✕</button>
+    </div>
+    <div class="cart__items" id="cart-items">
+      <p class="cart__empty">Todavía no agregaste nada.<br>Tu color te está esperando.</p>
+    </div>
+    <div class="cart__foot">
+      <div class="cart__total">
+        <span>Total</span>
+        <strong id="cart-total">$0</strong>
+      </div>
+      <button class="btn btn--solid btn--block" id="cart-checkout">Confirmar pedido</button>
+      <p class="cart__note">Al confirmar te contactamos por WhatsApp para coordinar pago y envío.</p>
+    </div>
+  </aside>
+
+  <script src="js/main.js"></script>
+</body>
+</html>
