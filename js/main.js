@@ -133,24 +133,29 @@ function setupAgeGate() {
 }
 
 /* ==========================================================================
-   VISOR 360 — la lata queda FIJA, lo impreso gira alrededor
-   La foto de la lata (vidrio, líquido, brillos, tapa) no se toca: es la
-   base estática. El texto impreso se separó en una capa aparte
-   (assets/img/*-label.webp) y es lo único que se reproyecta sobre la
-   esfera: se desliza, se comprime en el borde, desaparece (del otro lado
-   la lata no dice nada) y reaparece al completar la vuelta. En 360° vuelve
-   exactamente a la posición inicial.
+   VISOR 360 — el cuerpo queda fijo, giran la TAPA y lo IMPRESO
+   - El vidrio y el líquido (transparentes) no cambian al girar: quedan
+     fijos, con el color y los brillos intactos.
+   - La tapa metálica rota en su plano: la anilla da vueltas de verdad.
+   - El texto impreso (capa aparte, assets/img/*-label.webp) gira derecho
+     alrededor, proyectado en cilindro: todo el bloque se mueve junto, se
+     esconde por el borde (atrás no dice nada) y reaparece. Una vuelta
+     completa vuelve exactamente a la posición inicial.
    ========================================================================== */
 const CANS = {
   blueberry: {
     base: "assets/img/blueberry-base.webp",
     label: "assets/img/blueberry-label.webp",
     sphere: { cx: 0.499, cy: 0.490, r: 0.497 },
+    // cara superior de la tapa (los aros y la anilla); el borde con
+    // perspectiva queda fijo y se funde suave en el límite
+    lid: { ex: 0.503, ey: 0.098, rx: 0.370, ry: 0.092 },
   },
   peach: {
     base: "assets/img/peach-base.webp",
     label: "assets/img/peach-label.webp",
     sphere: { cx: 0.499, cy: 0.509, r: 0.494 },
+    lid: { ex: 0.500, ey: 0.095, rx: 0.360, ry: 0.088 },
   },
 };
 
@@ -199,29 +204,48 @@ function setupViewer() {
       const overlayCv = document.createElement("canvas");
       overlayCv.width = W; overlayCv.height = H;
 
-      // LUT de la esfera: seno/coseno de la longitud de cada píxel
+      const baseData = baseCv.getContext("2d").getImageData(0, 0, W, H);
+
       const cx = cfg.sphere.cx * W, cy = cfg.sphere.cy * H, r = cfg.sphere.r * W;
-      const idx = [], sinL = [], cosL = [], rho = [];
+      const ex = cfg.lid.ex * W, ey = cfg.lid.ey * H, rx = cfg.lid.rx * W, ry = cfg.lid.ry * H;
+
+      // LUT del cuerpo (proyección cilíndrica: el texto gira derecho, todo
+      // el bloque junto) — solo píxeles dentro de la esfera y fuera de la tapa
+      const idx = [], sinL = [], cosL = [];
+      // LUT de la tapa: rotación con fundido hacia el borde (el borde con
+      // perspectiva no se toca, así nada queda torcido)
+      const lIdx = [], lUx = [], lUy = [], lW = [];
+
       for (let y = 0; y < H; y++) {
         for (let x = 0; x < W; x++) {
+          const eu = (x - ex) / rx, ev = (y - ey) / ry;
+          const rho2 = eu * eu + ev * ev;
+          if (rho2 <= 1) {
+            const rhoL = Math.sqrt(rho2);
+            lIdx.push(y * W + x);
+            lUx.push(eu);
+            lUy.push(ev);
+            lW.push(Math.min(1, Math.max(0, (1 - rhoL) / 0.24))); // 1 al centro, 0 en el borde
+            continue;
+          }
           const nx = (x - cx) / r, ny = (y - cy) / r;
           if (nx * nx + ny * ny > 0.998) continue;
-          const cosLat = Math.sqrt(1 - ny * ny);
-          if (cosLat < 0.04) continue;
-          const lon = Math.asin(Math.max(-1, Math.min(1, nx / cosLat)));
+          const lon = Math.asin(Math.max(-1, Math.min(1, nx)));
           idx.push(y * W + x);
           sinL.push(Math.sin(lon));
           cosL.push(Math.cos(lon));
-          rho.push(r * cosLat);
         }
       }
 
       cache[key] = {
-        baseCv, label, overlayCv, W, H, cx, r,
+        baseCv, baseData, label, overlayCv, W, H, cx, r, ex, ey, rx, ry,
         idx: Int32Array.from(idx),
         sinL: Float32Array.from(sinL),
         cosL: Float32Array.from(cosL),
-        rho: Float32Array.from(rho),
+        lIdx: Int32Array.from(lIdx),
+        lUx: Float32Array.from(lUx),
+        lUy: Float32Array.from(lUy),
+        lW: Float32Array.from(lW),
       };
       cb(cache[key]);
     });
@@ -229,30 +253,60 @@ function setupViewer() {
 
   function render() {
     if (!active) return;
-    const { baseCv, label, overlayCv, W, H, cx, idx, sinL, cosL, rho } = active;
+    const { baseCv, baseData, label, overlayCv, W, H, cx, r, ex, ey, rx, ry,
+            idx, sinL, cosL, lIdx, lUx, lUy, lW } = active;
     canvas.width = W; canvas.height = H;
 
     const cosT = Math.cos(theta), sinT = Math.sin(theta);
+
+    // --- 1. base + tapa girando ---
+    const out = ctx.createImageData(W, H);
+    out.data.set(baseData.data);
+    const sb = baseData.data, ob = out.data;
+    for (let i = 0; i < lIdx.length; i++) {
+      const w = lW[i];
+      if (w <= 0) continue;
+      // rotar la cara de la tapa (la anilla da vueltas, en el mismo
+      // sentido en que viaja el texto por el frente)
+      const ux = lUx[i], uy = lUy[i];
+      const su = ux * cosT - uy * sinT;
+      const sv = uy * cosT + ux * sinT;
+      const sx = ex + su * rx, sy = ey + sv * ry;
+      const x0 = Math.max(0, Math.min(W - 1, Math.floor(sx)));
+      const y0 = Math.max(0, Math.min(H - 1, Math.floor(sy)));
+      const x1 = Math.min(W - 1, x0 + 1), y1 = Math.min(H - 1, y0 + 1);
+      const fx = Math.min(1, Math.max(0, sx - x0)), fy = Math.min(1, Math.max(0, sy - y0));
+      const a00 = (y0 * W + x0) * 4, a10 = (y0 * W + x1) * 4;
+      const a01 = (y1 * W + x0) * 4, a11 = (y1 * W + x1) * 4;
+      const q = lIdx[i] * 4;
+      for (let ch = 0; ch < 4; ch++) {
+        const top = sb[a00 + ch] + (sb[a10 + ch] - sb[a00 + ch]) * fx;
+        const bot = sb[a01 + ch] + (sb[a11 + ch] - sb[a01 + ch]) * fx;
+        const rot = top + (bot - top) * fy;
+        // fundido hacia el borde: centro gira, borde queda quieto
+        ob[q + ch] = rot * w + sb[q + ch] * (1 - w);
+      }
+    }
+
+    // --- 2. texto girando derecho (cilindro) ---
     const s = label.data;
     const octx = overlayCv.getContext("2d");
-    const out = octx.createImageData(W, H);
-    const o = out.data;
-
+    const lay = octx.createImageData(W, H);
+    const o = lay.data;
     for (let i = 0; i < idx.length; i++) {
-      // longitud original del punto que hoy se ve en este píxel
       const sinL0 = sinL[i] * cosT - cosL[i] * sinT;
       const cosL0 = cosL[i] * cosT + sinL[i] * sinT;
-      if (cosL0 <= 0.02) continue; // ese punto está en la parte de atrás: sin texto
+      if (cosL0 <= 0.02) continue; // atrás: la lata no dice nada
 
       const p = idx[i], row = (p / W) | 0;
-      const sx = cx + rho[i] * sinL0;
+      const sx = cx + r * sinL0;
       const x0 = Math.max(0, Math.min(W - 1, Math.floor(sx)));
       const x1 = Math.min(W - 1, x0 + 1);
       const fx = Math.min(1, Math.max(0, sx - x0));
       const a0 = (row * W + x0) * 4, a1 = (row * W + x1) * 4;
 
       const aC = s[a0 + 3] + (s[a1 + 3] - s[a0 + 3]) * fx;
-      if (aC < 2) continue; // acá no hay texto impreso: la base queda intacta
+      if (aC < 2) continue; // sin texto acá: la base queda intacta
 
       const fade = Math.min(1, cosL0 / 0.12); // se desvanece justo en el borde
       const q = p * 4;
@@ -262,10 +316,9 @@ function setupViewer() {
       o[q + 3] = aC * fade;
     }
 
-    octx.putImageData(out, 0, 0);
-    ctx.clearRect(0, 0, W, H);
-    ctx.drawImage(baseCv, 0, 0);      // la lata, quieta, con su color intacto
-    ctx.drawImage(overlayCv, 0, 0);   // el texto, girando alrededor
+    octx.putImageData(lay, 0, 0);
+    ctx.putImageData(out, 0, 0);      // lata quieta + tapa girando
+    ctx.drawImage(overlayCv, 0, 0);   // el texto, girando derecho alrededor
   }
 
   let lastTheta = -1;
@@ -283,6 +336,7 @@ function setupViewer() {
       render();
       lastTheta = theta;
     }
+    window.__bubaTheta = theta; // para diagnóstico
     requestAnimationFrame(loop);
   }
 
@@ -306,12 +360,15 @@ function setupViewer() {
     const dt = Math.max(1, performance.now() - lastT);
     const dTheta = dx / (active.r * 1.1); // sensación de agarrar la esfera
     theta += dTheta;
-    vel = (dTheta / dt) * 16; // velocidad para la inercia
+    // inercia acotada: un tirón fuerte no dispara vueltas de más
+    vel = Math.max(-0.06, Math.min(0.06, (dTheta / dt) * 16));
     lastX = e.clientX;
     lastT = performance.now();
   });
   const endDrag = () => {
     dragging = false;
+    // si el usuario frenó antes de soltar, no hay inercia
+    if (performance.now() - lastT > 120) vel = 0;
     idleAt = performance.now();
   };
   stage.addEventListener("pointerup", endDrag);
