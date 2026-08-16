@@ -467,10 +467,12 @@ h3 { font-size: 1.15rem; }
 }
 .product:hover .product__media img { transform: scale(1.06); }
 .product__media--soon {
-  color: var(--gray-400);
+  color: rgba(255, 255, 255, 0.95);
   font-family: var(--display);
   font-weight: 900;
-  font-size: 3.2rem;
+  font-size: 1.1rem;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
 }
 .product--soon { opacity: 0.85; }
 .product__soon-tag, .product__stock-tag {

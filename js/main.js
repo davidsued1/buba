@@ -197,7 +197,9 @@ function setupViewer() {
     if (cache[key]) return cb(cache[key]);
     const cfg = CANS[key];
     Promise.all([loadImg(cfg.base), loadImg(cfg.label)]).then(([baseImg, labelImg]) => {
-      const H = Math.min(560, Math.max(380, stage.clientHeight || 460));
+      // render a resolución de pantalla (retina incluido) para máxima nitidez
+      const dpr = Math.min(2, window.devicePixelRatio || 1);
+      const H = Math.min(880, Math.max(420, Math.round((stage.clientHeight || 460) * dpr)));
       const W = Math.round((baseImg.width / baseImg.height) * H);
 
       // base estática (lista para dibujar tal cual)
@@ -249,7 +251,7 @@ function setupViewer() {
       }
 
       cache[key] = {
-        baseCv, baseData, label, overlayCv, W, H, cx, r, ex, ey, rx, ry,
+        baseCv, baseData, label, overlayCv, W, H, cx, cy, r, ex, ey, rx, ry,
         idx: Int32Array.from(idx),
         sinL: Float32Array.from(sinL),
         cosL: Float32Array.from(cosL),
@@ -264,7 +266,7 @@ function setupViewer() {
 
   function render() {
     if (!active) return;
-    const { baseCv, baseData, label, overlayCv, W, H, cx, r, ex, ey, rx, ry,
+    const { baseCv, baseData, label, overlayCv, W, H, cx, cy, r, ex, ey, rx, ry,
             idx, sinL, cosL, lIdx, lUx, lUy, lW } = active;
     canvas.width = W; canvas.height = H;
 
@@ -330,6 +332,29 @@ function setupViewer() {
     octx.putImageData(lay, 0, 0);
     ctx.putImageData(out, 0, 0);      // lata quieta + tapa girando
     ctx.drawImage(overlayCv, 0, 0);   // el texto, girando derecho alrededor
+
+    // --- 3. luces que acompañan el giro (para que se sienta la vuelta) ---
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.99, 0, Math.PI * 2);
+    ctx.clip();
+
+    // brillo vertical que barre la esfera al girar
+    const hx = cx + r * 0.9 * Math.sin(-theta + 1.15);
+    const sheen = ctx.createLinearGradient(hx - r * 0.4, 0, hx + r * 0.4, 0);
+    sheen.addColorStop(0, "rgba(255,255,255,0)");
+    sheen.addColorStop(0.5, "rgba(255,255,255,0.11)");
+    sheen.addColorStop(1, "rgba(255,255,255,0)");
+    ctx.fillStyle = sheen;
+    ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+
+    // al mostrar la parte de atrás, la lata queda apenas en sombra
+    const backShade = 0.12 * (1 - Math.cos(theta)) / 2;
+    if (backShade > 0.004) {
+      ctx.fillStyle = `rgba(10,10,12,${backShade.toFixed(3)})`;
+      ctx.fillRect(cx - r, cy - r, r * 2, r * 2);
+    }
+    ctx.restore();
   }
 
   let lastTheta = -1;
@@ -426,12 +451,17 @@ function renderProducts() {
     </article>`;
   });
 
+  const soonColor = (name) => {
+    if (/pink|magenta|rosa/i.test(name)) return "radial-gradient(120% 120% at 30% 20%, #ffb1d4 0%, #ec5f9f 55%, #96285f 100%)";
+    if (/straw|frutilla|roja/i.test(name)) return "radial-gradient(120% 120% at 30% 20%, #ff8f8f 0%, #e03e3e 55%, #8a1010 100%)";
+    return "radial-gradient(120% 120% at 30% 20%, #d9d9d9 0%, #a8a8a8 55%, #6b6b6b 100%)";
+  };
   const soon = (STORE.comingSoon || []).map((name) => `
     <article class="product product--soon reveal is-visible">
-      <div class="product__media product__media--soon"><span>?</span></div>
+      <div class="product__media product__media--soon" style="background:${soonColor(name)}"><span>Pronto</span></div>
       <div class="product__body">
         <h3 class="product__name">${esc(name)}</h3>
-        <p class="product__desc">Muy pronto. Suscribite abajo para enterarte antes que nadie.</p>
+        <p class="product__desc">Nuevo sabor en camino.</p>
         <div class="product__row"><span class="product__soon-tag">Próximamente</span></div>
       </div>
     </article>`);

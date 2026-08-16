@@ -13,14 +13,14 @@
   "texts": {
     "heroEyebrow": "Ready cocktails · Hecho en Argentina",
     "heroTitle": "El color\nse toma.",
-    "heroSub": "BUBA está para los planes que valen la pena: la previa, la playa, el cumple, la juntada improvisada. Un cocktail con vodka premium, listo para tomar, en una esfera que se ve venir de lejos.",
+    "heroSub": "El cocktail con vodka premium, listo para tomar, en una esfera que se ve venir de lejos.",
     "benefitsTitle": "Por qué BUBA",
-    "benefitsSub": "Un trago rico, fácil de tomar y con una lata que arranca conversaciones.",
+    "benefitsSub": "",
     "shopTitle": "Elegí tu color",
-    "shopSub": "Cada sabor tiene su color. Cada color, su plan. Venta solo a mayores de 18.",
-    "aboutTitle": "Dos amigos, una esfera y muchas ganas",
-    "aboutP1": "BUBA nace de dos emprendedores que decidieron convertir una idea en un producto real: un cocktail listo para tomar, en una lata esférica que no se confunde con nada. Sin aparentar perfección: mostramos el detrás de escena, los aciertos y los errores.",
-    "aboutP2": "Más que vender cocktails, construimos una marca que acompaña experiencias. Creemos que los mejores recuerdos nacen cuando la gente se junta: BUBA existe para hacer esos momentos más divertidos.",
+    "shopSub": "Venta solo a mayores de 18.",
+    "aboutTitle": "Dos amigos y una esfera",
+    "aboutP1": "BUBA nace de dos emprendedores que convirtieron una idea en un producto real: un cocktail listo para tomar, en una lata que no se confunde con nada.",
+    "aboutP2": "Los mejores recuerdos nacen cuando la gente se junta. BUBA está para hacer esos momentos más divertidos.",
     "wholesaleTitle": "Llevá BUBA a tu comercio",
     "wholesaleSub": "¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora? Trabajamos con precios mayoristas, entregas programadas y material de marca para tu punto de venta.",
     "contactTitle": "Sumate a la comunidad BUBA",
@@ -33,8 +33,8 @@
   "products": [
     {
       "id": "blueberry",
-      "name": "BUBA La Azul",
-      "desc": "Cereza, frambuesa y lima limón. Con vodka premium.",
+      "name": "Blueberry Limeade",
+      "desc": "La Azul.",
       "price": 3500,
       "stock": 100,
       "active": true,
@@ -42,8 +42,8 @@
     },
     {
       "id": "peach",
-      "name": "BUBA La Naranja",
-      "desc": "Durazno. Con vodka premium.",
+      "name": "Golden Peach",
+      "desc": "La Naranja. Durazno.",
       "price": 3500,
       "stock": 100,
       "active": true,
@@ -51,17 +51,17 @@
     },
     {
       "id": "pack",
-      "name": "Pack Juntada x8",
-      "desc": "Cuatro de cada sabor. Para la previa entera.",
+      "name": "Pack x8",
+      "desc": "Cuatro de cada sabor.",
       "price": 26000,
       "stock": 50,
       "active": true,
-      "img": ""
+      "img": "assets/img/pack.webp"
     }
   ],
   "comingSoon": [
-    "La Roja — Frutilla y lima limón",
-    "La Magenta — Lima limón y frutos del bosque"
+    "Pink Lemonade",
+    "Strawberry Ice"
   ],
   "images": {
     "about": "",
