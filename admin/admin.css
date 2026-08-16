@@ -73,6 +73,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
 }
 .login__logo { font-size: 1.8rem; font-weight: 900; letter-spacing: -0.04em; margin-bottom: 16px; }
 .login__logo span { color: var(--gray-400); }
+.login__logo-img { height: 54px; width: auto; margin: 0 auto 20px; }
 .login__box h1 { font-size: 1.2rem; margin-bottom: 6px; }
 .login__sub { color: var(--gray-600); font-size: 0.9rem; margin-bottom: 22px; }
 .login__box form { display: flex; gap: 10px; }
@@ -101,7 +102,7 @@ button, input, select, textarea { font-family: inherit; font-size: inherit; colo
   top: 0;
   height: 100dvh;
 }
-.sidebar__logo { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; padding: 0 10px 22px; }
+.sidebar__logo { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.04em; padding: 0 10px 22px; display: flex; align-items: center; gap: 8px; }
 .sidebar__logo span { color: #6f6f74; }
 .sidebar__logo small { font-size: 0.65rem; font-weight: 600; color: #8a8a8f; letter-spacing: 0.14em; text-transform: uppercase; margin-left: 4px; }
 .sidebar__nav { display: flex; flex-direction: column; gap: 4px; flex: 1; }

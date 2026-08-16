@@ -11,30 +11,30 @@
     "adminPin": "buba2026"
   },
   "texts": {
-    "heroEyebrow": "Cocktail frutal · Vodka premium",
+    "heroEyebrow": "Ready cocktails · Hecho en Argentina",
     "heroTitle": "El color\nse toma.",
-    "heroSub": "BUBA es el cocktail listo para tomar que no necesita presentarse: fruta, vodka premium y una lata esférica que se ve venir de lejos. Enfriás, abrís y listo.",
+    "heroSub": "BUBA está para los planes que valen la pena: la previa, la playa, el cumple, la juntada improvisada. Un cocktail con vodka premium, listo para tomar, en una esfera que se ve venir de lejos.",
     "benefitsTitle": "Por qué BUBA",
-    "benefitsSub": "Menos verso, más cocktail. Esto es lo que te llevás en cada lata.",
+    "benefitsSub": "Un trago rico, fácil de tomar y con una lata que arranca conversaciones.",
     "shopTitle": "Elegí tu color",
-    "shopSub": "Cada sabor tiene su color. Cada color, su momento. Venta solo a mayores de 18.",
-    "aboutTitle": "Empezamos con una pregunta simple",
-    "aboutP1": "¿Por qué todos los tragos listos para tomar se ven iguales? Góndolas enteras de latas idénticas, con mucha promesa y poco adentro.",
-    "aboutP2": "BUBA nace para cambiar eso: un cocktail frutal elaborado con vodka premium, en una lata esférica que no se confunde con nada. Que el producto hable por su color, y que la etiqueta diga poco porque el trago dice todo.",
+    "shopSub": "Cada sabor tiene su color. Cada color, su plan. Venta solo a mayores de 18.",
+    "aboutTitle": "Dos amigos, una esfera y muchas ganas",
+    "aboutP1": "BUBA nace de dos emprendedores que decidieron convertir una idea en un producto real: un cocktail listo para tomar, en una lata esférica que no se confunde con nada. Sin aparentar perfección: mostramos el detrás de escena, los aciertos y los errores.",
+    "aboutP2": "Más que vender cocktails, construimos una marca que acompaña experiencias. Creemos que los mejores recuerdos nacen cuando la gente se junta: BUBA existe para hacer esos momentos más divertidos.",
     "wholesaleTitle": "Llevá BUBA a tu comercio",
     "wholesaleSub": "¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora? Trabajamos con precios mayoristas, entregas programadas y material de marca para tu punto de venta.",
-    "contactTitle": "Enterate antes que nadie",
-    "contactSub": "Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.",
-    "footerTagline": "Cocktail frutal con vodka premium.\nHecho en Argentina. bubadrinks.com.ar",
+    "contactTitle": "Sumate a la comunidad BUBA",
+    "contactSub": "Nuevos sabores, tandas limitadas y descuentos, antes que nadie. Sin spam, palabra.",
+    "footerTagline": "Ready cocktails. El color se toma.\nHecho en Argentina. bubadrinks.com.ar",
     "legal": "Beber con moderación. Prohibida su venta a menores de 18 años.",
     "announce": "Envíos a todo el país · Venta exclusiva +18 · Hecho en Argentina",
-    "bigQuote": "“Un trago que no necesita presentarse: lo ves llegar a la mesa y ya sabés que es BUBA.”"
+    "bigQuote": "“Los mejores recuerdos nacen cuando las personas se juntan. BUBA está para hacer esos momentos más divertidos.”"
   },
   "products": [
     {
       "id": "blueberry",
-      "name": "BUBA Blueberry Limeade",
-      "desc": "Azul eléctrico. Arándano y lima con vodka premium.",
+      "name": "BUBA La Azul",
+      "desc": "Cereza, frambuesa y lima limón. Con vodka premium.",
       "price": 3500,
       "stock": 100,
       "active": true,
@@ -42,8 +42,8 @@
     },
     {
       "id": "peach",
-      "name": "BUBA Golden Peach",
-      "desc": "Dorado intenso. Durazno maduro con vodka premium.",
+      "name": "BUBA La Naranja",
+      "desc": "Durazno. Con vodka premium.",
       "price": 3500,
       "stock": 100,
       "active": true,
@@ -51,8 +51,8 @@
     },
     {
       "id": "pack",
-      "name": "Pack Degustación x8",
-      "desc": "Cuatro de cada sabor. El punto de partida ideal.",
+      "name": "Pack Juntada x8",
+      "desc": "Cuatro de cada sabor. Para la previa entera.",
       "price": 26000,
       "stock": 50,
       "active": true,
@@ -60,8 +60,8 @@
     }
   ],
   "comingSoon": [
-    "Nuevo sabor 03",
-    "Nuevo sabor 04"
+    "La Roja — Frutilla y lima limón",
+    "La Magenta — Lima limón y frutos del bosque"
   ],
   "images": {
     "about": "",
