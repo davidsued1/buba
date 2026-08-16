@@ -567,7 +567,7 @@ function renderImages(box) {
    CONFIGURACIÓN
    ========================================================================== */
 function renderSettings(box) {
-  const gh = lsJSON("buba-admin-gh") || { token: "", repo: "davidsued1/buba", branch: "main" };
+  const gh = lsJSON("buba-admin-gh") || { token: "", repo: "davidsued1/buba", branch: "claude/buba-web-minimal-design-5k85u5" };
   box.innerHTML = `
     <div class="panel">
       <h3>Datos de contacto de la tienda</h3>
