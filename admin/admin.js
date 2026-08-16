@@ -23,6 +23,7 @@ function mergeStore(base, over) {
   const out = { ...base };
   for (const k of ["config", "texts"]) if (over[k]) out[k] = { ...base[k], ...over[k] };
   for (const k of ["products", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+  if (over.images) out.images = { ...base.images, ...over.images };
   return out;
 }
 
@@ -85,6 +86,7 @@ const VIEWS = {
   shipping: { title: "Envíos", render: renderShipping },
   promos: { title: "Promociones", render: renderPromos },
   texts: { title: "Textos de la web", render: renderTexts },
+  images: { title: "Imágenes de la web", render: renderImages },
   settings: { title: "Configuración", render: renderSettings },
 };
 
@@ -492,6 +494,8 @@ const TEXT_LABELS = {
   contactSub: "Contacto — bajada",
   footerTagline: "Footer — texto de marca",
   legal: "Leyenda legal (+18)",
+  announce: "Barra de anuncio (arriba de todo)",
+  bigQuote: "Cita editorial grande (antes de Mayoristas)",
 };
 
 function renderTexts(box) {
@@ -508,6 +512,55 @@ function renderTexts(box) {
     box.querySelectorAll("[data-txt]").forEach((ta) => { STORE.texts[ta.dataset.txt] = ta.value; });
     saveLocal();
   });
+}
+
+/* ==========================================================================
+   IMÁGENES DE LA WEB
+   ========================================================================== */
+const IMAGE_SLOTS = [
+  { key: "about", label: "Sección Nosotros", hint: "Foto de producción, equipo o lifestyle (vertical, mín. 800px de ancho)" },
+  { key: "wholesale", label: "Sección Mayoristas", hint: "Foto de cajas, punto de venta o distribución" },
+];
+
+function renderImages(box) {
+  if (!STORE.images) STORE.images = { about: "", wholesale: "" };
+  box.innerHTML = IMAGE_SLOTS.map((slot) => {
+    const cur = STORE.images[slot.key];
+    return `
+    <div class="panel">
+      <h3>${esc(slot.label)}</h3>
+      <p class="hint" style="margin-bottom:12px">${esc(slot.hint)}</p>
+      <label class="img-drop" data-slot="${slot.key}">
+        ${cur ? `<img src="${cur.startsWith("data:") || cur.startsWith("http") ? cur : "../" + cur}" style="width:120px;height:120px;object-fit:cover">` : ""}
+        <span>📷 Click para ${cur ? "cambiar" : "cargar"} la imagen<br><span class="hint">Se guarda al instante; se sube al repo al publicar online</span></span>
+        <input type="file" accept="image/*" hidden>
+      </label>
+      ${cur ? `<button class="btn btn--danger btn--sm" data-clear-img="${slot.key}" style="margin-top:12px">Quitar imagen</button>` : ""}
+    </div>`;
+  }).join("");
+
+  box.querySelectorAll(".img-drop").forEach((drop) => {
+    const input = drop.querySelector("input[type=file]");
+    drop.addEventListener("click", () => input.click());
+    input.addEventListener("change", () => {
+      const file = input.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        STORE.images[drop.dataset.slot] = reader.result;
+        saveLocal();
+        renderView();
+      };
+      reader.readAsDataURL(file);
+    });
+  });
+  box.querySelectorAll("[data-clear-img]").forEach((b) =>
+    b.addEventListener("click", (e) => {
+      e.stopPropagation();
+      STORE.images[b.dataset.clearImg] = "";
+      saveLocal();
+      renderView();
+    }));
 }
 
 /* ==========================================================================
@@ -617,6 +670,16 @@ async function publishOnline() {
         flashSave("Subiendo imagen de " + p.name + "…");
         await ghPutFile(gh, path, p.img.split(",")[1], `Imagen de producto: ${p.name} (panel BUBA)`);
         p.img = path;
+      }
+    }
+    for (const key of Object.keys(store.images || {})) {
+      const img = store.images[key];
+      if (img && img.startsWith("data:")) {
+        const ext = (img.match(/^data:image\/(\w+)/) || [])[1] || "png";
+        const path = `assets/img/uploads/web-${key}.${ext === "jpeg" ? "jpg" : ext}`;
+        flashSave("Subiendo imagen de la web…");
+        await ghPutFile(gh, path, img.split(",")[1], `Imagen de la web: ${key} (panel BUBA)`);
+        store.images[key] = path;
       }
     }
     flashSave("Subiendo datos de la tienda…");

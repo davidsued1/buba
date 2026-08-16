@@ -26,7 +26,9 @@
     "contactTitle": "Enterate antes que nadie",
     "contactSub": "Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.",
     "footerTagline": "Cocktail frutal con vodka premium.\nHecho en Argentina. bubadrinks.com.ar",
-    "legal": "Beber con moderación. Prohibida su venta a menores de 18 años."
+    "legal": "Beber con moderación. Prohibida su venta a menores de 18 años.",
+    "announce": "Envíos a todo el país · Venta exclusiva +18 · Hecho en Argentina",
+    "bigQuote": "“Un trago que no necesita presentarse: lo ves llegar a la mesa y ya sabés que es BUBA.”"
   },
   "products": [
     {
@@ -61,6 +63,10 @@
     "Nuevo sabor 03",
     "Nuevo sabor 04"
   ],
+  "images": {
+    "about": "",
+    "wholesale": ""
+  },
   "shipping": [
     {
       "id": "moto",

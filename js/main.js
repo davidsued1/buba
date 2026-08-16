@@ -47,8 +47,19 @@ function mergeStore(base, over) {
   for (const k of ["products", "shipping", "promos", "comingSoon"]) {
     if (Array.isArray(over[k])) out[k] = over[k];
   }
+  if (over.images) out.images = { ...base.images, ...over.images };
   if (over.version) out.version = over.version;
   return out;
+}
+
+/* ---------- Imágenes de secciones (cargadas desde el panel) ---------- */
+function applyImages() {
+  const imgs = STORE.images || {};
+  [["about", "about-media", "Nosotros BUBA"], ["wholesale", "wholesale-media", "Mayoristas BUBA"]].forEach(([key, id, alt]) => {
+    const box = $(id);
+    if (!box || !imgs[key]) return;
+    box.innerHTML = `<img class="section-img" src="${esc(imgs[key])}" alt="${alt}">`;
+  });
 }
 
 /* ---------- Aplicar textos y contactos administrables ---------- */
@@ -814,6 +825,7 @@ window.addEventListener("storage", async (e) => {
   if (e.key !== "buba-store") return;
   STORE = await resolveStore();
   applyTexts();
+  applyImages();
   renderProducts();
   updateCartUI();
   setupWhatsAppLinks();
@@ -824,6 +836,7 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   setupAgeGate();
   applyTexts();
+  applyImages();
   renderProducts();
   updateCartUI();
   setupViewer();
