@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>BUBA — Producto</title>
+  <meta name="description" content="Detalle de producto BUBA: ready cocktail con vodka premium en lata esférica de 210 ml. Solo +18.">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0b0c'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='900' font-family='Arial' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ============ VERIFICACIÓN DE EDAD ============ -->
+  <div class="agegate" id="agegate" hidden>
+    <div class="agegate__box">
+      <img class="agegate__logo-img" src="assets/img/logo-full.png" alt="BUBA Ready Cocktails">
+      <h2>¿Sos mayor de 18?</h2>
+      <p class="agegate__sub">Para entrar tenés que tener 18 años o más.</p>
+      <div class="agegate__actions">
+        <button class="btn btn--solid" id="age-yes">Sí, soy mayor</button>
+        <button class="btn btn--outline" id="age-no">No</button>
+      </div>
+      <p class="agegate__legal" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+    </div>
+  </div>
+
+  <!-- ============ BARRA DE ANUNCIO ============ -->
+  <div class="announce" data-txt="announce">Envíos a todo el país · Venta exclusiva +18 · Hecho en Argentina</div>
+
+  <!-- ============ HEADER / NAV ============ -->
+  <header class="header" id="top">
+    <div class="container header__inner">
+      <a href="index.html" class="logo" aria-label="BUBA inicio">
+        <img class="logo__img" src="assets/img/logo-buba.png" alt="BUBA">
+      </a>
+
+      <nav class="nav" id="nav">
+        <a href="index.html#sabores">Sabores</a>
+        <a href="index.html#nosotros">Nosotros</a>
+        <a href="index.html#mayoristas">Mayoristas</a>
+        <a href="index.html#faq">FAQ</a>
+        <a href="index.html#contacto">Contacto</a>
+      </nav>
+
+      <div class="header__actions">
+        <a class="btn btn--outline btn--cart" id="cart-open" href="index.html?cart=1" aria-label="Ver carrito">
+          Carrito <span class="cart-count" id="cart-count">0</span>
+        </a>
+        <button class="hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false">
+          <span></span><span></span><span></span>
+        </button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="section pdp" id="pdp">
+      <div class="container">
+        <p class="pdp__back"><a href="index.html#sabores">← Volver a la tienda</a></p>
+
+        <div class="pdp__layout" id="pdp-layout">
+          <div class="pdp__media" id="pdp-media"></div>
+
+          <div class="pdp__info">
+            <p class="eyebrow">Ready cocktail · 210 ml · 10% vol.</p>
+            <h1 class="pdp__name" id="pdp-name">…</h1>
+            <p class="pdp__desc" id="pdp-desc"></p>
+            <p class="pdp__price" id="pdp-price"></p>
+            <p class="pdp__stock" id="pdp-stock"></p>
+
+            <div class="pdp__buy" id="pdp-buy">
+              <div class="pdp__qty" id="pdp-qty">
+                <button type="button" id="qty-dec" aria-label="Quitar uno">−</button>
+                <span id="qty-val">1</span>
+                <button type="button" id="qty-inc" aria-label="Agregar uno">+</button>
+              </div>
+              <button class="btn btn--solid" id="pdp-add">Agregar al carrito</button>
+            </div>
+            <p class="pdp__added" id="pdp-added" hidden>
+              ✓ Agregado. <a href="index.html?cart=1">Ver carrito y comprar →</a>
+            </p>
+
+            <div class="pdp__details" id="pdp-details"></div>
+
+            <p class="cart__note" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+          </div>
+        </div>
+
+        <div class="pdp__notfound" id="pdp-notfound" hidden>
+          <h1>Ese color no existe (todavía)</h1>
+          <p>El producto que buscás no está disponible.</p>
+          <a href="index.html#sabores" class="btn btn--solid">Ver todos los sabores</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="section section--soft" id="pdp-related-section">
+      <div class="container">
+        <div class="section__head">
+          <p class="eyebrow">También en la heladera</p>
+          <h2>Otros colores</h2>
+        </div>
+        <div class="grid grid--4" id="pdp-related"></div>
+      </div>
+    </section>
+  </main>
+
+  <!-- ============ FOOTER ============ -->
+  <footer class="footer">
+    <div class="container footer__inner">
+      <div class="footer__brand">
+        <a href="index.html" class="logo"><img class="logo__img logo__img--footer" src="assets/img/logo-full-white.png" alt="BUBA Ready Cocktails"></a>
+        <p data-txt="footerTagline">Ready cocktails. El color se toma.<br>Hecho en Argentina. bubadrinks.com.ar</p>
+      </div>
+      <nav class="footer__nav">
+        <a href="index.html#sabores">Sabores</a>
+        <a href="index.html#nosotros">Nosotros</a>
+        <a href="index.html#mayoristas">Mayoristas</a>
+        <a href="index.html#faq">FAQ</a>
+      </nav>
+      <div class="footer__contact">
+        <p id="footer-wa"></p>
+        <p id="footer-email">bubadrinks0@gmail.com</p>
+        <p id="footer-ig">@buba.drinks</p>
+      </div>
+    </div>
+    <div class="container footer__legal">
+      <p class="footer__warning" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+      <p>© 2026 BUBA. Todos los derechos reservados. · <a class="footer__admin" href="admin/">Panel de administración</a></p>
+    </div>
+  </footer>
+
+  <script src="js/store-defaults.js"></script>
+  <script src="js/product.js"></script>
+</body>
+</html>

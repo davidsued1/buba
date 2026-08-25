@@ -1,0 +1,9 @@
+# BUBA Drinks — robots.txt
+# Permitimos todo el sitio salvo el panel de administración.
+# OJO: al migrar a bubadrinks.com.ar, actualizar la URL del sitemap.
+
+User-agent: *
+Disallow: /admin/
+Allow: /
+
+Sitemap: https://davidsued1.github.io/buba/sitemap.xml

@@ -433,13 +433,16 @@ function renderProducts() {
   const grid = $("products");
   const cards = activeProducts().map((p) => {
     const out = (p.stock ?? 0) <= 0;
+    const href = "producto.html?id=" + encodeURIComponent(p.id);
     return `
     <article class="product reveal is-visible">
-      ${p.img
-        ? `<div class="product__media"><img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy"></div>`
-        : `<div class="photo" data-flavor="${esc(p.id)}"><span class="photo__label">FOTO ${esc(p.name).toUpperCase()}</span></div>`}
+      <a class="product__link" href="${href}">
+        ${p.img
+          ? `<div class="product__media"><img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy"></div>`
+          : `<div class="photo" data-flavor="${esc(p.id)}"><span class="photo__label">FOTO ${esc(p.name).toUpperCase()}</span></div>`}
+        <h3 class="product__name product__name--card">${esc(p.name)}</h3>
+      </a>
       <div class="product__body">
-        <h3 class="product__name">${esc(p.name)}</h3>
         <p class="product__desc">${esc(p.desc)}</p>
         <div class="product__row">
           <span class="product__price">${money(p.price)}</span>
@@ -707,6 +710,7 @@ function buildOrder(payMethod) {
 }
 
 function persistOrder(order) {
+  trackPurchase(order);
   const orders = lsJSON("buba-orders") || [];
   orders.unshift(order);
   lsSet("buba-orders", JSON.stringify(orders));
@@ -861,12 +865,58 @@ window.addEventListener("storage", async (e) => {
   setupWhatsAppLinks();
 });
 
+/* ---------- Analytics (doc 07 módulo 9): IDs configurables desde el panel ---------- */
+function setupAnalytics() {
+  const c = STORE.config;
+  try {
+    if (c.ga4Id) {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(c.ga4Id);
+      document.head.appendChild(s);
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = function () { window.dataLayer.push(arguments); };
+      gtag("js", new Date());
+      gtag("config", c.ga4Id);
+    }
+    if (c.metaPixelId) {
+      !(function (f, b, e, v, n, t) {
+        if (f.fbq) return; n = f.fbq = function () { n.callMethod ? n.callMethod.apply(n, arguments) : n.queue.push(arguments); };
+        f._fbq = n; n.push = n; n.loaded = true; n.version = "2.0"; n.queue = [];
+        t = b.createElement(e); t.async = true; t.src = v;
+        b.getElementsByTagName(e)[0].parentNode.insertBefore(t, b.getElementsByTagName(e)[0]);
+      })(window, document, "script", "https://connect.facebook.net/en_US/fbevents.js");
+      fbq("init", c.metaPixelId);
+      fbq("track", "PageView");
+    }
+    if (c.tiktokPixelId) {
+      const s = document.createElement("script");
+      s.async = true;
+      s.src = "https://analytics.tiktok.com/i18n/pixel/sdk.js?sdkid=" + encodeURIComponent(c.tiktokPixelId);
+      document.head.appendChild(s);
+    }
+  } catch { /* analytics nunca debe romper la web */ }
+}
+
+// evento de compra hacia los pixels configurados
+function trackPurchase(order) {
+  try {
+    if (window.gtag) gtag("event", "purchase", {
+      transaction_id: order.code, value: order.total, currency: "ARS",
+      items: order.items.map((i) => ({ item_id: i.id, item_name: i.name, price: i.price, quantity: i.qty })),
+    });
+    if (window.fbq) fbq("track", "Purchase", { value: order.total, currency: "ARS" });
+  } catch {}
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   STORE = await resolveStore();
 
   setupAgeGate();
   applyTexts();
   applyImages();
+  setupAnalytics();
+  if (window.BUBA_SEO) window.BUBA_SEO.inject(STORE);
   renderProducts();
   updateCartUI();
   setupViewer();
@@ -878,6 +928,11 @@ document.addEventListener("DOMContentLoaded", async () => {
 
   $("cart-open").addEventListener("click", openCart);
   $("cart-close").addEventListener("click", closeCart);
+  // volviendo de una página de producto con ?cart=1, abrimos el carrito
+  if (new URLSearchParams(location.search).has("cart")) {
+    history.replaceState(null, "", location.pathname + location.hash);
+    if (cartEntries().length) openCart();
+  }
   $("cart-overlay").addEventListener("click", closeCart);
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") { closeCart(); closeCheckout(); }

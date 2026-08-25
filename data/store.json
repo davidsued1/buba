@@ -8,7 +8,10 @@
     "emailMayoristas": "bubadrinks0@gmail.com",
     "apiBase": "",
     "freeShippingFrom": 40000,
-    "adminPin": "buba2026"
+    "adminPin": "buba2026",
+    "ga4Id": "",
+    "metaPixelId": "",
+    "tiktokPixelId": ""
   },
   "texts": {
     "heroEyebrow": "Ready cocktails · Hecho en Argentina",

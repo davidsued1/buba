@@ -55,6 +55,23 @@
 
   <main>
 
+    <!-- ============ EXPERIENCIA 3D (doc 04) ============
+         Se activa sola en dispositivos capaces, la primera visita.
+         En equipos flojos o visitas repetidas se salta directo al hero. -->
+    <section class="experience" id="experience" hidden>
+      <div class="experience__stage">
+        <canvas id="exp-canvas"></canvas>
+        <div class="experience__ui">
+          <button class="experience__skip" id="exp-skip" type="button">Saltar intro →</button>
+          <p class="experience__hint" id="exp-hint">Deslizá y mirá cómo nace</p>
+          <div class="experience__cta" id="exp-cta" hidden>
+            <img src="assets/img/logo-full.png" alt="BUBA Ready Cocktails">
+            <a href="#sabores" class="btn btn--solid">Comprar ahora</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
     <!-- ============ HERO + VISOR 360 ============ -->
     <section class="hero">
       <div class="container hero__inner">
@@ -403,6 +420,8 @@
   </div>
 
   <script src="js/store-defaults.js"></script>
+  <script src="js/seo.js"></script>
   <script src="js/main.js"></script>
+  <script type="module" src="js/experience.js"></script>
 </body>
 </html>

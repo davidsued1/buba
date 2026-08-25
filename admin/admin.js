@@ -585,6 +585,15 @@ function renderSettings(box) {
       <div class="note">El backend crea la preferencia de pago con tu cuenta de Mercado Pago. Está listo en la carpeta <strong>backend/</strong> del repo: se deploya gratis en Vercel cargando tu Access Token de MP. Cuando tengas la URL, pegala acá y el botón "Pagar con Mercado Pago" queda funcionando.</div>
     </div>
     <div class="panel">
+      <h3>Analytics</h3>
+      <div class="form-grid">
+        <label>Google Analytics 4 (G-…)<input id="c-ga4" value="${esc(STORE.config.ga4Id || "")}" placeholder="G-XXXXXXXXXX"></label>
+        <label>Meta Pixel ID<input id="c-meta" value="${esc(STORE.config.metaPixelId || "")}" placeholder="123456789012345"></label>
+        <label>TikTok Pixel ID<input id="c-tiktok" value="${esc(STORE.config.tiktokPixelId || "")}" placeholder="XXXXXXXXXXXXXXXXXX"></label>
+      </div>
+      <div class="note">Pegá los IDs y publicá: la web empieza a medir visitas y compras automáticamente. Se consiguen gratis en Google Analytics, Meta Business y TikTok Ads.</div>
+    </div>
+    <div class="panel">
       <h3>Seguridad</h3>
       <label class="label-block">PIN del panel<input id="c-pin" value="${esc(STORE.config.adminPin)}"></label>
     </div>
@@ -609,6 +618,9 @@ function renderSettings(box) {
     STORE.config.emailGeneral = $("c-email").value.trim();
     STORE.config.emailMayoristas = $("c-email").value.trim();
     STORE.config.apiBase = $("c-api").value.trim();
+    STORE.config.ga4Id = $("c-ga4").value.trim();
+    STORE.config.metaPixelId = $("c-meta").value.trim();
+    STORE.config.tiktokPixelId = $("c-tiktok").value.trim();
     STORE.config.adminPin = $("c-pin").value.trim() || "buba2026";
     lsSet("buba-admin-gh", { token: $("gh-token").value.trim(), repo: $("gh-repo").value.trim(), branch: $("gh-branch").value.trim() || "main" });
     saveLocal();
