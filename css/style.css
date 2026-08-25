@@ -207,7 +207,7 @@ h3 { font-size: 1.15rem; }
 .hamburger span { width: 24px; height: 1.5px; background: var(--ink); }
 
 /* ---------- Experiencia 3D (doc 04) ---------- */
-.experience { height: 480vh; position: relative; background: var(--bg); }
+.experience { height: 560vh; position: relative; background: var(--bg); }
 .experience__stage {
   position: sticky;
   top: 0;
