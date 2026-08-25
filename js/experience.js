@@ -120,9 +120,22 @@ function main() {
   const can = new THREE.Group();
   scene.add(can);
 
+  /* Medidas reales del envase (foto de la lata vacía):
+     ∅ máximo 75 mm · alto del cuerpo 64 mm · boca y tapa de 55 mm.
+     La esfera se trunca arriba justo donde mide 55 mm (y sigue un cuello
+     corto recto hasta los 64 mm) y abajo en la base plana de apoyo,
+     que tiene el domo hundido característico. */
+  const MM = R / 37.5;                 // escala: 75 mm de ancho = 2R
+  const TOP_CUT = 25.5 * MM;           // corte superior (ahí el cuerpo mide 55 mm)
+  const BOT_CUT = -32 * MM;            // base plana
+  const NECK_R = 27.5 * MM;            // boca de 55 mm
+  const NECK_TOP = 32 * MM;            // alto total del cuerpo: 64 mm
+  const thetaTop = Math.acos(TOP_CUT / R);
+  const thetaBot = Math.acos(BOT_CUT / R);
+
   // PET por alpha real (transmission taparía el líquido interior): pared
   // frontal con reflejos clearcoat + pared trasera tenue para dar volumen.
-  const shellGeo = new THREE.SphereGeometry(R, 96, 64);
+  const shellGeo = new THREE.SphereGeometry(R, 96, 64, 0, Math.PI * 2, thetaTop, thetaBot - thetaTop);
   const shellMat = new THREE.MeshPhysicalMaterial({
     color: 0xffffff, transparent: true, opacity: 0.16,
     roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.04,
@@ -138,6 +151,42 @@ function main() {
   shellBack.renderOrder = 0;
   can.add(shellBack);
 
+  // cuello recto hasta la boca + borde
+  const neck = new THREE.Mesh(
+    new THREE.CylinderGeometry(NECK_R, NECK_R, NECK_TOP - TOP_CUT, 64, 1, true),
+    shellMat
+  );
+  neck.position.y = (NECK_TOP + TOP_CUT) / 2;
+  neck.renderOrder = 7;
+  can.add(neck);
+  const neckRim = new THREE.Mesh(
+    new THREE.TorusGeometry(NECK_R, 0.022, 12, 64),
+    new THREE.MeshPhysicalMaterial({ color: 0xffffff, transparent: true, opacity: 0.5, roughness: 0.05, clearcoat: 1 })
+  );
+  neckRim.rotation.x = Math.PI / 2;
+  neckRim.position.y = NECK_TOP;
+  neckRim.renderOrder = 7;
+  can.add(neckRim);
+
+  // base plana + domo hundido del fondo (se ve a través del PET)
+  const baseR = Math.sqrt(R * R - BOT_CUT * BOT_CUT);
+  const baseDisc = new THREE.Mesh(
+    new THREE.CircleGeometry(baseR, 48),
+    new THREE.MeshPhysicalMaterial({ color: 0xf2f6f9, transparent: true, opacity: 0.22, roughness: 0.08, clearcoat: 1, side: THREE.DoubleSide, depthWrite: false })
+  );
+  baseDisc.rotation.x = -Math.PI / 2;
+  baseDisc.position.y = BOT_CUT + 0.005;
+  baseDisc.renderOrder = 0;
+  can.add(baseDisc);
+  const baseDome = new THREE.Mesh(
+    new THREE.SphereGeometry(baseR * 0.62, 32, 16, 0, Math.PI * 2, 0, Math.PI / 2),
+    new THREE.MeshPhysicalMaterial({ color: 0xeef4f8, transparent: true, opacity: 0.3, roughness: 0.06, clearcoat: 1, depthWrite: false })
+  );
+  baseDome.scale.set(1, 0.5, 1);
+  baseDome.position.y = BOT_CUT;
+  baseDome.renderOrder = 1;
+  can.add(baseDome);
+
   // serigrafía real (misma foto de la lata, con el 10%)
   new THREE.TextureLoader().load(flavor.label, (tex) => {
     tex.colorSpace = THREE.SRGBColorSpace;
@@ -152,14 +201,16 @@ function main() {
   });
 
   /* ---------- el líquido (recortado por el plano del nivel) ---------- */
-  const FILL_MIN = -R * 0.86;         // fondo de la lata
-  const FILL_MAX = R * 0.55;          // nivel de llenado correcto
+  const FILL_MIN = BOT_CUT + 0.1;     // apenas sobre el domo del fondo
+  const FILL_MAX = TOP_CUT * 0.91;    // nivel correcto: hombro, con espacio de cabeza
   const clipPlane = new THREE.Plane(new THREE.Vector3(0, -1, 0), FILL_MIN);
+  // el líquido nunca baja de la base plana real
+  const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(BOT_CUT + 0.02));
 
   const liquidMat = new THREE.MeshPhysicalMaterial({
     color: flavor.liquid, transparent: true, opacity: 0.92,
     roughness: 0.06, clearcoat: 0.8, clearcoatRoughness: 0.1,
-    envMapIntensity: 0.7, clippingPlanes: [clipPlane],
+    envMapIntensity: 0.7, clippingPlanes: [clipPlane, floorPlane],
   });
   const liquid = new THREE.Mesh(new THREE.SphereGeometry(R * 0.965, 72, 48), liquidMat);
   liquid.renderOrder = 1;
@@ -210,20 +261,21 @@ function main() {
   bubbles.renderOrder = 4;
   can.add(bubbles);
 
-  /* ---------- la tapa (baja desde el cabezal de tapado) ---------- */
-  const LID_SEAT = R * 0.82 + 0.05;
+  /* ---------- la tapa de 55 mm (baja desde el cabezal de tapado) ---------- */
+  const LID_R = NECK_R + 0.03;        // calza justo sobre la boca
+  const LID_SEAT = NECK_TOP + 0.075;  // asienta sobre el borde del cuello
   const lid = new THREE.Group();
   {
     const metal = new THREE.MeshStandardMaterial({ color: 0xd8d8da, metalness: 0.92, roughness: 0.3 });
-    const cap = new THREE.Mesh(new THREE.CylinderGeometry(1.02, 1.06, 0.16, 64), metal);
+    const cap = new THREE.Mesh(new THREE.CylinderGeometry(LID_R, LID_R + 0.035, 0.15, 64), metal);
     lid.add(cap);
-    const ring = new THREE.Mesh(new THREE.TorusGeometry(1.05, 0.055, 20, 72), metal);
+    const ring = new THREE.Mesh(new THREE.TorusGeometry(LID_R + 0.02, 0.05, 20, 72), metal);
     ring.rotation.x = Math.PI / 2;
-    ring.position.y = 0.08;
+    ring.position.y = 0.075;
     lid.add(ring);
-    const tab = new THREE.Mesh(new THREE.TorusGeometry(0.2, 0.045, 12, 40), metal);
+    const tab = new THREE.Mesh(new THREE.TorusGeometry(0.18, 0.042, 12, 40), metal);
     tab.rotation.x = Math.PI / 2;
-    tab.position.set(0.28, 0.13, 0);
+    tab.position.set(0.26, 0.12, 0);
     lid.add(tab);
   }
   scene.add(lid);
@@ -233,8 +285,8 @@ function main() {
   const steelDark = new THREE.MeshStandardMaterial({ color: 0x26282c, metalness: 0.65, roughness: 0.45 });
 
   // plataforma / puck de la cinta (la lata apoya justo encima)
-  const puck = new THREE.Mesh(new THREE.CylinderGeometry(1.32, 1.42, 0.14, 64), steelDark);
-  puck.position.y = -R - 0.07;
+  const puck = new THREE.Mesh(new THREE.CylinderGeometry(1.05, 1.15, 0.14, 64), steelDark);
+  puck.position.y = BOT_CUT - 0.07;
   scene.add(puck);
 
   // sombra blanda
@@ -254,7 +306,7 @@ function main() {
     new THREE.MeshBasicMaterial({ map: shadowTex, transparent: true, opacity: 0.9, depthWrite: false })
   );
   shadow.rotation.x = -Math.PI / 2;
-  shadow.position.y = -R - 0.17;
+  shadow.position.y = BOT_CUT - 0.17;
   scene.add(shadow);
 
   // riel superior de la línea
@@ -317,16 +369,16 @@ function main() {
   });
   const sealCollar = new THREE.Group();
   {
-    const ringO = new THREE.Mesh(new THREE.TorusGeometry(1.18, 0.075, 20, 72), sealMat);
+    const ringO = new THREE.Mesh(new THREE.TorusGeometry(LID_R + 0.16, 0.07, 20, 72), sealMat);
     ringO.rotation.x = Math.PI / 2;
     sealCollar.add(ringO);
-    const wall = new THREE.Mesh(new THREE.CylinderGeometry(1.22, 1.22, 0.18, 72, 1, true), sealMat);
+    const wall = new THREE.Mesh(new THREE.CylinderGeometry(LID_R + 0.2, LID_R + 0.2, 0.18, 72, 1, true), sealMat);
     wall.position.y = 0.14;
     sealCollar.add(wall);
     for (let i = 0; i < 3; i++) { // mordazas del sellador
-      const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.2, 0.3), steelDark);
+      const jaw = new THREE.Mesh(new THREE.BoxGeometry(0.15, 0.18, 0.26), steelDark);
       const a = (i / 3) * Math.PI * 2;
-      jaw.position.set(Math.cos(a) * 1.1, -0.02, Math.sin(a) * 1.1);
+      jaw.position.set(Math.cos(a) * (LID_R + 0.08), -0.02, Math.sin(a) * (LID_R + 0.08));
       jaw.rotation.y = -a;
       sealCollar.add(jaw);
     }
@@ -485,9 +537,9 @@ function main() {
     machine.position.y = outro * 4.2;
     capper.position.x = lerp(capper.position.x, 6.5, outro);
     // la línea se retira y la lata queda en plano producto
-    puck.position.y = -R - 0.07 - outro * 3.2;
+    puck.position.y = BOT_CUT - 0.07 - outro * 3.2;
     shadow.material.opacity = 0.9 - outro * 0.25;
-    shadow.position.y = -R - 0.17 - outro * 0.28;
+    shadow.position.y = BOT_CUT - 0.17 - outro * 0.28;
 
     /* --- lata: quieta durante el proceso, se luce al final --- */
     can.rotation.y = pointer.x * 0.12 + outro * 0.1;
