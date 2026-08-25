@@ -23,14 +23,21 @@ import { RoomEnvironment } from "../assets/vendor/RoomEnvironment.js";
 /* ---------- Config por sabor ---------- */
 const FLAVORS = {
   blueberry: {
-    liquid: 0x1596c8,
-    surface: 0x53c2e8,
-    bubble: 0xbfeaff,
+    // azul galáctico: profundo, saturado y con brillo propio
+    // el ACES tone mapping corre el azul puro hacia violeta: se compensa
+    // con un tinte más cian, que en pantalla queda azul eléctrico
+    liquid: 0x0338e5,
+    glow: 0x0226d0,
+    surface: 0x0d50ff,
+    surfaceGlow: 0x0338e5,
+    bubble: 0x9fd2ff,
     label: "assets/img/blueberry-label.webp",
   },
   peach: {
     liquid: 0xe8920a,
+    glow: 0xa85f04,
     surface: 0xf7bf5a,
+    surfaceGlow: 0xc47a10,
     bubble: 0xffe9c2,
     label: "assets/img/peach-label.webp",
   },
@@ -96,8 +103,10 @@ function main() {
   /* ---------- base: estudio ---------- */
   const renderer = new THREE.WebGLRenderer({ canvas, antialias: tier === "high", alpha: true });
   renderer.setPixelRatio(DPR);
-  renderer.toneMapping = THREE.ACESFilmicToneMapping;
-  renderer.toneMappingExposure = 1.05;
+  // Neutral (Khronos PBR): preserva los colores saturados de marca;
+  // ACES corría el azul galáctico hacia lila
+  renderer.toneMapping = THREE.NeutralToneMapping;
+  renderer.toneMappingExposure = 1.0;
   renderer.localClippingEnabled = true;
 
   const scene = new THREE.Scene();
@@ -208,9 +217,11 @@ function main() {
   const floorPlane = new THREE.Plane(new THREE.Vector3(0, 1, 0), -(BOT_CUT + 0.02));
 
   const liquidMat = new THREE.MeshPhysicalMaterial({
-    color: flavor.liquid, transparent: true, opacity: 0.92,
-    roughness: 0.06, clearcoat: 0.8, clearcoatRoughness: 0.1,
-    envMapIntensity: 0.7, clippingPlanes: [clipPlane, floorPlane],
+    color: flavor.liquid, transparent: true, opacity: 0.97,
+    emissive: flavor.glow, emissiveIntensity: 0.32, // brilla desde adentro
+    roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.04,
+    // poco reflejo ambiental: el blanco del estudio no lava el azul
+    envMapIntensity: 0.3, clippingPlanes: [clipPlane, floorPlane],
   });
   const liquid = new THREE.Mesh(new THREE.SphereGeometry(R * 0.965, 72, 48), liquidMat);
   liquid.renderOrder = 1;
@@ -222,9 +233,10 @@ function main() {
   const surfGeo = makeDiskGeometry(SURF_RINGS, SURF_SEGS);
   const surfBase = surfGeo.attributes.position.array.slice();
   const surfMat = new THREE.MeshPhysicalMaterial({
-    color: flavor.surface, transparent: true, opacity: 0.95,
-    roughness: 0.05, clearcoat: 1, clearcoatRoughness: 0.05,
-    envMapIntensity: 1.2, side: THREE.DoubleSide,
+    color: flavor.surface, transparent: true, opacity: 0.97,
+    emissive: flavor.surfaceGlow, emissiveIntensity: 0.3,
+    roughness: 0.03, clearcoat: 1, clearcoatRoughness: 0.04,
+    envMapIntensity: 0.5, side: THREE.DoubleSide,
   });
   const surface = new THREE.Mesh(surfGeo, surfMat);
   surface.renderOrder = 2;
@@ -342,7 +354,8 @@ function main() {
   // chorro de líquido
   const streamMat = new THREE.MeshPhysicalMaterial({
     color: flavor.liquid, transparent: true, opacity: 0,
-    roughness: 0.04, clearcoat: 1, envMapIntensity: 0.8, depthWrite: false,
+    emissive: flavor.glow, emissiveIntensity: 0.4,
+    roughness: 0.03, clearcoat: 1, envMapIntensity: 1.1, depthWrite: false,
   });
   const stream = new THREE.Mesh(new THREE.CylinderGeometry(0.052, 0.035, 1, 20, 1, true), streamMat);
   stream.renderOrder = 4;
@@ -549,7 +562,7 @@ function main() {
     /* --- luz final + CTA --- */
     const s8 = smooth(seg(p, 0.93, 0.995));
     key.intensity = 1.5 + s8 * 0.9;
-    renderer.toneMappingExposure = 1.05 + s8 * 0.12;
+    renderer.toneMappingExposure = 1.0 + s8 * 0.1;
     cta.hidden = s8 < 0.35;
     hint.style.opacity = p > 0.01 && p < 0.88 ? 1 : 0;
 
