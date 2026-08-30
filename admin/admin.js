@@ -817,9 +817,12 @@ function openConnectWizard(afterConnect) {
           <li>En <em>Expiration</em> elegí <strong>No expiration</strong>
             <span class="hint">(si no, dentro de un mes deja de andar)</span></li>
           <li>Fijate que la casilla <strong>repo</strong> esté tildada
-            <span class="hint">— es la primera de la lista, la de arriba de todo. Ya te la dejamos marcada, pero confirmá que tenga el tilde ✓</span></li>
+            <span class="hint">— es la primera de la lista, la de arriba de todo</span></li>
           <li>Bajá hasta el final y tocá el botón verde <strong>Generate token</strong></li>
         </ul>
+        <p class="warn-box">Si abajo de todo el botón dice <strong>Update token</strong> en vez de
+        <em>Generate token</em>, estás editando una llave vieja: los tildes no se guardan solos.
+        Volvé atrás y creá una llave <strong>nueva</strong> con el botón de arriba.</p>
       </li>
       <li>
         <strong>Copiá la llave y pegala acá</strong>
@@ -845,7 +848,7 @@ function openConnectWizard(afterConnect) {
     if (/\s/.test(token)) return say("La llave tiene espacios: copiala de nuevo, entera y sin cortar.", "err");
 
     const gh = { token, repo: GH_REPO, branch: GH_BRANCH };
-    say("Revisando la llave…");
+    say("Revisando la llave y probando que pueda publicar…");
     const check = await diagnose(gh);
     if (!check.ok) return say(check.message, "err");
 
@@ -855,37 +858,49 @@ function openConnectWizard(afterConnect) {
   });
 }
 
-/* Revisa la llave de punta a punta y devuelve un mensaje que se entienda:
-   1. ¿es válida?  2. ¿ve el repositorio?  3. ¿puede escribir en él? */
-async function diagnose(gh) {
-  // 1. ¿la llave sirve?
+/* Revisa la llave probando lo que realmente importa: escribir en el repo.
+   No se fía de los permisos declarados (a veces GitHub no los informa):
+   hace una escritura de prueba real y mira si GitHub la acepta. */
+async function diagnose(gh, { write = true } = {}) {
+  // 1. ¿la llave existe y es válida?
   let me;
   try {
     me = await ghRequest(gh, "/user");
   } catch (err) {
     if (err.status === 401)
-      return { ok: false, message: "Esa llave no es válida o ya venció. Creá una nueva y copiala entera." };
+      return { ok: false, message: "Esa llave no es válida o ya venció. Creá una NUEVA (botón verde \"Generate token\") y copiala entera." };
     if (!err.status)
       return { ok: false, message: "No hay conexión con GitHub. Revisá internet y probá de nuevo." };
     return { ok: false, message: "GitHub respondió: " + err.message };
   }
 
-  // 2. ¿ve el repositorio?
+  // 2. ¿existe el repositorio y la llave lo alcanza?
   let repo;
   try {
     repo = await ghRequest(gh, `/repos/${gh.repo}`);
   } catch (err) {
     if (err.status === 404)
-      return { ok: false, message: `La llave no llega al repositorio ${gh.repo}. Si creaste una llave "Fine-grained", volvé a crearla como "Tokens (classic)" con el permiso repo tildado.` };
+      return { ok: false, message: `La llave no llega a ${gh.repo}. Si creaste una llave del tipo "Fine-grained", tenés que crearla como "Tokens (classic)".` };
     return { ok: false, message: "GitHub respondió: " + err.message };
   }
-
-  // 3. ¿puede escribir? (lo que realmente hace falta para publicar)
-  if (!repo.permissions || !repo.permissions.push) {
-    return { ok: false, message: 'La llave puede mirar pero no escribir. Al crearla tenés que tildar la casilla "repo" (la de arriba de todo). Creá una nueva con ese permiso.' };
-  }
   if (me.login && repo.owner && me.login.toLowerCase() !== repo.owner.login.toLowerCase()) {
-    return { ok: false, message: `Esa llave es de la cuenta "${me.login}", y la web está en la cuenta "${repo.owner.login}". Entrá a GitHub con la cuenta correcta y creá la llave desde ahí.` };
+    return { ok: false, message: `Esa llave es de la cuenta "${me.login}" y la web está en "${repo.owner.login}". Entrá a GitHub con la cuenta correcta.` };
+  }
+  if (!write) return { ok: true, login: me.login };
+
+  // 3. la prueba de fuego: escribir de verdad un archivo de control
+  try {
+    await ghPutFile(gh, "data/.panel-ok",
+      toB64(`Panel BUBA conectado — ${new Date().toISOString()}\n`),
+      "Prueba de conexión del panel BUBA");
+  } catch (err) {
+    if (err.status === 403 || err.status === 404) {
+      return { ok: false, message:
+        'La llave no tiene permiso para escribir. Ojo: si estabas en la pantalla de una llave YA CREADA, ' +
+        'los tildes no se guardan hasta tocar "Update token" abajo de todo. Lo más seguro es crear una llave ' +
+        'nueva desde cero con la casilla "repo" tildada.' };
+    }
+    return { ok: false, message: "GitHub no aceptó la escritura: " + err.message };
   }
   return { ok: true, login: me.login };
 }
