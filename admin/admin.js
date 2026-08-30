@@ -697,7 +697,7 @@ function renderSettings(box) {
       </label>
       <p class="hint">Para que alguien entre, pasale este link — abre sin pedir nada:</p>
       <input class="copy-field" id="link-acceso" readonly
-        value="https://davidsued1.github.io/buba/?acceso=${encodeURIComponent(STORE.config.codigoAcceso || "")}">
+        value="${esc(siteBase())}/?acceso=${encodeURIComponent(STORE.config.codigoAcceso || "")}">
       <button class="btn btn--outline btn--sm btn--block" id="copy-acceso">Copiar el link</button>
       <div class="form-grid" style="margin-top:16px">
         <label class="span-2">Título de la pantalla de espera
@@ -930,6 +930,13 @@ const toB64 = (str) => btoa(unescape(encodeURIComponent(str)));
 /* ==========================================================================
    PUBLICAR — asistente de conexión (una sola vez) y publicación en un toque
    ========================================================================== */
+/* Dirección pública del sitio: se deduce de dónde está abierto el panel,
+   así el enlace de acceso sirve tanto en la dirección de GitHub como en
+   bubadrinks.com.ar cuando el dominio esté enchufado. */
+function siteBase() {
+  return (location.origin + location.pathname.replace(/\/admin\/?$/, "")).replace(/\/$/, "");
+}
+
 const GH_OWNER = "davidsued1";
 const GH_REPO = "davidsued1/buba";
 const GH_BRANCH = "claude/buba-web-minimal-design-5k85u5";
@@ -1084,7 +1091,7 @@ async function publishOnline() {
       <p class="lead">Tus cambios ya están viajando a la web.</p>
       <p>En <strong>1 o 2 minutos</strong> los va a ver todo el mundo. Si entrás ahora y
       todavía ves lo viejo, esperá un momento y recargá.</p>
-      <a class="btn btn--solid btn--block" href="https://davidsued1.github.io/buba/" target="_blank" rel="noopener">Ver mi web →</a>
+      <a class="btn btn--solid btn--block" href="${siteBase()}/" target="_blank" rel="noopener">Ver mi web →</a>
     `);
   } catch (err) {
     const causa = err.status === 401
