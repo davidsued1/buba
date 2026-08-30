@@ -909,6 +909,36 @@ function trackPurchase(order) {
   } catch {}
 }
 
+/* ---------- Vuelta desde Mercado Pago ---------- */
+function checkPaymentReturn() {
+  const q = new URLSearchParams(location.search);
+  const estado = q.get("pago");
+  if (!estado) return;
+  const pedido = q.get("pedido") || "";
+  const textos = {
+    ok: ["¡Listo, pago confirmado! 🎉", "Ya estamos preparando tu pedido. Te escribimos por WhatsApp para coordinar la entrega."],
+    pendiente: ["Tu pago está en proceso", "Cuando Mercado Pago lo confirme te avisamos. Si pagaste en efectivo, puede tardar unas horas."],
+    error: ["El pago no se pudo completar", "No se te cobró nada. Podés intentar de nuevo o escribirnos por WhatsApp para coordinar."],
+  }[estado];
+  if (!textos) return;
+
+  // marcar el pedido como pagado en el historial local
+  if (estado === "ok" && pedido) {
+    const orders = lsJSON("buba-orders") || [];
+    const o = orders.find((x) => x.code === pedido);
+    if (o) { o.status = "pagado"; lsSet("buba-orders", JSON.stringify(orders)); }
+  }
+
+  history.replaceState(null, "", location.pathname);
+  $("done-msg").textContent = textos[1];
+  $("done-code").textContent = pedido ? "Nº de pedido: " + pedido : "";
+  $("step-done").querySelector("h3").textContent = textos[0];
+  $("checkout").hidden = false;
+  $("checkout-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  gotoStep(4);
+}
+
 document.addEventListener("DOMContentLoaded", async () => {
   STORE = await resolveStore();
 
@@ -929,6 +959,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   $("cart-open").addEventListener("click", openCart);
   $("cart-close").addEventListener("click", closeCart);
   // volviendo de una página de producto con ?cart=1, abrimos el carrito
+  checkPaymentReturn();
   if (new URLSearchParams(location.search).has("cart")) {
     history.replaceState(null, "", location.pathname + location.hash);
     if (cartEntries().length) openCart();

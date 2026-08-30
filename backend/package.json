@@ -1,0 +1,7 @@
+{
+  "name": "buba-pagos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Pagos de BUBA con Mercado Pago",
+  "engines": { "node": ">=18" }
+}

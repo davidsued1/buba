@@ -661,11 +661,16 @@ function renderSettings(box) {
       </div>
     </div>
     <div class="panel">
-      <h3>Pagos (Mercado Pago)</h3>
-      <label class="label-block">URL del backend de pagos <span class="hint">— la que te da Vercel al deployar la carpeta backend/ (dejar vacío = modo demo)</span>
-        <input id="c-api" value="${esc(STORE.config.apiBase)}" placeholder="https://buba-backend.vercel.app">
+      <h3>💳 Cobrar con Mercado Pago</h3>
+      <p class="hint">Pegá acá la dirección que te da Vercel cuando publiques la carpeta de pagos.
+      Mientras esté vacío, los pedidos se registran igual y se coordinan por WhatsApp.</p>
+      <label class="label-block">Dirección del servicio de pagos
+        <input id="c-api" value="${esc(STORE.config.apiBase)}" placeholder="https://buba-pagos.vercel.app">
       </label>
-      <div class="note">El backend crea la preferencia de pago con tu cuenta de Mercado Pago. Está listo en la carpeta <strong>backend/</strong> del repo: se deploya gratis en Vercel cargando tu Access Token de MP. Cuando tengas la URL, pegala acá y el botón "Pagar con Mercado Pago" queda funcionando.</div>
+      <button class="btn btn--outline btn--block" id="btn-mp-test">Probar el cobro</button>
+      <p class="wiz-status" id="mp-status"></p>
+      <div class="note">¿Todavía no lo armaste? Pedime el paso a paso: se hace una vez y quedan
+      habilitados tarjeta, débito, dinero en cuenta, transferencia, efectivo y cuotas.</div>
     </div>
     <div class="panel">
       <h3>Analytics</h3>
@@ -710,6 +715,25 @@ function renderSettings(box) {
     saveLocal();
   });
   $("btn-connect").addEventListener("click", () => openConnectWizard());
+  $("btn-mp-test").addEventListener("click", async () => {
+    const st = $("mp-status");
+    const base = $("c-api").value.trim().replace(/\/$/, "");
+    st.className = "wiz-status";
+    if (!base) { st.className = "wiz-status err"; st.textContent = "Primero pegá la dirección del servicio de pagos."; return; }
+    st.textContent = "Probando…";
+    try {
+      const r = await fetch(base + "/api/estado", { cache: "no-store" });
+      const d = await r.json();
+      st.className = "wiz-status " + (d.ok ? "ok" : "err");
+      st.textContent = d.ok
+        ? `✓ Conectado a la cuenta ${d.cuenta} (${d.modo}). ${d.mensaje}`
+        : d.mensaje || "No se pudo verificar.";
+      if (d.ok) { STORE.config.apiBase = base; saveLocal(true); }
+    } catch (err) {
+      st.className = "wiz-status err";
+      st.textContent = "No se pudo llegar a esa dirección. Revisá que esté bien copiada (tiene que empezar con https:// y terminar en .vercel.app).";
+    }
+  });
   if ($("btn-check")) $("btn-check").addEventListener("click", async () => {
     const st = $("check-status");
     st.className = "wiz-status";
