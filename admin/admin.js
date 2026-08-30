@@ -688,6 +688,8 @@ function renderSettings(box) {
       <button class="btn ${gh.token ? "btn--outline" : "btn--solid"} btn--block" id="btn-connect">
         ${gh.token ? "Volver a conectar" : "Conectar ahora"}
       </button>
+      ${gh.token ? '<button class="btn btn--outline btn--block" id="btn-check" style="margin-top:10px">Revisar la conexión</button>' : ""}
+      <p class="wiz-status" id="check-status"></p>
     </div>
     <div class="panel">
       <h3>Zona de riesgo</h3>
@@ -708,6 +710,16 @@ function renderSettings(box) {
     saveLocal();
   });
   $("btn-connect").addEventListener("click", () => openConnectWizard());
+  if ($("btn-check")) $("btn-check").addEventListener("click", async () => {
+    const st = $("check-status");
+    st.className = "wiz-status";
+    st.textContent = "Revisando…";
+    const r = await diagnose(ghConfig());
+    st.className = "wiz-status " + (r.ok ? "ok" : "err");
+    st.textContent = r.ok
+      ? `✓ Todo bien. Conectado como ${r.login}: podés publicar.`
+      : r.message;
+  });
   $("reset-local").addEventListener("click", async () => {
     if (!confirm("Esto descarta los cambios locales no publicados y vuelve a la última versión publicada. ¿Seguir?")) return;
     localStorage.removeItem("buba-store");
@@ -720,26 +732,55 @@ function renderSettings(box) {
 /* ==========================================================================
    PUBLICAR ONLINE (commit vía API de GitHub)
    ========================================================================== */
-async function ghRequest(gh, path, options = {}) {
-  const res = await fetch(`https://api.github.com/repos/${gh.repo}/contents/${path}`, {
+/* Llamada cruda a la API de GitHub. `path` es la ruta completa a partir de
+   api.github.com (ej: "/repos/davidsued1/buba"). Devuelve la respuesta y
+   nunca lanza: cada caller decide qué hacer con el status. */
+async function ghFetch(gh, path, options = {}) {
+  return fetch("https://api.github.com" + path, {
     ...options,
     headers: {
       Authorization: "Bearer " + gh.token,
       Accept: "application/vnd.github+json",
+      "X-GitHub-Api-Version": "2022-11-28",
       ...(options.headers || {}),
     },
   });
-  return res;
 }
 
+/* Igual que ghFetch pero lanza un error legible si algo falla. */
+async function ghRequest(gh, path, options = {}) {
+  const res = await ghFetch(gh, path, options);
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json()).message || ""; } catch {}
+    const err = new Error(detail || "Error " + res.status);
+    err.status = res.status;
+    throw err;
+  }
+  return res.json();
+}
+
+/* Rutas de contenido del repo */
+const contentPath = (gh, file, ref) =>
+  `/repos/${gh.repo}/contents/${file}` + (ref ? `?ref=${encodeURIComponent(ref)}` : "");
+
 async function ghPutFile(gh, path, base64Content, message) {
-  const head = await ghRequest(gh, `${path}?ref=${gh.branch}`);
-  const sha = head.ok ? (await head.json()).sha : undefined;
-  const res = await ghRequest(gh, path, {
+  // si el archivo ya existe hay que mandar su sha para reemplazarlo
+  let sha;
+  const head = await ghFetch(gh, contentPath(gh, path, gh.branch));
+  if (head.ok) sha = (await head.json()).sha;
+
+  const res = await ghFetch(gh, contentPath(gh, path), {
     method: "PUT",
     body: JSON.stringify({ message, content: base64Content, branch: gh.branch, ...(sha ? { sha } : {}) }),
   });
-  if (!res.ok) throw new Error(`GitHub ${res.status} al subir ${path}`);
+  if (!res.ok) {
+    let detail = "";
+    try { detail = (await res.json()).message || ""; } catch {}
+    const err = new Error(detail || "Error " + res.status);
+    err.status = res.status;
+    throw err;
+  }
 }
 
 const toB64 = (str) => btoa(unescape(encodeURIComponent(str)));
@@ -747,6 +788,7 @@ const toB64 = (str) => btoa(unescape(encodeURIComponent(str)));
 /* ==========================================================================
    PUBLICAR — asistente de conexión (una sola vez) y publicación en un toque
    ========================================================================== */
+const GH_OWNER = "davidsued1";
 const GH_REPO = "davidsued1/buba";
 const GH_BRANCH = "claude/buba-web-minimal-design-5k85u5";
 const TOKEN_URL = "https://github.com/settings/tokens/new?scopes=repo&description=Panel%20BUBA";
@@ -760,51 +802,92 @@ const isConnected = () => !!ghConfig().token;
 /* Asistente: 3 pasos, con el link directo al permiso ya configurado */
 function openConnectWizard(afterConnect) {
   openModal("Conectar el panel con tu web", `
-    <p class="lead">Esto se hace <strong>una sola vez</strong>. Después vas a publicar
-    con un solo botón, para siempre.</p>
+    <p class="lead">Se hace <strong>una sola vez</strong>. Son 3 pasos y lleva un minuto.</p>
 
     <ol class="wizard">
       <li>
-        <strong>Abrí GitHub y creá la llave</strong>
-        <p class="hint">Te abre la página con todo configurado. Abajo de todo, poné
-        <em>Expiration: No expiration</em> y tocá el botón verde <em>Generate token</em>.</p>
-        <a class="btn btn--solid" href="${TOKEN_URL}" target="_blank" rel="noopener">Abrir GitHub →</a>
+        <strong>Tocá este botón</strong>
+        <p class="hint">Se abre GitHub en otra pestaña, en la pantalla de crear la llave.
+        Si te pide usuario y contraseña, entrá con <strong>tu cuenta ${GH_OWNER}</strong>.</p>
+        <a class="btn btn--solid btn--block" href="${TOKEN_URL}" target="_blank" rel="noopener">Abrir GitHub →</a>
       </li>
       <li>
-        <strong>Copiá la llave que te muestra</strong>
-        <p class="hint">Empieza con <code>ghp_</code>. GitHub la muestra una sola vez: copiala enseguida.</p>
+        <strong>En GitHub, hacé solo esto</strong>
+        <ul class="wizard__sub">
+          <li>En <em>Expiration</em> elegí <strong>No expiration</strong>
+            <span class="hint">(si no, dentro de un mes deja de andar)</span></li>
+          <li>Fijate que la casilla <strong>repo</strong> esté tildada
+            <span class="hint">— es la primera de la lista, la de arriba de todo. Ya te la dejamos marcada, pero confirmá que tenga el tilde ✓</span></li>
+          <li>Bajá hasta el final y tocá el botón verde <strong>Generate token</strong></li>
+        </ul>
       </li>
       <li>
-        <strong>Pegala acá</strong>
-        <input id="wiz-token" type="password" placeholder="ghp_…" autocomplete="off">
-        <p class="hint">Queda guardada solo en este dispositivo. Nadie más la ve.</p>
+        <strong>Copiá la llave y pegala acá</strong>
+        <p class="hint">Aparece una sola vez, en un recuadro verde. Empieza con <code>ghp_</code>.
+        Tocá el ícono de copiar que está al lado.</p>
+        <input id="wiz-token" type="password" placeholder="ghp_…" autocomplete="off" spellcheck="false">
       </li>
     </ol>
 
     <p class="wiz-status" id="wiz-status"></p>
     <button class="btn btn--solid btn--block" id="wiz-save">Conectar</button>
+    <p class="hint" style="margin-top:14px">
+      ¿Ya lo hiciste y te da error? El mensaje de acá arriba te dice exactamente qué falta.
+    </p>
   `);
 
   $("wiz-save").addEventListener("click", async () => {
     const token = $("wiz-token").value.trim();
     const st = $("wiz-status");
-    if (!token) { st.textContent = "Pegá la llave que copiaste de GitHub."; st.className = "wiz-status err"; return; }
-    st.textContent = "Probando la conexión…"; st.className = "wiz-status";
+    const say = (msg, cls) => { st.textContent = msg; st.className = "wiz-status " + (cls || ""); };
+
+    if (!token) return say("Pegá la llave que copiaste de GitHub.", "err");
+    if (/\s/.test(token)) return say("La llave tiene espacios: copiala de nuevo, entera y sin cortar.", "err");
+
     const gh = { token, repo: GH_REPO, branch: GH_BRANCH };
-    try {
-      await ghRequest(gh, `/repos/${gh.repo}`);
-      lsSet("buba-admin-gh", gh);
-      st.textContent = "✓ Conectado"; st.className = "wiz-status ok";
-      setTimeout(() => { closeModal(); syncPublishState(); if (afterConnect) afterConnect(); }, 700);
-    } catch (err) {
-      st.className = "wiz-status err";
-      st.textContent = /401|Bad credentials/.test(err.message)
-        ? "Esa llave no es válida. Copiala de nuevo desde GitHub (entera, sin espacios)."
-        : /403|404/.test(err.message)
-        ? "La llave no tiene permiso sobre el repositorio. Al crearla tiene que estar tildado \"repo\"."
-        : "No hay conexión con GitHub. Revisá internet y probá de nuevo.";
-    }
+    say("Revisando la llave…");
+    const check = await diagnose(gh);
+    if (!check.ok) return say(check.message, "err");
+
+    lsSet("buba-admin-gh", gh);
+    say("✓ Listo, quedó conectado", "ok");
+    setTimeout(() => { closeModal(); syncPublishState(); if (afterConnect) afterConnect(); }, 800);
   });
+}
+
+/* Revisa la llave de punta a punta y devuelve un mensaje que se entienda:
+   1. ¿es válida?  2. ¿ve el repositorio?  3. ¿puede escribir en él? */
+async function diagnose(gh) {
+  // 1. ¿la llave sirve?
+  let me;
+  try {
+    me = await ghRequest(gh, "/user");
+  } catch (err) {
+    if (err.status === 401)
+      return { ok: false, message: "Esa llave no es válida o ya venció. Creá una nueva y copiala entera." };
+    if (!err.status)
+      return { ok: false, message: "No hay conexión con GitHub. Revisá internet y probá de nuevo." };
+    return { ok: false, message: "GitHub respondió: " + err.message };
+  }
+
+  // 2. ¿ve el repositorio?
+  let repo;
+  try {
+    repo = await ghRequest(gh, `/repos/${gh.repo}`);
+  } catch (err) {
+    if (err.status === 404)
+      return { ok: false, message: `La llave no llega al repositorio ${gh.repo}. Si creaste una llave "Fine-grained", volvé a crearla como "Tokens (classic)" con el permiso repo tildado.` };
+    return { ok: false, message: "GitHub respondió: " + err.message };
+  }
+
+  // 3. ¿puede escribir? (lo que realmente hace falta para publicar)
+  if (!repo.permissions || !repo.permissions.push) {
+    return { ok: false, message: 'La llave puede mirar pero no escribir. Al crearla tenés que tildar la casilla "repo" (la de arriba de todo). Creá una nueva con ese permiso.' };
+  }
+  if (me.login && repo.owner && me.login.toLowerCase() !== repo.owner.login.toLowerCase()) {
+    return { ok: false, message: `Esa llave es de la cuenta "${me.login}", y la web está en la cuenta "${repo.owner.login}". Entrá a GitHub con la cuenta correcta y creá la llave desde ahí.` };
+  }
+  return { ok: true, login: me.login };
 }
 
 async function publishOnline() {
@@ -847,9 +930,17 @@ async function publishOnline() {
       <a class="btn btn--solid btn--block" href="https://davidsued1.github.io/buba/" target="_blank" rel="noopener">Ver mi web →</a>
     `);
   } catch (err) {
+    const causa = err.status === 401
+      ? "La llave venció o dejó de ser válida."
+      : err.status === 403 || err.status === 404
+      ? 'La llave no tiene permiso para escribir. Al crearla hay que tildar la casilla "repo".'
+      : err.status === 409
+      ? "Alguien más publicó al mismo tiempo. Probá de nuevo en un momento."
+      : "No se pudo conectar con GitHub.";
     openModal("No se pudo publicar", `
-      <p class="lead">${esc(err.message)}</p>
-      <p>Suele ser la llave de GitHub: puede haber vencido o no tener permisos.</p>
+      <p class="lead">${esc(causa)}</p>
+      <p class="hint">Detalle técnico: ${esc(err.message)}</p>
+      <p>Tus cambios <strong>no se perdieron</strong>: siguen guardados acá. Conectá de nuevo y volvé a tocar Publicar.</p>
       <button class="btn btn--solid btn--block" id="err-reconnect">Volver a conectar</button>
     `);
     $("err-reconnect").addEventListener("click", () => openConnectWizard(publishOnline));
