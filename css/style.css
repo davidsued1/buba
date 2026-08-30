@@ -206,72 +206,6 @@ h3 { font-size: 1.15rem; }
 }
 .hamburger span { width: 24px; height: 1.5px; background: var(--ink); }
 
-/* ---------- Experiencia 3D (doc 04) ---------- */
-.experience { height: 560vh; position: relative; background: var(--bg); }
-.experience__stage {
-  position: sticky;
-  top: 0;
-  height: 100dvh;
-  overflow: hidden;
-}
-.experience__stage canvas { width: 100%; height: 100%; display: block; }
-.experience__ui { position: absolute; inset: 0; pointer-events: none; }
-.experience__skip {
-  position: absolute;
-  top: 22px;
-  right: 24px;
-  pointer-events: auto;
-  background: transparent;
-  border: 1px solid #cfc9c0;
-  border-radius: var(--radius);
-  padding: 10px 18px;
-  font-family: var(--sans);
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.18em;
-  color: var(--gray-600);
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-.experience__skip:hover { border-color: var(--ink); color: var(--ink); }
-.experience__hint {
-  position: absolute;
-  bottom: 30px;
-  left: 0;
-  right: 0;
-  text-align: center;
-  font-size: 0.7rem;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.26em;
-  color: var(--gray-400);
-  animation: hintPulse 2.4s ease-in-out infinite;
-  transition: opacity 0.4s ease;
-}
-/* el pulso solo mueve; la opacidad la maneja experience.js según el scroll */
-@keyframes hintPulse {
-  0%, 100% { transform: translateY(0); }
-  50% { transform: translateY(6px); }
-}
-.experience__cta {
-  position: absolute;
-  bottom: 12vh;
-  left: 0;
-  right: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 26px;
-  pointer-events: auto;
-  animation: ctaIn 0.9s ease both;
-}
-.experience__cta img { height: 56px; width: auto; }
-@keyframes ctaIn {
-  from { opacity: 0; transform: translateY(24px); }
-  to { opacity: 1; transform: none; }
-}
-
 /* ---------- Hero ---------- */
 .hero {
   padding: 84px 0 96px;
@@ -1059,8 +993,10 @@ h3 { font-size: 1.15rem; }
 @media (max-width: 960px) {
   .grid--4 { grid-template-columns: repeat(2, 1fr); }
   .grid--3 { grid-template-columns: repeat(2, 1fr); }
-  .hero__inner { grid-template-columns: 1fr; gap: 44px; }
-  .viewer__stage { height: 360px; }
+  /* En celular la lata va primero: el producto es lo que vende */
+  .hero__inner { grid-template-columns: 1fr; gap: 30px; }
+  .hero__media { order: -1; }
+  .viewer__stage { height: 340px; }
   .split, .mayorista { grid-template-columns: 1fr; gap: 44px; }
   .footer__inner { grid-template-columns: 1fr 1fr; }
 }
@@ -1088,7 +1024,21 @@ h3 { font-size: 1.15rem; }
   .newsletter { flex-direction: column; border: 0; gap: 10px; }
   .newsletter input { border: 1px solid #cfc9c0; border-radius: var(--radius); }
   .newsletter .btn { border: 1px solid var(--ink); }
-  .hero { padding: 52px 0 68px; }
+  .hero { padding: 26px 0 56px; }
+  /* mobile: menos aire, títulos más compactos, todo al alcance del pulgar */
+  .hero__title { font-size: clamp(2.9rem, 15vw, 4rem); margin: 8px 0 16px; }
+  .hero__sub { font-size: 1rem; }
+  .hero__cta { margin-top: 26px; gap: 12px; }
+  .hero__cta .btn { width: 100%; text-align: center; justify-content: center; }
+  .hero__badges { margin-top: 26px; gap: 8px 18px; }
+  .announce { font-size: 0.6rem; letter-spacing: 0.12em; padding: 9px 14px; }
+  .viewer__flavors { gap: 8px; }
+  .viewer__flavors button { flex: 1; padding: 12px 10px; font-size: 0.72rem; }
+  .section__head { margin-bottom: 30px; }
+  .product__media { height: 230px; }
+  /* botones de acción a ancho completo: más fáciles de tocar */
+  .cart__foot .btn, .pay-actions .btn, .checkout__nav .btn { width: 100%; }
+  .checkout__nav { flex-direction: column-reverse; gap: 10px; }
   .whatsapp-float { bottom: 18px; right: 18px; }
   .form-grid { grid-template-columns: 1fr; }
   .form-grid .span-2 { grid-column: span 1; }

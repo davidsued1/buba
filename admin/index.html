@@ -26,17 +26,28 @@
 
   <!-- ============ APP ============ -->
   <div class="app" id="app" hidden>
-    <aside class="sidebar">
-      <p class="sidebar__logo"><img src="../assets/img/logo-buba-white.png" alt="BUBA" style="height:18px;width:auto"> <small>panel</small></p>
+    <!-- Barra superior: siempre a la vista, con el botón de publicar -->
+    <header class="topbar">
+      <button class="topbar__menu" id="btn-menu" aria-label="Menú">☰</button>
+      <h2 id="view-title">Inicio</h2>
+      <div class="topbar__actions">
+        <span class="save-state" id="save-state"></span>
+        <button class="btn btn--solid btn--sm" id="btn-publish">Publicar</button>
+      </div>
+    </header>
+
+    <!-- Menú lateral (se despliega en celular) -->
+    <aside class="sidebar" id="sidebar">
+      <p class="sidebar__logo"><img src="../assets/img/logo-buba-white.png" alt="BUBA"> <small>panel</small></p>
       <nav class="sidebar__nav" id="side-nav">
-        <button data-view="dashboard" class="is-active">📊 Dashboard</button>
+        <button data-view="dashboard" class="is-active">📊 Inicio</button>
         <button data-view="orders">📦 Pedidos <span class="badge" id="badge-orders"></span></button>
-        <button data-view="products">🥫 Productos</button>
+        <button data-view="products">🥫 Productos y fotos</button>
+        <button data-view="texts">✏️ Textos de la web</button>
+        <button data-view="images">🖼️ Fotos de la web</button>
         <button data-view="clients">👥 Clientes</button>
         <button data-view="shipping">🚚 Envíos</button>
         <button data-view="promos">🏷️ Promociones</button>
-        <button data-view="texts">✏️ Textos de la web</button>
-        <button data-view="images">🖼️ Imágenes de la web</button>
         <button data-view="settings">⚙️ Configuración</button>
       </nav>
       <div class="sidebar__foot">
@@ -44,18 +55,20 @@
         <button id="logout" class="linklike">Salir</button>
       </div>
     </aside>
+    <div class="sidebar-overlay" id="sidebar-overlay" hidden></div>
 
     <main class="main">
-      <div class="topbar">
-        <h2 id="view-title">Dashboard</h2>
-        <div class="topbar__actions">
-          <span class="save-state" id="save-state"></span>
-          <button class="btn btn--outline btn--sm" id="btn-preview">Vista previa local</button>
-          <button class="btn btn--solid btn--sm" id="btn-publish">Publicar online</button>
-        </div>
-      </div>
       <div class="view" id="view"></div>
     </main>
+
+    <!-- Accesos rápidos abajo, como una app -->
+    <nav class="tabbar" id="tabbar">
+      <button data-view="dashboard" class="is-active"><span>📊</span>Inicio</button>
+      <button data-view="orders"><span>📦</span>Pedidos</button>
+      <button data-view="products"><span>🥫</span>Productos</button>
+      <button data-view="texts"><span>✏️</span>Textos</button>
+      <button data-view="images"><span>🖼️</span>Fotos</button>
+    </nav>
   </div>
 
   <!-- Modal genérico -->

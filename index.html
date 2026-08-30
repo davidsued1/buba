@@ -55,24 +55,6 @@
 
   <main>
 
-    <!-- ============ HERO INMERSIVO: LA LÍNEA DE LLENADO ============
-         La lata BUBA vacía se llena de líquido con el scroll, se tapa y se
-         sella como en la línea de producción real (js/experience.js).
-         En equipos flojos o con reduced-motion se salta directo al hero. -->
-    <section class="experience" id="experience" hidden>
-      <div class="experience__stage">
-        <canvas id="exp-canvas"></canvas>
-        <div class="experience__ui">
-          <button class="experience__skip" id="exp-skip" type="button">Saltar intro →</button>
-          <p class="experience__hint" id="exp-hint">Deslizá — estás llenando tu BUBA</p>
-          <div class="experience__cta" id="exp-cta" hidden>
-            <img src="assets/img/logo-full.png" alt="BUBA Ready Cocktails">
-            <a href="#sabores" class="btn btn--solid">Comprar ahora</a>
-          </div>
-        </div>
-      </div>
-    </section>
-
     <!-- ============ HERO + VISOR 360 ============ -->
     <section class="hero">
       <div class="container hero__inner">
@@ -85,13 +67,13 @@
             Enfriás, abrís y listo.
           </p>
           <div class="hero__cta">
-            <a href="#sabores" class="btn btn--solid">Comprar ahora</a>
-            <a href="#mayoristas" class="btn btn--ghost">Soy mayorista →</a>
+            <a href="#sabores" class="btn btn--solid" data-txt="heroCta1">Comprar ahora</a>
+            <a href="#mayoristas" class="btn btn--ghost" data-txt="heroCta2">Soy mayorista →</a>
           </div>
           <ul class="hero__badges">
-            <li>Vodka premium</li>
-            <li>210 ml · 10% vol.</li>
-            <li>Envíos a todo el país</li>
+            <li data-txt="heroBadge1">Vodka premium</li>
+            <li data-txt="heroBadge2">210 ml · 10% vol.</li>
+            <li data-txt="heroBadge3">Envíos a todo el país</li>
           </ul>
         </div>
 
@@ -124,7 +106,7 @@
     <section class="section section--soft" id="sabores">
       <div class="container">
         <div class="section__head reveal">
-          <p class="eyebrow">Tienda</p>
+          <p class="eyebrow" data-txt="shopEyebrow">Tienda</p>
           <h2 data-txt="shopTitle">Elegí tu color</h2>
           <p class="section__sub" data-txt="shopSub">Venta solo a mayores de 18.</p>
         </div>
@@ -145,18 +127,18 @@
         <div class="grid grid--3">
           <article class="card reveal">
             <div class="card__num">01</div>
-            <h3>Listo para tomar</h3>
-            <p>Enfriás, abrís y listo. El trago ya viene hecho, con vodka premium.</p>
+            <h3 data-txt="benefit1Title">Listo para tomar</h3>
+            <p data-txt="benefit1Text">Enfriás, abrís y listo. El trago ya viene hecho, con vodka premium.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">02</div>
-            <h3>La esfera</h3>
-            <p>Un envase que no se parece a nada. Llega a la mesa y arranca la conversación.</p>
+            <h3 data-txt="benefit2Title">La esfera</h3>
+            <p data-txt="benefit2Text">Un envase que no se parece a nada. Llega a la mesa y arranca la conversación.</p>
           </article>
           <article class="card reveal">
             <div class="card__num">03</div>
-            <h3>Hecho en Argentina</h3>
-            <p>Por dos emprendedores de acá. Envíos a todo el país.</p>
+            <h3 data-txt="benefit3Title">Hecho en Argentina</h3>
+            <p data-txt="benefit3Text">Por dos emprendedores de acá. Envíos a todo el país.</p>
           </article>
         </div>
       </div>
@@ -172,7 +154,7 @@
           </div>
         </div>
         <div class="split__copy reveal">
-          <p class="eyebrow">Nosotros</p>
+          <p class="eyebrow" data-txt="aboutEyebrow">Nosotros</p>
           <h2 data-txt="aboutTitle">Empezamos con una pregunta simple</h2>
           <p data-txt="aboutP1">
             ¿Por qué todos los tragos listos para tomar se ven iguales? Góndolas
@@ -184,7 +166,7 @@
             producto hable por su color, y que la etiqueta diga poco porque el
             trago dice todo.
           </p>
-          <a href="#sabores" class="btn btn--solid">Probalo vos</a>
+          <a href="#sabores" class="btn btn--solid" data-txt="aboutCta">Probalo vos</a>
         </div>
       </div>
     </section>
@@ -194,7 +176,7 @@
       <div class="container">
         <div class="mayorista">
           <div class="mayorista__copy reveal">
-            <p class="eyebrow">Mayoristas & distribuidores</p>
+            <p class="eyebrow" data-txt="wholesaleEyebrow">Mayoristas &amp; distribuidores</p>
             <h2 data-txt="wholesaleTitle">Llevá BUBA a tu comercio</h2>
             <p class="mayorista__sub" data-txt="wholesaleSub">
               ¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora?
@@ -202,18 +184,18 @@
               de marca para tu punto de venta.
             </p>
             <ul class="mayorista__list">
-              <li>Precios especiales por volumen</li>
-              <li>Reposición programada, sin quiebres de stock</li>
-              <li>Material de exhibición y marca</li>
-              <li>Atención directa, sin intermediarios</li>
+              <li data-txt="wholesaleItem1">Precios especiales por volumen</li>
+              <li data-txt="wholesaleItem2">Reposición programada, sin quiebres de stock</li>
+              <li data-txt="wholesaleItem3">Material de exhibición y marca</li>
+              <li data-txt="wholesaleItem4">Atención directa, sin intermediarios</li>
             </ul>
             <div class="mayorista__cta">
               <a href="#" class="btn btn--light" id="wholesale-whatsapp" target="_blank" rel="noopener">
-                Hablar por WhatsApp
+                <span data-txt="wholesaleCta">Hablar por WhatsApp</span>
               </a>
               <a href="mailto:bubadrinks0@gmail.com" class="btn btn--ghost-light" id="wholesale-email">bubadrinks0@gmail.com</a>
             </div>
-            <p class="mayorista__note">Respondemos el mismo día, de lunes a sábado.</p>
+            <p class="mayorista__note" data-txt="wholesaleNote">Respondemos el mismo día, de lunes a sábado.</p>
           </div>
           <div class="mayorista__media reveal" id="wholesale-media">
             <!-- La imagen se carga desde el panel (Imágenes → Mayoristas) -->
@@ -229,26 +211,26 @@
     <section class="section section--soft" id="faq">
       <div class="container container--narrow">
         <div class="section__head reveal">
-          <p class="eyebrow">FAQ</p>
-          <h2>Preguntas frecuentes</h2>
+          <p class="eyebrow" data-txt="faqEyebrow">FAQ</p>
+          <h2 data-txt="faqTitle">Preguntas frecuentes</h2>
         </div>
 
         <div class="faq reveal">
           <details class="faq__item">
-            <summary>¿Qué es BUBA?</summary>
-            <p>Un ready cocktail: trago frutal con vodka premium, listo para tomar, en una lata esférica de 210 ml con 10% de alcohol. Hecho en Argentina.</p>
+            <summary data-txt="faq1Q">¿Qué es BUBA?</summary>
+            <p data-txt="faq1A">Un ready cocktail: trago frutal con vodka premium, listo para tomar, en una lata esférica de 210 ml con 10% de alcohol. Hecho en Argentina.</p>
           </details>
           <details class="faq__item">
-            <summary>¿Cuánto alcohol tiene?</summary>
-            <p>10% vol. Venta exclusiva para mayores de 18 años. Beber con moderación.</p>
+            <summary data-txt="faq2Q">¿Cuánto alcohol tiene?</summary>
+            <p data-txt="faq2A">10% vol. Venta exclusiva para mayores de 18 años. Beber con moderación.</p>
           </details>
           <details class="faq__item">
-            <summary>¿Hacen envíos?</summary>
-            <p>Sí: moto en el día para CABA y GBA, y Correo Argentino o Andreani al resto del país. El costo se calcula en el checkout.</p>
+            <summary data-txt="faq3Q">¿Hacen envíos?</summary>
+            <p data-txt="faq3A">Sí: moto en el día para CABA y GBA, y Correo Argentino o Andreani al resto del país. El costo se calcula en el checkout.</p>
           </details>
           <details class="faq__item">
-            <summary>¿Cómo pago?</summary>
-            <p>Con Mercado Pago (tarjeta, dinero en cuenta o cuotas) o coordinando por WhatsApp. Para compras por mayor, escribinos desde la sección <a href="#mayoristas">Mayoristas</a>.</p>
+            <summary data-txt="faq4Q">¿Cómo pago?</summary>
+            <p data-txt="faq4A">Con Mercado Pago (tarjeta, dinero en cuenta o cuotas) o coordinando por WhatsApp. Para compras por mayor, escribinos desde la sección <a href="#mayoristas">Mayoristas</a>.</p>
           </details>
       </div>
     </section>
@@ -257,15 +239,15 @@
     <section class="section" id="contacto">
       <div class="container container--narrow">
         <div class="section__head reveal">
-          <p class="eyebrow">Contacto</p>
+          <p class="eyebrow" data-txt="contactEyebrow">Contacto</p>
           <h2 data-txt="contactTitle">Enterate antes que nadie</h2>
           <p class="section__sub" data-txt="contactSub">Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.</p>
         </div>
         <form class="newsletter reveal" id="newsletter-form">
           <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
-          <button type="submit" class="btn btn--solid">Sumarme</button>
+          <button type="submit" class="btn btn--solid" data-txt="newsletterCta">Sumarme</button>
         </form>
-        <p class="newsletter__ok" id="newsletter-ok" hidden>¡Listo! Ya estás en la lista.</p>
+        <p class="newsletter__ok" id="newsletter-ok" hidden data-txt="newsletterOk">¡Listo! Ya estás en la lista.</p>
         <div class="contact-direct reveal">
           <a href="#" id="contact-whatsapp" target="_blank" rel="noopener">WhatsApp directo</a>
           <span>·</span>
@@ -423,6 +405,5 @@
   <script src="js/store-defaults.js"></script>
   <script src="js/seo.js"></script>
   <script src="js/main.js"></script>
-  <script type="module" src="js/experience.js"></script>
 </body>
 </html>

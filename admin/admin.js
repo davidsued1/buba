@@ -40,7 +40,37 @@ async function resolveStore() {
 
 function saveLocal(silent) {
   lsSet("buba-store", STORE);
-  if (!silent) flashSave("Guardado ✓ (visible en la web de este navegador)");
+  markDirty();
+  if (!silent) flashSave("Guardado ✓");
+}
+
+/* Guardado automático mientras se escribe (medio segundo después de la última tecla) */
+let autoTimer = null;
+function queueSave() {
+  clearTimeout(autoTimer);
+  flashSave("Escribiendo…");
+  autoTimer = setTimeout(() => { saveLocal(true); flashSave("Guardado ✓"); }, 500);
+}
+
+/* Cambios guardados en este navegador pero todavía no publicados online */
+function markDirty() {
+  lsSet("buba-dirty", "1");
+  syncPublishState();
+}
+function clearDirty() {
+  try { localStorage.removeItem("buba-dirty"); } catch {}
+  syncPublishState();
+}
+function isDirty() { try { return localStorage.getItem("buba-dirty") === "1"; } catch { return false; } }
+
+function syncPublishState() {
+  const btn = $("btn-publish");
+  if (!btn) return;
+  const dirty = isDirty();
+  btn.classList.toggle("is-dirty", dirty);
+  btn.textContent = dirty ? "● Publicar cambios" : "Publicar";
+  const dot = $("dirty-dot");
+  if (dot) dot.hidden = !dirty;
 }
 function saveOrders() { lsSet("buba-orders", ORDERS); }
 
@@ -79,14 +109,14 @@ function setupLogin() {
    NAVEGACIÓN
    ========================================================================== */
 const VIEWS = {
-  dashboard: { title: "Dashboard", render: renderDashboard },
+  dashboard: { title: "Inicio", render: renderDashboard },
   orders: { title: "Pedidos", render: renderOrders },
-  products: { title: "Productos", render: renderProducts },
+  products: { title: "Productos y fotos", render: renderProducts },
   clients: { title: "Clientes", render: renderClients },
   shipping: { title: "Envíos", render: renderShipping },
   promos: { title: "Promociones", render: renderPromos },
   texts: { title: "Textos de la web", render: renderTexts },
-  images: { title: "Imágenes de la web", render: renderImages },
+  images: { title: "Fotos de la web", render: renderImages },
   settings: { title: "Configuración", render: renderSettings },
 };
 
@@ -285,11 +315,8 @@ function editProduct(index) {
       <label>Precio ($)<input id="p-price" type="number" value="${p.price}"></label>
       <label>Stock<input id="p-stock" type="number" value="${p.stock ?? 0}"></label>
       <div class="span-2">
-        <label class="img-drop" id="img-drop">
-          ${p.img ? `<img id="p-img-preview" src="${absImg(p.img)}">` : '<img id="p-img-preview" style="display:none">'}
-          <span>📷 Click para ${p.img ? "cambiar" : "cargar"} la foto del producto<br><span class="hint">Se sube al publicar online</span></span>
-          <input type="file" id="p-img" accept="image/*" hidden>
-        </label>
+        <p class="hint" style="margin-bottom:8px">Foto del producto</p>
+        ${imageBox(p.img, "p-img")}
       </div>
       <label class="check-row span-2"><input type="checkbox" id="p-active" ${p.active !== false ? "checked" : ""}> Visible en la tienda</label>
     </div>
@@ -299,19 +326,15 @@ function editProduct(index) {
     </div>`);
 
   let imgData = p.img;
-  $("img-drop").addEventListener("click", () => $("p-img").click());
-  $("p-img").addEventListener("change", () => {
-    const file = $("p-img").files[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      imgData = reader.result;
-      const prev = $("p-img-preview");
-      prev.src = imgData;
-      prev.style.display = "block";
-    };
-    reader.readAsDataURL(file);
-  });
+  const modal = document.getElementById("modal");
+  function onPickImage(data) {
+    imgData = data;
+    const drop = modal.querySelector('[data-drop="p-img"]');
+    drop.innerHTML = `<img src="${data}" alt=""><span class="img-drop__txt">Tocá para cambiarla</span>` +
+      '<input type="file" accept="image/*" hidden>';
+    wireImageBox(modal, "p-img", onPickImage);
+  }
+  wireImageBox(modal, "p-img", onPickImage);
   $("p-cancel").addEventListener("click", closeModal);
   $("p-save").addEventListener("click", () => {
     p.name = $("p-name").value.trim();
@@ -477,40 +500,60 @@ function renderPromos(box) {
 /* ==========================================================================
    TEXTOS
    ========================================================================== */
-const TEXT_LABELS = {
-  heroEyebrow: "Hero — etiqueta chica de arriba",
-  heroTitle: "Hero — título grande (usá saltos de línea)",
-  heroSub: "Hero — texto descriptivo",
-  benefitsTitle: "Beneficios — título",
-  benefitsSub: "Beneficios — bajada",
-  shopTitle: "Tienda — título",
-  shopSub: "Tienda — bajada",
-  aboutTitle: "Nosotros — título",
-  aboutP1: "Nosotros — párrafo 1",
-  aboutP2: "Nosotros — párrafo 2",
-  wholesaleTitle: "Mayoristas — título",
-  wholesaleSub: "Mayoristas — bajada",
-  contactTitle: "Contacto — título",
-  contactSub: "Contacto — bajada",
-  footerTagline: "Footer — texto de marca",
-  legal: "Leyenda legal (+18)",
-  announce: "Barra de anuncio (arriba de todo)",
-  bigQuote: "Cita editorial grande (antes de Mayoristas)",
-};
+const TEXT_GROUPS = [
+  { title: "Barra de arriba", icon: "📢", keys: { announce: "Texto de la barra de anuncio" } },
+  { title: "Portada (hero)", icon: "🏠", keys: {
+      heroEyebrow: "Etiqueta chica de arriba", heroTitle: "Título grande (Enter = salto de línea)",
+      heroSub: "Texto descriptivo", heroCta1: "Botón principal", heroCta2: "Botón secundario",
+      heroBadge1: "Dato 1", heroBadge2: "Dato 2", heroBadge3: "Dato 3" } },
+  { title: "Tienda", icon: "🛒", keys: { shopEyebrow: "Etiqueta chica", shopTitle: "Título", shopSub: "Bajada" } },
+  { title: "Por qué BUBA", icon: "⭐", keys: {
+      benefitsTitle: "Título de la sección",
+      benefit1Title: "Beneficio 1 — título", benefit1Text: "Beneficio 1 — texto",
+      benefit2Title: "Beneficio 2 — título", benefit2Text: "Beneficio 2 — texto",
+      benefit3Title: "Beneficio 3 — título", benefit3Text: "Beneficio 3 — texto" } },
+  { title: "Nosotros", icon: "👥", keys: {
+      aboutEyebrow: "Etiqueta chica", aboutTitle: "Título", aboutP1: "Párrafo 1",
+      aboutP2: "Párrafo 2", aboutCta: "Botón" } },
+  { title: "Mayoristas", icon: "🏪", keys: {
+      wholesaleEyebrow: "Etiqueta chica", wholesaleTitle: "Título", wholesaleSub: "Bajada",
+      wholesaleItem1: "Viñeta 1", wholesaleItem2: "Viñeta 2", wholesaleItem3: "Viñeta 3",
+      wholesaleItem4: "Viñeta 4", wholesaleCta: "Botón de WhatsApp", wholesaleNote: "Nota al pie" } },
+  { title: "Preguntas frecuentes", icon: "❓", keys: {
+      faqEyebrow: "Etiqueta chica", faqTitle: "Título",
+      faq1Q: "Pregunta 1", faq1A: "Respuesta 1", faq2Q: "Pregunta 2", faq2A: "Respuesta 2",
+      faq3Q: "Pregunta 3", faq3A: "Respuesta 3", faq4Q: "Pregunta 4", faq4A: "Respuesta 4" } },
+  { title: "Contacto / newsletter", icon: "✉️", keys: {
+      contactEyebrow: "Etiqueta chica", contactTitle: "Título", contactSub: "Bajada",
+      newsletterCta: "Botón de suscripción", newsletterOk: "Mensaje al suscribirse" } },
+  { title: "Pie de página y legales", icon: "📄", keys: {
+      footerTagline: "Texto de marca del pie", legal: "Leyenda legal (+18)", bigQuote: "Cita editorial" } },
+];
 
 function renderTexts(box) {
-  box.innerHTML = `<div class="panel">
-    <h3>Contenidos de la web pública</h3>
-    ${Object.keys(TEXT_LABELS).map((key) => `
-      <label class="label-block">${esc(TEXT_LABELS[key])}
-        <textarea data-txt="${key}" rows="${(STORE.texts[key] || "").length > 80 ? 3 : 1}">${esc(STORE.texts[key] || "")}</textarea>
-      </label>`).join("")}
-    <button class="btn btn--solid" id="save-texts">Guardar textos</button>
-  </div>`;
+  box.innerHTML = `
+    <p class="lead">Tocá cualquier texto, escribí y se guarda solo. Después tocá
+    <strong>Publicar</strong> para que lo vea todo el mundo.</p>
+    ${TEXT_GROUPS.map((g, gi) => `
+      <details class="panel panel--acc" ${gi === 0 ? "open" : ""}>
+        <summary><span>${g.icon}</span> ${esc(g.title)}</summary>
+        <div class="acc__body">
+          ${Object.keys(g.keys).map((key) => {
+            const val = STORE.texts[key] || "";
+            const long = val.length > 60 || key === "heroTitle";
+            return `<label class="label-block">${esc(g.keys[key])}
+              <textarea data-txt="${key}" rows="${long ? 3 : 1}">${esc(val)}</textarea>
+            </label>`;
+          }).join("")}
+        </div>
+      </details>`).join("")}`;
 
-  $("save-texts").addEventListener("click", () => {
-    box.querySelectorAll("[data-txt]").forEach((ta) => { STORE.texts[ta.dataset.txt] = ta.value; });
-    saveLocal();
+  // guardado automático mientras escribe
+  box.querySelectorAll("[data-txt]").forEach((ta) => {
+    ta.addEventListener("input", () => {
+      STORE.texts[ta.dataset.txt] = ta.value;
+      queueSave();
+    });
   });
 }
 
@@ -518,56 +561,96 @@ function renderTexts(box) {
    IMÁGENES DE LA WEB
    ========================================================================== */
 const IMAGE_SLOTS = [
-  { key: "about", label: "Sección Nosotros", hint: "Foto de producción, equipo o lifestyle (vertical, mín. 800px de ancho)" },
-  { key: "wholesale", label: "Sección Mayoristas", hint: "Foto de cajas, punto de venta o distribución" },
+  { key: "about", label: "Foto de la sección Nosotros", hint: "Vertical. Producción, equipo o lifestyle." },
+  { key: "wholesale", label: "Foto de la sección Mayoristas", hint: "Vertical. Cajas, punto de venta o distribución." },
 ];
+
+/* Cargador de imágenes reutilizable: comprime antes de guardar para que
+   la web cargue rápido en el celular. */
+function readImage(file, cb) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1400;
+      const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+      const c = document.createElement("canvas");
+      c.width = Math.round(img.width * scale);
+      c.height = Math.round(img.height * scale);
+      c.getContext("2d").drawImage(img, 0, 0, c.width, c.height);
+      cb(c.toDataURL("image/jpeg", 0.86));
+    };
+    img.onerror = () => cb(reader.result);
+    img.src = reader.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function imgSrc(src) {
+  if (!src) return "";
+  return src.startsWith("data:") || src.startsWith("http") ? src : "../" + src;
+}
+
+/* Caja de carga: se usa en Imágenes y en la ficha de producto */
+function imageBox(current, id) {
+  return `
+    <label class="img-drop" data-drop="${id}">
+      ${current ? `<img src="${imgSrc(current)}" alt="">` : '<span class="img-drop__icon">📷</span>'}
+      <span class="img-drop__txt">${current ? "Tocá para cambiarla" : "Tocá para elegir una foto"}</span>
+      <input type="file" accept="image/*" hidden>
+    </label>`;
+}
+function wireImageBox(scope, id, onPick) {
+  const drop = scope.querySelector(`[data-drop="${id}"]`);
+  if (!drop) return;
+  const input = drop.querySelector("input[type=file]");
+  drop.addEventListener("click", (e) => { e.preventDefault(); input.click(); });
+  input.addEventListener("change", () => {
+    const f = input.files[0];
+    if (f) readImage(f, onPick);
+  });
+}
 
 function renderImages(box) {
   if (!STORE.images) STORE.images = { about: "", wholesale: "" };
-  box.innerHTML = IMAGE_SLOTS.map((slot) => {
-    const cur = STORE.images[slot.key];
-    return `
+  box.innerHTML = `
+    <p class="lead">Cambiá las fotos de la web. Se achican solas para que el sitio
+    cargue rápido en el celular.</p>
+    ${IMAGE_SLOTS.map((slot) => `
+      <div class="panel">
+        <h3>${esc(slot.label)}</h3>
+        <p class="hint">${esc(slot.hint)}</p>
+        ${imageBox(STORE.images[slot.key], "img-" + slot.key)}
+        ${STORE.images[slot.key] ? `<button class="btn btn--danger btn--sm btn--block" data-clear-img="${slot.key}">Quitar foto</button>` : ""}
+      </div>`).join("")}
     <div class="panel">
-      <h3>${esc(slot.label)}</h3>
-      <p class="hint" style="margin-bottom:12px">${esc(slot.hint)}</p>
-      <label class="img-drop" data-slot="${slot.key}">
-        ${cur ? `<img src="${cur.startsWith("data:") || cur.startsWith("http") ? cur : "../" + cur}" style="width:120px;height:120px;object-fit:cover">` : ""}
-        <span>📷 Click para ${cur ? "cambiar" : "cargar"} la imagen<br><span class="hint">Se guarda al instante; se sube al repo al publicar online</span></span>
-        <input type="file" accept="image/*" hidden>
-      </label>
-      ${cur ? `<button class="btn btn--danger btn--sm" data-clear-img="${slot.key}" style="margin-top:12px">Quitar imagen</button>` : ""}
+      <h3>Fotos de los productos</h3>
+      <p class="hint">Las fotos de cada sabor se cambian desde <strong>Productos</strong>,
+      tocando el producto que quieras.</p>
+      <button class="btn btn--outline btn--block" id="go-products">Ir a Productos →</button>
     </div>`;
-  }).join("");
 
-  box.querySelectorAll(".img-drop").forEach((drop) => {
-    const input = drop.querySelector("input[type=file]");
-    drop.addEventListener("click", () => input.click());
-    input.addEventListener("change", () => {
-      const file = input.files[0];
-      if (!file) return;
-      const reader = new FileReader();
-      reader.onload = () => {
-        STORE.images[drop.dataset.slot] = reader.result;
-        saveLocal();
-        renderView();
-      };
-      reader.readAsDataURL(file);
-    });
-  });
+  IMAGE_SLOTS.forEach((slot) =>
+    wireImageBox(box, "img-" + slot.key, (data) => {
+      STORE.images[slot.key] = data;
+      saveLocal();
+      renderView();
+    }));
   box.querySelectorAll("[data-clear-img]").forEach((b) =>
     b.addEventListener("click", (e) => {
-      e.stopPropagation();
+      e.preventDefault();
       STORE.images[b.dataset.clearImg] = "";
       saveLocal();
       renderView();
     }));
+  $("go-products").addEventListener("click", () => { currentView = "products"; syncNav(); renderView(); });
 }
 
 /* ==========================================================================
    CONFIGURACIÓN
    ========================================================================== */
 function renderSettings(box) {
-  const gh = lsJSON("buba-admin-gh") || { token: "", repo: "davidsued1/buba", branch: "claude/buba-web-minimal-design-5k85u5" };
+  const gh = ghConfig();
   box.innerHTML = `
     <div class="panel">
       <h3>Datos de contacto de la tienda</h3>
@@ -598,13 +681,13 @@ function renderSettings(box) {
       <label class="label-block">PIN del panel<input id="c-pin" value="${esc(STORE.config.adminPin)}"></label>
     </div>
     <div class="panel">
-      <h3>Publicación online (GitHub)</h3>
-      <p class="hint" style="margin-bottom:12px">"Publicar online" sube los cambios al repo y la web se actualiza para todo el mundo en 1-2 minutos. Necesita un token de GitHub con permiso de escritura sobre el repo (Settings → Developer settings → Fine-grained tokens). El token queda guardado solo en este navegador.</p>
-      <div class="form-grid">
-        <label>Token de GitHub<input id="gh-token" type="password" value="${esc(gh.token)}" placeholder="github_pat_…"></label>
-        <label>Repositorio<input id="gh-repo" value="${esc(gh.repo)}"></label>
-        <label>Rama<input id="gh-branch" value="${esc(gh.branch)}"></label>
-      </div>
+      <h3>Conexión con la web</h3>
+      <p class="hint">${gh.token
+        ? "✅ El panel está conectado. Cuando tocás <strong>Publicar</strong>, tus cambios salen a la web real."
+        : "⚠️ Todavía no está conectado: podés editar y ver todo acá, pero los cambios <strong>no salen a la web</strong> hasta conectarlo. Se hace una sola vez y lleva un minuto."}</p>
+      <button class="btn ${gh.token ? "btn--outline" : "btn--solid"} btn--block" id="btn-connect">
+        ${gh.token ? "Volver a conectar" : "Conectar ahora"}
+      </button>
     </div>
     <div class="panel">
       <h3>Zona de riesgo</h3>
@@ -622,9 +705,9 @@ function renderSettings(box) {
     STORE.config.metaPixelId = $("c-meta").value.trim();
     STORE.config.tiktokPixelId = $("c-tiktok").value.trim();
     STORE.config.adminPin = $("c-pin").value.trim() || "buba2026";
-    lsSet("buba-admin-gh", { token: $("gh-token").value.trim(), repo: $("gh-repo").value.trim(), branch: $("gh-branch").value.trim() || "main" });
     saveLocal();
   });
+  $("btn-connect").addEventListener("click", () => openConnectWizard());
   $("reset-local").addEventListener("click", async () => {
     if (!confirm("Esto descarta los cambios locales no publicados y vuelve a la última versión publicada. ¿Seguir?")) return;
     localStorage.removeItem("buba-store");
@@ -661,55 +744,130 @@ async function ghPutFile(gh, path, base64Content, message) {
 
 const toB64 = (str) => btoa(unescape(encodeURIComponent(str)));
 
+/* ==========================================================================
+   PUBLICAR — asistente de conexión (una sola vez) y publicación en un toque
+   ========================================================================== */
+const GH_REPO = "davidsued1/buba";
+const GH_BRANCH = "claude/buba-web-minimal-design-5k85u5";
+const TOKEN_URL = "https://github.com/settings/tokens/new?scopes=repo&description=Panel%20BUBA";
+
+function ghConfig() {
+  const gh = lsJSON("buba-admin-gh") || {};
+  return { token: gh.token || "", repo: gh.repo || GH_REPO, branch: gh.branch || GH_BRANCH };
+}
+const isConnected = () => !!ghConfig().token;
+
+/* Asistente: 3 pasos, con el link directo al permiso ya configurado */
+function openConnectWizard(afterConnect) {
+  openModal("Conectar el panel con tu web", `
+    <p class="lead">Esto se hace <strong>una sola vez</strong>. Después vas a publicar
+    con un solo botón, para siempre.</p>
+
+    <ol class="wizard">
+      <li>
+        <strong>Abrí GitHub y creá la llave</strong>
+        <p class="hint">Te abre la página con todo configurado. Abajo de todo, poné
+        <em>Expiration: No expiration</em> y tocá el botón verde <em>Generate token</em>.</p>
+        <a class="btn btn--solid" href="${TOKEN_URL}" target="_blank" rel="noopener">Abrir GitHub →</a>
+      </li>
+      <li>
+        <strong>Copiá la llave que te muestra</strong>
+        <p class="hint">Empieza con <code>ghp_</code>. GitHub la muestra una sola vez: copiala enseguida.</p>
+      </li>
+      <li>
+        <strong>Pegala acá</strong>
+        <input id="wiz-token" type="password" placeholder="ghp_…" autocomplete="off">
+        <p class="hint">Queda guardada solo en este dispositivo. Nadie más la ve.</p>
+      </li>
+    </ol>
+
+    <p class="wiz-status" id="wiz-status"></p>
+    <button class="btn btn--solid btn--block" id="wiz-save">Conectar</button>
+  `);
+
+  $("wiz-save").addEventListener("click", async () => {
+    const token = $("wiz-token").value.trim();
+    const st = $("wiz-status");
+    if (!token) { st.textContent = "Pegá la llave que copiaste de GitHub."; st.className = "wiz-status err"; return; }
+    st.textContent = "Probando la conexión…"; st.className = "wiz-status";
+    const gh = { token, repo: GH_REPO, branch: GH_BRANCH };
+    try {
+      await ghRequest(gh, `/repos/${gh.repo}`);
+      lsSet("buba-admin-gh", gh);
+      st.textContent = "✓ Conectado"; st.className = "wiz-status ok";
+      setTimeout(() => { closeModal(); syncPublishState(); if (afterConnect) afterConnect(); }, 700);
+    } catch (err) {
+      st.className = "wiz-status err";
+      st.textContent = /401|Bad credentials/.test(err.message)
+        ? "Esa llave no es válida. Copiala de nuevo desde GitHub (entera, sin espacios)."
+        : /403|404/.test(err.message)
+        ? "La llave no tiene permiso sobre el repositorio. Al crearla tiene que estar tildado \"repo\"."
+        : "No hay conexión con GitHub. Revisá internet y probá de nuevo.";
+    }
+  });
+}
+
 async function publishOnline() {
-  const gh = lsJSON("buba-admin-gh");
-  if (!gh?.token) {
-    alert("Primero cargá tu token de GitHub en Configuración → Publicación online.");
-    currentView = "settings";
-    syncNav(); renderView();
-    return;
-  }
+  if (!isConnected()) { openConnectWizard(publishOnline); return; }
+  const gh = ghConfig();
   const btn = $("btn-publish");
   btn.disabled = true;
   btn.textContent = "Publicando…";
   try {
     const store = JSON.parse(JSON.stringify(STORE));
-    // subir imágenes nuevas (data URIs) como archivos del repo
+    // subir imágenes nuevas (las que cargaste desde el panel) como archivos del repo
     for (const p of store.products) {
       if (p.img && p.img.startsWith("data:")) {
-        const ext = (p.img.match(/^data:image\/(\w+)/) || [])[1] || "png";
-        const path = `assets/img/uploads/${p.id}.${ext === "jpeg" ? "jpg" : ext}`;
-        flashSave("Subiendo imagen de " + p.name + "…");
-        await ghPutFile(gh, path, p.img.split(",")[1], `Imagen de producto: ${p.name} (panel BUBA)`);
-        p.img = path;
+        p.img = await uploadImage(gh, p.img, `prod-${p.id}`, `Foto de ${p.name}`);
+      }
+      if (Array.isArray(p.gallery)) {
+        for (let i = 0; i < p.gallery.length; i++) {
+          if (p.gallery[i] && p.gallery[i].startsWith("data:")) {
+            p.gallery[i] = await uploadImage(gh, p.gallery[i], `prod-${p.id}-${i + 1}`, `Foto de ${p.name}`);
+          }
+        }
       }
     }
     for (const key of Object.keys(store.images || {})) {
       const img = store.images[key];
       if (img && img.startsWith("data:")) {
-        const ext = (img.match(/^data:image\/(\w+)/) || [])[1] || "png";
-        const path = `assets/img/uploads/web-${key}.${ext === "jpeg" ? "jpg" : ext}`;
-        flashSave("Subiendo imagen de la web…");
-        await ghPutFile(gh, path, img.split(",")[1], `Imagen de la web: ${key} (panel BUBA)`);
-        store.images[key] = path;
+        store.images[key] = await uploadImage(gh, img, `web-${key}`, `Imagen de la web: ${key}`);
       }
     }
-    flashSave("Subiendo datos de la tienda…");
-    await ghPutFile(gh, "data/store.json", toB64(JSON.stringify(store, null, 2)), "Actualización desde el panel BUBA");
+    flashSave("Publicando los cambios…");
+    await ghPutFile(gh, "data/store.json", toB64(JSON.stringify(store, null, 2)), "Cambios desde el panel BUBA");
     STORE = store;
-    saveLocal(true);
-    flashSave("✓ Publicado. La web se actualiza en 1-2 minutos.");
+    lsSet("buba-store", STORE);
+    clearDirty();
+    renderView();
+    openModal("¡Publicado! 🎉", `
+      <p class="lead">Tus cambios ya están viajando a la web.</p>
+      <p>En <strong>1 o 2 minutos</strong> los va a ver todo el mundo. Si entrás ahora y
+      todavía ves lo viejo, esperá un momento y recargá.</p>
+      <a class="btn btn--solid btn--block" href="https://davidsued1.github.io/buba/" target="_blank" rel="noopener">Ver mi web →</a>
+    `);
   } catch (err) {
-    alert("No se pudo publicar: " + err.message + "\nRevisá el token y los permisos del repo.");
+    openModal("No se pudo publicar", `
+      <p class="lead">${esc(err.message)}</p>
+      <p>Suele ser la llave de GitHub: puede haber vencido o no tener permisos.</p>
+      <button class="btn btn--solid btn--block" id="err-reconnect">Volver a conectar</button>
+    `);
+    $("err-reconnect").addEventListener("click", () => openConnectWizard(publishOnline));
     flashSave("Error al publicar", true);
   }
   btn.disabled = false;
-  btn.textContent = "Publicar online";
+  syncPublishState();
 }
 
-/* ==========================================================================
-   MODAL + NAV + INIT
-   ========================================================================== */
+/* sube una imagen (data URI) al repo y devuelve su ruta */
+async function uploadImage(gh, dataUri, name, label) {
+  const ext = (dataUri.match(/^data:image\/(\w+)/) || [])[1] || "png";
+  const path = `assets/img/uploads/${name}-${Date.now().toString(36)}.${ext === "jpeg" ? "jpg" : ext}`;
+  flashSave("Subiendo " + label + "…");
+  await ghPutFile(gh, path, dataUri.split(",")[1], `${label} (panel BUBA)`);
+  return path;
+}
+
 function openModal(title, html) {
   $("modal-title").textContent = title;
   $("modal-body").innerHTML = html;
@@ -722,9 +880,15 @@ function closeModal() {
 }
 
 function syncNav() {
-  document.querySelectorAll("#side-nav button").forEach((b) =>
+  document.querySelectorAll("#side-nav button, #tabbar button").forEach((b) =>
     b.classList.toggle("is-active", b.dataset.view === currentView));
 }
+
+function closeSidebar() {
+  document.getElementById("sidebar").classList.remove("is-open");
+  document.getElementById("sidebar-overlay").hidden = true;
+}
+
 
 document.addEventListener("DOMContentLoaded", async () => {
   STORE = await resolveStore();
@@ -733,18 +897,34 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupLogin();
   renderView();
 
-  $("side-nav").addEventListener("click", (e) => {
+  // navegación: menú lateral y barra inferior
+  const goto = (e) => {
     const btn = e.target.closest("[data-view]");
     if (!btn) return;
     currentView = btn.dataset.view;
     syncNav();
     renderView();
+    closeSidebar();
+    document.querySelector(".main").scrollTo({ top: 0 });
+  };
+  $("side-nav").addEventListener("click", goto);
+  $("tabbar").addEventListener("click", goto);
+  $("btn-menu").addEventListener("click", () => {
+    $("sidebar").classList.add("is-open");
+    $("sidebar-overlay").hidden = false;
   });
+  $("sidebar-overlay").addEventListener("click", closeSidebar);
 
   $("modal-close").addEventListener("click", closeModal);
   $("modal-overlay").addEventListener("click", closeModal);
   $("btn-publish").addEventListener("click", publishOnline);
-  $("btn-preview").addEventListener("click", () => window.open("../index.html", "_blank"));
+  syncPublishState();
+
+  // primera vez sin conectar: ofrecer el asistente
+  if (!isConnected() && sessionStorage.getItem("buba-wiz-shown") !== "1") {
+    sessionStorage.setItem("buba-wiz-shown", "1");
+    setTimeout(() => { if (!$("app").hidden) openConnectWizard(); }, 900);
+  }
   $("logout").addEventListener("click", () => {
     sessionStorage.removeItem("buba-admin-ok");
     location.reload();
