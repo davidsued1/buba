@@ -780,6 +780,62 @@ function renderSettings(box) {
 }
 
 
+
+/* ==========================================================================
+   DOMINIO — chequeo desde el navegador (acá sí hay internet)
+   ========================================================================== */
+const DOMINIO = "bubadrinks.com.ar";
+
+/* Intenta cargar una imagen del sitio servida desde el dominio. Si carga,
+   el DNS ya resuelve y GitHub está respondiendo ahí. */
+function pingDominio(url, ms = 8000) {
+  return new Promise((resolve) => {
+    const img = new Image();
+    const t = setTimeout(() => { img.src = ""; resolve(false); }, ms);
+    img.onload = () => { clearTimeout(t); resolve(true); };
+    img.onerror = () => { clearTimeout(t); resolve(false); };
+    img.src = url + "/assets/img/logo-buba.png?t=" + Date.now();
+  });
+}
+
+async function checkDominio() {
+  openModal("Revisar el dominio", '<p class="lead">Probando bubadrinks.com.ar…</p>');
+  const [https, http] = await Promise.all([
+    pingDominio("https://" + DOMINIO),
+    pingDominio("http://" + DOMINIO),
+  ]);
+
+  if (https) {
+    openModal("El dominio ya funciona 🎉", `
+      <p class="lead">bubadrinks.com.ar responde y con candado.</p>
+      <p>Si todavía no lo activaste en GitHub, hacelo ahora:</p>
+      <ol class="wizard">
+        <li><strong>Abrí la configuración</strong>
+          <a class="btn btn--solid btn--block" href="https://github.com/${GH_REPO}/settings/pages" target="_blank" rel="noopener">Abrir GitHub Pages →</a></li>
+        <li><strong>En Custom domain</strong> tiene que decir <code>${DOMINIO}</code>. Si está vacío, escribilo y guardá.</li>
+        <li><strong>Tildá Enforce HTTPS</strong>. Si está gris, esperá una hora y volvé.</li>
+      </ol>
+      <a class="btn btn--outline btn--block" href="https://${DOMINIO}/?acceso=${encodeURIComponent(STORE.config.codigoAcceso || "")}" target="_blank" rel="noopener">Abrir mi web en el dominio →</a>`);
+    return;
+  }
+  if (http) {
+    openModal("Ya casi 🙂", `
+      <p class="lead">El dominio resuelve, pero todavía sin candado.</p>
+      <p>Falta el certificado de seguridad. Entrá a la configuración de GitHub,
+      escribí <code>${DOMINIO}</code> en <strong>Custom domain</strong> y guardá:
+      GitHub emite el certificado en menos de una hora.</p>
+      <a class="btn btn--solid btn--block" href="https://github.com/${GH_REPO}/settings/pages" target="_blank" rel="noopener">Abrir GitHub Pages →</a>`);
+    return;
+  }
+  openModal("Todavía no", `
+    <p class="lead">El dominio no responde: la delegación sigue propagando.</p>
+    <p>Es normal, tarda entre 30 minutos y 24 horas desde que ejecutaste los
+    cambios en NIC. No hay nada que tocar: probá de nuevo más tarde.</p>
+    <p class="hint">También te va a llegar un mail de Cloudflare avisando que el
+    dominio quedó activo.</p>
+    <a class="btn btn--outline btn--block" href="https://dnschecker.org/#NS/${DOMINIO}" target="_blank" rel="noopener">Ver la propagación en el mundo →</a>`);
+}
+
 /* ==========================================================================
    PUESTA EN MARCHA — qué falta para vender
    ========================================================================== */
@@ -800,8 +856,11 @@ function renderSetup(box) {
     { ok: conFotos, titulo: "Fotos de las secciones",
       detalle: conFotos ? "Cargadas" : "Nosotros y Mayoristas siguen con el marcador gris",
       accion: { txt: "Cargar fotos", view: "images" } },
-    { ok: false, titulo: "Dominio propio (bubadrinks.com.ar)",
-      detalle: "Cuando quieras lo conectamos: se apunta el dominio de NIC al sitio", accion: null },
+    { ok: location.hostname === DOMINIO, titulo: `Dominio propio (${DOMINIO})`,
+      detalle: location.hostname === DOMINIO
+        ? "Andando: estás entrando por tu dominio"
+        : "Delegado en NIC. Tocá para ver si ya está listo para activar",
+      accion: location.hostname === DOMINIO ? null : { txt: "Revisar el dominio", fn: checkDominio } },
   ];
   const listos = pasos.filter((p) => p.ok).length;
 
