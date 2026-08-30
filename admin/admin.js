@@ -110,6 +110,8 @@ function setupLogin() {
    ========================================================================== */
 const VIEWS = {
   dashboard: { title: "Inicio", render: renderDashboard },
+  setup: { title: "Puesta en marcha", render: renderSetup },
+  cobros: { title: "Cobros", render: renderCobros },
   orders: { title: "Pedidos", render: renderOrders },
   products: { title: "Productos y fotos", render: renderProducts },
   clients: { title: "Clientes", render: renderClients },
@@ -662,15 +664,17 @@ function renderSettings(box) {
     </div>
     <div class="panel">
       <h3>💳 Cobrar con Mercado Pago</h3>
-      <p class="hint">Pegá acá la dirección que te da Vercel cuando publiques la carpeta de pagos.
-      Mientras esté vacío, los pedidos se registran igual y se coordinan por WhatsApp.</p>
-      <label class="label-block">Dirección del servicio de pagos
+      <p class="hint">${STORE.config.apiBase
+        ? "Está configurado. Tocá <strong>Probar el cobro</strong> para confirmar que sigue todo bien."
+        : "Todavía no está conectado: los pedidos se registran igual y se coordinan por WhatsApp. Cuando tengas la cuenta, el asistente te guía."}</p>
+      <button class="btn ${STORE.config.apiBase ? "btn--outline" : "btn--solid"} btn--block" id="btn-mp-wizard">
+        ${STORE.config.apiBase ? "Ver los pasos de nuevo" : "Conectar Mercado Pago"}
+      </button>
+      <label class="label-block" style="margin-top:14px">Dirección del servicio de pagos
         <input id="c-api" value="${esc(STORE.config.apiBase)}" placeholder="https://buba-pagos.vercel.app">
       </label>
       <button class="btn btn--outline btn--block" id="btn-mp-test">Probar el cobro</button>
       <p class="wiz-status" id="mp-status"></p>
-      <div class="note">¿Todavía no lo armaste? Pedime el paso a paso: se hace una vez y quedan
-      habilitados tarjeta, débito, dinero en cuenta, transferencia, efectivo y cuotas.</div>
     </div>
     <div class="panel">
       <h3>Analytics</h3>
@@ -715,24 +719,16 @@ function renderSettings(box) {
     saveLocal();
   });
   $("btn-connect").addEventListener("click", () => openConnectWizard());
+  $("btn-mp-wizard").addEventListener("click", openMPWizard);
   $("btn-mp-test").addEventListener("click", async () => {
     const st = $("mp-status");
     const base = $("c-api").value.trim().replace(/\/$/, "");
-    st.className = "wiz-status";
-    if (!base) { st.className = "wiz-status err"; st.textContent = "Primero pegá la dirección del servicio de pagos."; return; }
-    st.textContent = "Probando…";
-    try {
-      const r = await fetch(base + "/api/estado", { cache: "no-store" });
-      const d = await r.json();
-      st.className = "wiz-status " + (d.ok ? "ok" : "err");
-      st.textContent = d.ok
-        ? `✓ Conectado a la cuenta ${d.cuenta} (${d.modo}). ${d.mensaje}`
-        : d.mensaje || "No se pudo verificar.";
-      if (d.ok) { STORE.config.apiBase = base; saveLocal(true); }
-    } catch (err) {
-      st.className = "wiz-status err";
-      st.textContent = "No se pudo llegar a esa dirección. Revisá que esté bien copiada (tiene que empezar con https:// y terminar en .vercel.app).";
-    }
+    if (!base) { st.className = "wiz-status err"; st.textContent = "Primero conectá Mercado Pago con el botón de arriba."; return; }
+    st.className = "wiz-status"; st.textContent = "Probando…";
+    const r = await testPagos(base);
+    st.className = "wiz-status " + (r.ok ? "ok" : "err");
+    st.textContent = r.texto;
+    if (r.ok) { STORE.config.apiBase = base; saveLocal(true); }
   });
   if ($("btn-check")) $("btn-check").addEventListener("click", async () => {
     const st = $("check-status");
@@ -751,6 +747,98 @@ function renderSettings(box) {
     renderView();
     flashSave("Cambios locales descartados");
   });
+}
+
+
+/* ==========================================================================
+   PUESTA EN MARCHA — qué falta para vender
+   ========================================================================== */
+function renderSetup(box) {
+  const c = STORE.config;
+  const conectado = isConnected();
+  const conFotos = (STORE.images?.about || "") !== "" || (STORE.images?.wholesale || "") !== "";
+  const pasos = [
+    { ok: true, titulo: "La web está online", detalle: "davidsued1.github.io/buba", accion: null },
+    { ok: conectado, titulo: "El panel publica a la web",
+      detalle: conectado ? "Conectado: tus cambios salen con el botón Publicar" : "Falta conectarlo una vez",
+      accion: conectado ? null : { txt: "Conectar", fn: () => openConnectWizard() } },
+    { ok: !!c.whatsapp, titulo: "WhatsApp de la tienda", detalle: c.whatsapp ? "+" + c.whatsapp : "Sin cargar",
+      accion: { txt: "Configuración", view: "settings" } },
+    { ok: !!c.apiBase, titulo: "Cobros con Mercado Pago",
+      detalle: c.apiBase ? c.apiBase : "Pendiente: hace falta la cuenta de Mercado Pago",
+      accion: { txt: c.apiBase ? "Probar" : "Conectar", fn: openMPWizard } },
+    { ok: conFotos, titulo: "Fotos de las secciones",
+      detalle: conFotos ? "Cargadas" : "Nosotros y Mayoristas siguen con el marcador gris",
+      accion: { txt: "Cargar fotos", view: "images" } },
+    { ok: false, titulo: "Dominio propio (bubadrinks.com.ar)",
+      detalle: "Cuando quieras lo conectamos: se apunta el dominio de NIC al sitio", accion: null },
+  ];
+  const listos = pasos.filter((p) => p.ok).length;
+
+  box.innerHTML = `
+    <p class="lead">Esto es todo lo que hace falta para vender. Lo que está en verde ya funciona.</p>
+    <div class="panel">
+      <h3>${listos} de ${pasos.length} listos</h3>
+      <div class="progress"><span style="width:${Math.round(listos / pasos.length * 100)}%"></span></div>
+    </div>
+    ${pasos.map((p, i) => `
+      <div class="panel setup-item ${p.ok ? "is-ok" : ""}">
+        <div class="setup-item__head">
+          <span class="setup-item__dot">${p.ok ? "✓" : "•"}</span>
+          <div>
+            <strong>${esc(p.titulo)}</strong>
+            <p class="hint">${esc(p.detalle)}</p>
+          </div>
+        </div>
+        ${p.accion ? `<button class="btn btn--outline btn--sm btn--block" data-setup="${i}">${esc(p.accion.txt)}</button>` : ""}
+      </div>`).join("")}`;
+
+  box.querySelectorAll("[data-setup]").forEach((b) =>
+    b.addEventListener("click", () => {
+      const a = pasos[Number(b.dataset.setup)].accion;
+      if (a.fn) return a.fn();
+      currentView = a.view; syncNav(); renderView();
+    }));
+}
+
+/* ---------- Cobros reales de Mercado Pago ---------- */
+async function renderCobros(box) {
+  const base = (STORE.config.apiBase || "").replace(/\/$/, "");
+  if (!base) {
+    box.innerHTML = `<div class="panel">
+      <h3>Todavía no hay cobros online</h3>
+      <p class="hint">Cuando conectes Mercado Pago, acá vas a ver la plata que entra,
+      con el medio de pago y a qué pedido corresponde.</p>
+      <button class="btn btn--solid btn--block" id="cobros-connect">Conectar Mercado Pago</button>
+    </div>`;
+    $("cobros-connect").addEventListener("click", openMPWizard);
+    return;
+  }
+  box.innerHTML = '<div class="panel"><p class="hint">Buscando los cobros…</p></div>';
+  try {
+    const r = await fetch(base + "/api/pagos", { cache: "no-store" });
+    const d = await r.json();
+    if (!d.ok) throw new Error(d.mensaje || "No se pudo consultar");
+    if (!d.pagos.length) {
+      box.innerHTML = '<div class="panel"><p class="empty">Todavía no entró ningún pago.</p></div>';
+      return;
+    }
+    const total = d.pagos.filter((p) => p.aprobado).reduce((s, p) => s + p.monto, 0);
+    box.innerHTML = `
+      <div class="panel"><h3>Cobrado</h3><p class="stat__num">${money(total)}</p>
+        <p class="hint">${d.pagos.filter((p) => p.aprobado).length} pagos aprobados</p></div>
+      ${d.pagos.map((p) => `
+        <div class="panel cobro ${p.aprobado ? "is-ok" : ""}">
+          <div class="cobro__row"><strong>${money(p.monto)}</strong><span class="tag">${esc(p.estado)}</span></div>
+          <p class="hint">${esc(p.medio || "")}${p.cuotas > 1 ? ` · ${p.cuotas} cuotas` : ""}
+            ${p.pedido ? " · pedido " + esc(p.pedido) : ""}</p>
+          <p class="hint">${esc(p.email || "")} · ${new Date(p.fecha).toLocaleString("es-AR")}</p>
+        </div>`).join("")}`;
+  } catch (err) {
+    box.innerHTML = `<div class="panel"><p class="wiz-status err">${esc(err.message)}</p>
+      <button class="btn btn--outline btn--block" id="cobros-retry">Reintentar</button></div>`;
+    $("cobros-retry").addEventListener("click", () => renderView());
+  }
 }
 
 /* ==========================================================================
@@ -1072,3 +1160,95 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   document.addEventListener("keydown", (e) => { if (e.key === "Escape") closeModal(); });
 });
+
+/* ==========================================================================
+   ASISTENTE DE MERCADO PAGO — 3 partes, con los links directos
+   ========================================================================== */
+const MP_PANEL_URL = "https://www.mercadopago.com.ar/developers/panel";
+const VERCEL_NEW_URL = "https://vercel.com/new";
+
+function openMPWizard() {
+  openModal("Conectar Mercado Pago", `
+    <p class="lead">Tres partes, una sola vez. Cuando termines, tu web cobra con
+    tarjeta, débito, dinero en cuenta, transferencia, efectivo y cuotas.</p>
+
+    <details class="panel panel--acc" open>
+      <summary><span>1️⃣</span> Sacar la clave de Mercado Pago</summary>
+      <div class="acc__body">
+        <p class="hint">Con la cuenta de Mercado Pago con la que vas a cobrar.</p>
+        <a class="btn btn--solid btn--block" href="${MP_PANEL_URL}" target="_blank" rel="noopener">Abrir Mercado Pago →</a>
+        <ul class="wizard__sub">
+          <li>Tocá <strong>Crear aplicación</strong></li>
+          <li>Nombre: <strong>BUBA</strong> · Producto: <strong>Pagos online</strong> ·
+              Plataforma: <strong>No</strong> · Solución: <strong>Checkout Pro</strong></li>
+          <li>Ya adentro, entrá a <strong>Credenciales de producción</strong></li>
+          <li>Copiá el <strong>Access Token</strong> (empieza con <code>APP_USR-</code>)</li>
+        </ul>
+        <p class="warn-box">Esa clave es la llave de tu caja: no se la pases a nadie
+        ni la pegues en un chat. Solo va en la parte 2.</p>
+      </div>
+    </details>
+
+    <details class="panel panel--acc">
+      <summary><span>2️⃣</span> Publicar el cajero (gratis)</summary>
+      <div class="acc__body">
+        <p class="hint">Vercel es donde vive el programita que habla con Mercado Pago.
+        Es gratis y no pide tarjeta.</p>
+        <a class="btn btn--solid btn--block" href="${VERCEL_NEW_URL}" target="_blank" rel="noopener">Abrir Vercel →</a>
+        <ul class="wizard__sub">
+          <li>Entrá con <strong>Continue with GitHub</strong> (cuenta ${GH_OWNER})</li>
+          <li>En la lista de repositorios buscá <strong>buba</strong> y tocá <strong>Import</strong></li>
+          <li><strong>Root Directory</strong> → tocá <em>Edit</em> → elegí la carpeta
+              <strong>backend</strong>
+              <span class="hint">— sin esto no funciona</span></li>
+          <li>Abrí <strong>Environment Variables</strong> y cargá:<br>
+              Name: <code>MP_ACCESS_TOKEN</code><br>
+              Value: la clave de la parte 1</li>
+          <li>Tocá <strong>Deploy</strong> y esperá un minuto</li>
+          <li>Copiá la dirección que te queda (termina en <code>.vercel.app</code>)</li>
+        </ul>
+      </div>
+    </details>
+
+    <details class="panel panel--acc">
+      <summary><span>3️⃣</span> Pegar la dirección acá</summary>
+      <div class="acc__body">
+        <input id="mp-wiz-url" placeholder="https://buba-pagos.vercel.app" autocomplete="off" spellcheck="false">
+        <p class="wiz-status" id="mp-wiz-status"></p>
+        <button class="btn btn--solid btn--block" id="mp-wiz-save">Probar y guardar</button>
+      </div>
+    </details>
+  `);
+
+  $("mp-wiz-save").addEventListener("click", async () => {
+    const st = $("mp-wiz-status");
+    const base = $("mp-wiz-url").value.trim().replace(/\/$/, "");
+    if (!base) { st.className = "wiz-status err"; st.textContent = "Pegá la dirección que te dio Vercel."; return; }
+    st.className = "wiz-status"; st.textContent = "Probando el cobro…";
+    const r = await testPagos(base);
+    st.className = "wiz-status " + (r.ok ? "ok" : "err");
+    st.textContent = r.texto;
+    if (r.ok) {
+      STORE.config.apiBase = base;
+      saveLocal();
+      setTimeout(() => { closeModal(); renderView(); }, 1200);
+    }
+  });
+}
+
+/* Prueba la conexión con el cajero y devuelve un mensaje entendible */
+async function testPagos(base) {
+  try {
+    const r = await fetch(base + "/api/estado", { cache: "no-store" });
+    if (!r.ok) return { ok: false, texto: "Esa dirección responde con error " + r.status + ". Revisá que en Vercel hayas elegido la carpeta backend." };
+    const d = await r.json();
+    if (!d.ok) return { ok: false, texto: d.mensaje || "No se pudo verificar." };
+    return {
+      ok: true,
+      texto: `✓ Conectado a ${d.cuenta} (${d.modo}). ${d.mensaje}`,
+    };
+  } catch {
+    return { ok: false, texto: "No se pudo llegar a esa dirección. Tiene que empezar con https:// y terminar en .vercel.app" };
+  }
+}
+
