@@ -10,6 +10,32 @@
 </head>
 <body>
 
+  <!-- ============ MODO PRIVADO (la web todavía no está abierta) ============
+       Tapa todo el sitio hasta que se apague desde el panel. Con el código
+       de acceso se entra a la web real. -->
+  <div class="curtain" id="curtain" hidden>
+    <div class="curtain__box">
+      <img class="curtain__logo" src="assets/img/logo-full.png" alt="BUBA Ready Cocktails">
+      <h1 class="curtain__title" data-txt="privadoTitulo">Muy pronto</h1>
+      <p class="curtain__text" data-txt="privadoTexto">Estamos preparando algo que se ve venir de lejos.</p>
+
+      <form class="curtain__news" id="curtain-news">
+        <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
+        <button type="submit" class="btn btn--solid">Avisame</button>
+      </form>
+      <p class="curtain__ok" id="curtain-ok" hidden>¡Listo! Te avisamos cuando abrimos.</p>
+
+      <button class="curtain__link" id="curtain-toggle" type="button">Tengo un código de acceso</button>
+      <form class="curtain__code" id="curtain-code" hidden>
+        <input type="password" id="curtain-input" placeholder="Código" autocomplete="off" aria-label="Código de acceso">
+        <button type="submit" class="btn btn--outline">Entrar</button>
+      </form>
+      <p class="curtain__err" id="curtain-err" hidden>Ese código no es.</p>
+
+      <p class="curtain__legal" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
+    </div>
+  </div>
+
   <!-- ============ VERIFICACIÓN DE EDAD ============ -->
   <div class="agegate" id="agegate" hidden>
     <div class="agegate__box">

@@ -19,6 +19,12 @@ window.BUBA_DEFAULTS = {
     apiBase: "",                  // URL del backend (Mercado Pago). Vacío = modo demo
     freeShippingFrom: 40000,      // envío gratis desde este subtotal (0 = nunca)
     adminPin: "buba2026",         // PIN de acceso al panel
+    // Modo privado: la web queda tapada con una pantalla de "Muy pronto" y
+    // solo entra quien tenga el código. Se maneja desde el panel.
+    privado: true,
+    codigoAcceso: "buba2026",
+    privadoTitulo: "Muy pronto",
+    privadoTexto: "Estamos preparando algo que se ve venir de lejos.\nDejanos tu mail y te avisamos antes que a nadie.",
     ga4Id: "",                    // Google Analytics 4 (G-XXXXXXX)
     metaPixelId: "",              // Meta / Facebook Pixel
     tiktokPixelId: "",            // TikTok Pixel

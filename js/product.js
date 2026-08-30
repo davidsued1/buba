@@ -185,6 +185,12 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     STORE = await resolveStore();
+    // si la web está cerrada al público, mandamos a la portada (ahí está la pantalla de espera)
+    const codigo = String(STORE.config.codigoAcceso || "");
+    if (STORE.config.privado && lsGet("buba-acceso") !== codigo) {
+      location.replace("index.html");
+      return;
+    }
     setupAgeGate();
     applyTexts();
     refreshCartCount();

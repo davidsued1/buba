@@ -1133,3 +1133,70 @@ a.btn--cart { text-decoration: none; display: inline-flex; align-items: center; 
   .pdp__layout { grid-template-columns: 1fr; gap: 34px; }
   .pdp__media { min-height: 320px; padding: 30px; }
 }
+
+/* ---------- Modo privado: la web todavía no abrió ---------- */
+/* mientras está cerrada, nada del sitio se dibuja: solo la cortina */
+body.is-locked > *:not(.curtain) { display: none !important; }
+body.is-locked { overflow: hidden; }
+
+.curtain {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background:
+    radial-gradient(80rem 40rem at 50% -10%, rgba(4, 56, 229, 0.16), transparent 65%),
+    var(--bg);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 24px;
+  overflow-y: auto;
+}
+.curtain__box { max-width: 460px; width: 100%; text-align: center; }
+.curtain__logo { height: 62px; width: auto; margin: 0 auto 34px; }
+.curtain__title {
+  font-family: var(--display);
+  font-weight: 900;
+  font-size: clamp(2.6rem, 12vw, 4rem);
+  line-height: 1;
+  margin-bottom: 18px;
+}
+.curtain__text { color: var(--gray-600); font-size: 1.02rem; margin-bottom: 30px; }
+.curtain__news { display: flex; flex-direction: column; gap: 10px; margin-bottom: 26px; }
+.curtain__news input {
+  padding: 15px 16px;
+  border: 1px solid #cfc9c0;
+  border-radius: var(--radius);
+  font: inherit;
+  text-align: center;
+}
+.curtain__news input:focus { outline: none; border-color: var(--ink); }
+.curtain__ok { color: #10693f; font-weight: 700; margin-bottom: 26px; }
+.curtain__link {
+  background: none;
+  border: 0;
+  color: var(--gray-400);
+  font: inherit;
+  font-size: 0.82rem;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+.curtain__link:hover { color: var(--ink); }
+.curtain__code { display: flex; flex-direction: column; gap: 10px; max-width: 260px; margin: 0 auto; }
+.curtain__code input {
+  padding: 13px 16px;
+  border: 1px solid #cfc9c0;
+  border-radius: var(--radius);
+  font: inherit;
+  text-align: center;
+  letter-spacing: 0.18em;
+}
+.curtain__err { color: #a33; font-size: 0.86rem; font-weight: 600; margin-top: 12px; }
+.curtain__legal {
+  margin-top: 40px;
+  font-size: 0.66rem;
+  text-transform: uppercase;
+  letter-spacing: 0.16em;
+  color: var(--gray-400);
+}

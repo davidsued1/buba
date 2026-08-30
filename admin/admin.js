@@ -686,6 +686,27 @@ function renderSettings(box) {
       <div class="note">Pegá los IDs y publicá: la web empieza a medir visitas y compras automáticamente. Se consiguen gratis en Google Analytics, Meta Business y TikTok Ads.</div>
     </div>
     <div class="panel">
+      <h3>${STORE.config.privado ? "🔒" : "🌐"} Estado de la web</h3>
+      <p class="hint">${STORE.config.privado
+        ? "La web está <strong>cerrada al público</strong>: quien entra ve la pantalla de <em>Muy pronto</em>. Solo pasa quien tenga el código."
+        : "La web está <strong>abierta</strong>: cualquiera puede entrar y comprar."}</p>
+      <label class="check-row"><input type="checkbox" id="c-privado" ${STORE.config.privado ? "checked" : ""}>
+        Mantener la web cerrada al público</label>
+      <label class="label-block">Código de acceso
+        <input id="c-codigo" value="${esc(STORE.config.codigoAcceso || "")}" placeholder="buba2026">
+      </label>
+      <p class="hint">Para que alguien entre, pasale este link — abre sin pedir nada:</p>
+      <input class="copy-field" id="link-acceso" readonly
+        value="https://davidsued1.github.io/buba/?acceso=${encodeURIComponent(STORE.config.codigoAcceso || "")}">
+      <button class="btn btn--outline btn--sm btn--block" id="copy-acceso">Copiar el link</button>
+      <div class="form-grid" style="margin-top:16px">
+        <label class="span-2">Título de la pantalla de espera
+          <input id="c-priv-titulo" value="${esc(STORE.config.privadoTitulo || "")}"></label>
+        <label class="span-2">Texto de la pantalla de espera
+          <textarea id="c-priv-texto" rows="2">${esc(STORE.config.privadoTexto || "")}</textarea></label>
+      </div>
+    </div>
+    <div class="panel">
       <h3>Seguridad</h3>
       <label class="label-block">PIN del panel<input id="c-pin" value="${esc(STORE.config.adminPin)}"></label>
     </div>
@@ -716,10 +737,19 @@ function renderSettings(box) {
     STORE.config.metaPixelId = $("c-meta").value.trim();
     STORE.config.tiktokPixelId = $("c-tiktok").value.trim();
     STORE.config.adminPin = $("c-pin").value.trim() || "buba2026";
+    STORE.config.privado = $("c-privado").checked;
+    STORE.config.codigoAcceso = $("c-codigo").value.trim() || "buba2026";
+    STORE.config.privadoTitulo = $("c-priv-titulo").value.trim();
+    STORE.config.privadoTexto = $("c-priv-texto").value;
     saveLocal();
   });
   $("btn-connect").addEventListener("click", () => openConnectWizard());
   $("btn-mp-wizard").addEventListener("click", openMPWizard);
+  $("copy-acceso").addEventListener("click", async () => {
+    const inp = $("link-acceso");
+    try { await navigator.clipboard.writeText(inp.value); } catch { inp.select(); document.execCommand("copy"); }
+    flashSave("Link copiado ✓");
+  });
   $("btn-mp-test").addEventListener("click", async () => {
     const st = $("mp-status");
     const base = $("c-api").value.trim().replace(/\/$/, "");

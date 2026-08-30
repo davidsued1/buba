@@ -9,6 +9,10 @@
     "apiBase": "",
     "freeShippingFrom": 40000,
     "adminPin": "buba2026",
+    "privado": true,
+    "codigoAcceso": "buba2026",
+    "privadoTitulo": "Muy pronto",
+    "privadoTexto": "Estamos preparando algo que se ve venir de lejos.\nDejanos tu mail y te avisamos antes que a nadie.",
     "ga4Id": "",
     "metaPixelId": "",
     "tiktokPixelId": ""

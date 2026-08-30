@@ -123,6 +123,51 @@ function setupWhatsAppLinks() {
     });
 }
 
+/* ==========================================================================
+   MODO PRIVADO — la web tapada hasta la apertura
+   Con el código de acceso se entra y queda recordado en ese dispositivo.
+   ========================================================================== */
+function setupCurtain() {
+  const cur = $("curtain");
+  if (!cur) return true;
+  const c = STORE.config;
+  const codigo = String(c.codigoAcceso || "");
+
+  // ya entró antes, o viene con el código en el link (bubadrinks.com.ar/?acceso=xxxx)
+  const q = new URLSearchParams(location.search);
+  if (q.get("acceso") && codigo && q.get("acceso") === codigo) {
+    lsSet("buba-acceso", codigo);
+    history.replaceState(null, "", location.pathname + location.hash);
+  }
+  if (!c.privado || lsGet("buba-acceso") === codigo) return true;
+
+  cur.hidden = false;
+  document.body.classList.add("is-locked");
+
+  $("curtain-toggle").addEventListener("click", () => {
+    $("curtain-code").hidden = false;
+    $("curtain-toggle").hidden = true;
+    $("curtain-input").focus();
+  });
+  $("curtain-code").addEventListener("submit", (e) => {
+    e.preventDefault();
+    if ($("curtain-input").value.trim() === codigo) {
+      lsSet("buba-acceso", codigo);
+      cur.hidden = true;
+      document.body.classList.remove("is-locked");
+      setupAgeGate();
+    } else {
+      $("curtain-err").hidden = false;
+    }
+  });
+  $("curtain-news").addEventListener("submit", (e) => {
+    e.preventDefault();
+    $("curtain-news").hidden = true;
+    $("curtain-ok").hidden = false;
+  });
+  return false;
+}
+
 /* ---------- Verificación de edad ---------- */
 function setupAgeGate() {
   const gate = $("agegate");
@@ -942,8 +987,9 @@ function checkPaymentReturn() {
 document.addEventListener("DOMContentLoaded", async () => {
   STORE = await resolveStore();
 
-  setupAgeGate();
   applyTexts();
+  const abierta = setupCurtain();
+  if (abierta) setupAgeGate();
   applyImages();
   setupAnalytics();
   if (window.BUBA_SEO) window.BUBA_SEO.inject(STORE);
