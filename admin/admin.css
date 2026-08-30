@@ -425,3 +425,4 @@ input.inline--num { width: 90px; text-align: right; font-variant-numeric: tabula
   font-size: 0.86rem;
   line-height: 1.45;
 }
+.sidebar__ver { font-size: 0.68rem; color: #6f6f74; letter-spacing: 0.08em; }

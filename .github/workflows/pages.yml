@@ -26,6 +26,13 @@ jobs:
       url: ${{ steps.deployment.outputs.page_url }}
     steps:
       - uses: actions/checkout@v4
+      # Marca los CSS/JS con el commit actual: así el navegador nunca sirve
+      # una versión vieja desde su caché después de publicar.
+      - name: Versionar assets para evitar caché
+        run: |
+          V="${GITHUB_SHA::7}"
+          grep -rl 'v=dev' --include='*.html' . | xargs sed -i "s/v=dev/v=$V/g"
+          echo "Assets versionados como v=$V"
       - uses: actions/configure-pages@v5
         with:
           enablement: true

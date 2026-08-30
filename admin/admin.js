@@ -1021,6 +1021,17 @@ document.addEventListener("DOMContentLoaded", async () => {
   });
   $("sidebar-overlay").addEventListener("click", closeSidebar);
 
+  // Sello de versión: si el navegador sirvió una copia vieja, se nota acá.
+  const ver = (document.querySelector('script[src*="admin.js"]') || {}).src || "";
+  const marca = (ver.match(/[?&]v=([^&]+)/) || [])[1] || "local";
+  const foot = document.querySelector(".sidebar__foot");
+  if (foot) {
+    const p = document.createElement("p");
+    p.className = "sidebar__ver";
+    p.textContent = "Panel v" + marca;
+    foot.appendChild(p);
+  }
+
   $("modal-close").addEventListener("click", closeModal);
   $("modal-overlay").addEventListener("click", closeModal);
   $("btn-publish").addEventListener("click", publishOnline);
