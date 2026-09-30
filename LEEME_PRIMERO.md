@@ -42,8 +42,10 @@ Token de Mercado Pago. Esos viven solo en el navegador y en Vercel.
 ## 3. Cómo se cambia algo de la web
 
 1. Entrar al panel (`/admin`) con el PIN.
-2. Tocar lo que se quiera cambiar: **Textos**, **Productos y fotos**,
-   **Fotos de la web**, **Envíos**, **Promociones**, **Configuración**.
+2. Tocar lo que se quiera cambiar: **Textos** (10 textos en 3 grupos: Portada,
+   El pack y los sabores, Pie y legales), **Productos y fotos** (el pack y cada
+   sabor, con su foto), **Fotos de la web** (la foto grande de la portada),
+   **Envíos**, **Promociones**, **Configuración**.
 3. Se guarda solo mientras se escribe.
 4. Tocar **Publicar** (arriba a la derecha).
 5. En 1 o 2 minutos está online para todo el mundo.
@@ -73,8 +75,9 @@ un botón para resolver cada punto. Al día de hoy:
 - [x] Dominio delegado y verificado
 - [x] Modo venta exclusiva: solo el pack x4, sabores en galería, envíos por CP
 - [ ] Candado (HTTPS) del dominio — lo emite GitHub solo
-- [ ] Precio real del pack, stock inicial y tarifas de Mandalo Ya (panel)
-- [ ] Fotos del pack, de los sabores nuevos, y de Nosotros y Mayoristas
+- [x] Precio del pack ($24.000) y tarifas reales de Mandalo Ya cargados
+- [ ] Stock inicial real del pack (panel)
+- [ ] Fotos del pack (portada y producto) y de Pink Lemonade / Strawberry Ice
 - [ ] Stock y pedidos compartidos en una planilla (Fase 2 del plan)
 - [ ] Mercado Pago — falta la cuenta de la sociedad
 - [ ] Mandalo Ya — esperando su respuesta sobre cómo recibir pedidos

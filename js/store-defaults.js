@@ -8,7 +8,7 @@
    ========================================================================== */
 
 window.BUBA_DEFAULTS = {
-  version: 2,
+  version: 3,
 
   config: {
     storeName: "BUBA",
@@ -31,73 +31,31 @@ window.BUBA_DEFAULTS = {
     tiktokPixelId: "",            // TikTok Pixel
   },
 
+  // Pocos textos, todos editables desde el panel → Textos.
   texts: {
-    heroEyebrow: "Ready cocktails · Hecho en Argentina",
-    heroTitle: "El color\nse toma.",
-    heroSub: "El cocktail con vodka premium, listo para tomar, en una esfera que se ve venir de lejos.",
-    benefitsTitle: "Por qué BUBA",
-    benefitsSub: "",
+    heroTitle: "El pack de 4.",
+    heroSub: "Cuatro sabores. Vodka premium. Listo para tomar.",
+    heroCta1: "Quiero comprar",
     shopTitle: "Los 4 sabores",
-    shopSub: "Vienen juntos, en el pack. Venta solo a mayores de 18.",
-    packTitle: "El pack",
-    packSub: "Edición exclusiva: una lata de cada sabor.",
-    aboutTitle: "Dos amigos y una esfera",
-    aboutP1: "BUBA nace de dos emprendedores que convirtieron una idea en un producto real: un cocktail listo para tomar, en una lata que no se confunde con nada.",
-    aboutP2: "Los mejores recuerdos nacen cuando la gente se junta. BUBA está para hacer esos momentos más divertidos.",
-    wholesaleTitle: "Llevá BUBA a tu comercio",
-    wholesaleSub: "¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora? Trabajamos con precios mayoristas, entregas programadas y material de marca para tu punto de venta.",
-    contactTitle: "Sumate a la comunidad BUBA",
-    contactSub: "Nuevos sabores, tandas limitadas y descuentos, antes que nadie. Sin spam, palabra.",
-    footerTagline: "Ready cocktails. El color se toma.\nHecho en Argentina. bubadrinks.com.ar",
+    shopSub: "Vienen juntos en el pack.",
+    packTitle: "Pack x4",
+    packSub: "Una lata de cada sabor.",
+    packCta: "Comprar",
+    footerTagline: "Ready cocktails. Hecho en Argentina.",
     legal: "Beber con moderación. Prohibida su venta a menores de 18 años.",
-    announce: "Envíos a todo el país · Venta exclusiva +18 · Hecho en Argentina",
-    heroCta1: "Comprar el pack",
-    heroCta2: "Soy mayorista →",
-    heroBadge1: "Vodka premium",
-    heroBadge2: "210 ml · 10% vol.",
-    heroBadge3: "Envíos a todo el país",
-    shopEyebrow: "Sabores",
-    aboutEyebrow: "Nosotros",
-    aboutCta: "Probalo vos",
-    wholesaleEyebrow: "Mayoristas & distribuidores",
-    wholesaleItem1: "Precios especiales por volumen",
-    wholesaleItem2: "Reposición programada, sin quiebres de stock",
-    wholesaleItem3: "Material de exhibición y marca",
-    wholesaleItem4: "Atención directa, sin intermediarios",
-    wholesaleCta: "Hablar por WhatsApp",
-    wholesaleNote: "Respondemos el mismo día, de lunes a sábado.",
-    benefit1Title: "Listo para tomar",
-    benefit1Text: "Enfriás, abrís y listo. El trago ya viene hecho, con vodka premium.",
-    benefit2Title: "La esfera",
-    benefit2Text: "Un envase que no se parece a nada. Llega a la mesa y arranca la conversación.",
-    benefit3Title: "Hecho en Argentina",
-    benefit3Text: "Por dos emprendedores de acá. Envíos a todo el país.",
-    faqEyebrow: "FAQ",
-    faqTitle: "Preguntas frecuentes",
-    faq1Q: "¿Qué es BUBA?",
-    faq1A: "Un ready cocktail: trago frutal con vodka premium, listo para tomar, en una lata esférica de 210 ml con 10% de alcohol. Hecho en Argentina.",
-    faq2Q: "¿Cuánto alcohol tiene?",
-    faq2A: "10% vol. Venta exclusiva para mayores de 18 años. Beber con moderación.",
-    faq3Q: "¿Hacen envíos?",
-    faq3A: "Sí: moto en el día para CABA y GBA, y Correo Argentino o Andreani al resto del país. El costo se calcula en el checkout.",
-    faq4Q: "¿Cómo pago?",
-    faq4A: "Con Mercado Pago (tarjeta, dinero en cuenta o cuotas) o coordinando por WhatsApp. Para compras por mayor, escribinos desde la sección Mayoristas.",
-    contactEyebrow: "Contacto",
-    newsletterCta: "Sumarme",
-    newsletterOk: "¡Listo! Ya estás en la lista.",
-    bigQuote: "“Los mejores recuerdos nacen cuando las personas se juntan. BUBA está para hacer esos momentos más divertidos.”",
   },
 
-  // Lo único que se vende por ahora: el pack con los cuatro sabores.
+  // Lo único que se vende: el pack con los cuatro sabores.
+  // img vacío = la web muestra el lugar de la foto hasta que se cargue desde el panel.
   products: [
     {
       id: "pack4",
-      name: "Pack x4 — Los 4 sabores",
-      desc: "Una lata de cada sabor. Edición exclusiva.",
-      price: 14000,
+      name: "Pack x4",
+      desc: "Una lata de cada sabor.",
+      price: 24000,
       stock: 50,
       active: true,
-      img: "assets/img/pack.webp",
+      img: "",
     },
   ],
 
@@ -111,24 +69,27 @@ window.BUBA_DEFAULTS = {
 
   comingSoon: [],
 
-  // Imágenes de secciones de la web (vacío = placeholder). Se cargan desde el panel.
+  // Imágenes de la web (vacío = lugar reservado). Se cargan desde el panel → Fotos.
   images: {
-    about: "",       // sección Nosotros
-    wholesale: "",   // sección Mayoristas
+    hero: "",        // foto grande de la portada (el pack x4)
   },
 
-  // Envíos con Mandalo Ya: la zona se detecta por código postal.
-  // "cps" acepta rangos y listas: "1000-1499, 1602, 1636-1640".
+  // Envíos con Mandalo Ya (tarifas bonificadas 2026). La zona se detecta por
+  // código postal. "cps" acepta rangos y listas: "1000-1499, 1602, 1636-1640".
+  // Si un CP cae en dos zonas, gana la primera de la lista.
   // Una zona sin códigos postales se ofrece siempre (retiro en persona).
   shipping: [
     { id: "caba", name: "Envío a CABA", eta: "24 a 48 hs hábiles", price: 3800, active: true,
       cps: "1000-1499" },
-    { id: "gba1", name: "Envío a GBA — 1er cordón", eta: "24 a 72 hs hábiles", price: 4800, active: true,
-      cps: "1602-1611, 1636-1644, 1646-1648, 1650-1657, 1672-1678, 1702-1714, 1751-1757, 1822-1836, 1870-1875" },
-    { id: "gba2", name: "Envío a GBA — 2do cordón", eta: "48 a 72 hs hábiles", price: 5800, active: true,
-      cps: "1612-1628, 1660-1669, 1716-1727, 1740-1746, 1759-1778, 1804-1812, 1838-1856, 1876-1893" },
-    { id: "gba3", name: "Envío a GBA — 3er cordón", eta: "48 a 96 hs hábiles", price: 6800, active: true,
-      cps: "1629-1635, 1730-1739, 1748, 1814-1816, 1858-1868, 1894-1900, 1980-1984" },
+    // 1er cordón: Vicente López, San Isidro, San Fernando, San Martín, 3 de Febrero,
+    // Hurlingham, Ituzaingó, Morón, La Matanza norte, Avellaneda, Lanús, Lomas de Zamora.
+    { id: "gba1", name: "Envío a GBA — 1er cordón", eta: "24 a 72 hs hábiles", price: 6200, active: true,
+      cps: "1602-1611, 1636-1646, 1650-1657, 1672-1688, 1702-1714, 1750-1758, 1766, 1822-1836, 1870-1875" },
+    // 2do y 3er cordón (misma tarifa): Tigre, Malvinas Argentinas, José C. Paz, San Miguel,
+    // Moreno, Merlo, La Matanza sur, Ezeiza, Esteban Echeverría, Alte. Brown, Quilmes,
+    // Berazategui, Florencio Varela.
+    { id: "gba2", name: "Envío a GBA — 2do y 3er cordón", eta: "48 a 96 hs hábiles", price: 8500, active: true,
+      cps: "1612-1621, 1647-1649, 1660-1669, 1718-1724, 1742-1746, 1759-1778, 1801-1807, 1840-1856, 1876-1894" },
     { id: "retiro", name: "Retiro en persona", eta: "Coordinamos por WhatsApp", price: 0, active: true, cps: "" },
   ],
 

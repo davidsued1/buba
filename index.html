@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>BUBA — Cocktail frutal con vodka premium</title>
-  <meta name="description" content="BUBA: cocktail frutal elaborado con vodka premium, en lata esférica de 210 ml. Comprá online o sumate como distribuidor mayorista. Solo +18.">
+  <meta name="description" content="BUBA: pack de 4 cocktails con vodka premium, en lata esférica de 210 ml. Envíos a CABA y GBA. Solo +18.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0b0c'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='900' font-family='Arial' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css?v=dev">
 </head>
@@ -50,250 +50,44 @@
     </div>
   </div>
 
-  <!-- ============ BARRA DE ANUNCIO ============ -->
-  <div class="announce" data-txt="announce">Envíos a todo el país · Venta exclusiva +18 · Hecho en Argentina</div>
-
-  <!-- ============ HEADER / NAV ============ -->
-  <header class="header" id="top">
+  <!-- ============ HEADER ============ -->
+  <header class="header">
     <div class="container header__inner">
       <a href="#top" class="logo" aria-label="BUBA inicio">
         <img class="logo__img" src="assets/img/logo-buba.png" alt="BUBA">
       </a>
-
-      <nav class="nav" id="nav">
-        <a href="#sabores">Sabores</a>
-        <a href="#nosotros">Nosotros</a>
-        <a href="#mayoristas">Mayoristas</a>
-        <a href="#faq">FAQ</a>
-        <a href="#contacto">Contacto</a>
-      </nav>
-
-      <div class="header__actions">
-        <button class="btn btn--outline btn--cart" id="cart-open" aria-label="Abrir carrito">
-          Carrito <span class="cart-count" id="cart-count">0</span>
-        </button>
-        <button class="hamburger" id="hamburger" aria-label="Abrir menú" aria-expanded="false">
-          <span></span><span></span><span></span>
-        </button>
-      </div>
+      <button class="btn btn--cart" id="cart-open" aria-label="Abrir carrito">
+        Carrito <span class="cart-count" id="cart-count">0</span>
+      </button>
     </div>
   </header>
 
   <main>
 
-    <!-- ============ HERO + VISOR 360 ============ -->
-    <section class="hero">
-      <div class="container hero__inner">
-        <div class="hero__copy reveal">
-          <p class="eyebrow" data-txt="heroEyebrow">Cocktail frutal · Vodka premium</p>
-          <h1 class="hero__title" data-txt="heroTitle">El color<br>se toma.</h1>
-          <p class="hero__sub" data-txt="heroSub">
-            BUBA es el cocktail listo para tomar que no necesita presentarse:
-            fruta, vodka premium y una lata esférica que se ve venir de lejos.
-            Enfriás, abrís y listo.
-          </p>
-          <div class="hero__cta">
-            <a href="#pack" class="btn btn--solid" data-txt="heroCta1">Comprar el pack</a>
-            <a href="#mayoristas" class="btn btn--ghost" data-txt="heroCta2">Soy mayorista →</a>
-          </div>
-          <ul class="hero__badges">
-            <li data-txt="heroBadge1">Vodka premium</li>
-            <li data-txt="heroBadge2">210 ml · 10% vol.</li>
-            <li data-txt="heroBadge3">Envíos a todo el país</li>
-          </ul>
+    <section class="hero" id="top">
+      <div class="hero__inner">
+        <h1 class="hero__title" data-txt="heroTitle">El pack de 4.</h1>
+        <p class="hero__sub" data-txt="heroSub">Cuatro sabores. Vodka premium. Listo para tomar.</p>
+        <div class="hero__media" id="hero-media">
+          <!-- js/main.js pone acá la foto (images.hero) o el lugar reservado -->
         </div>
-
-        <div class="hero__media reveal">
-          <!-- Visor 360: gira la foto real (cuerpo esférico + tapa) en canvas.
-               Geometría por lata en CANS (js/main.js). -->
-          <div class="viewer" id="viewer360">
-            <div class="viewer__stage" id="viewer-stage" aria-label="Vista 360 de la lata BUBA. Arrastrá para girarla.">
-              <canvas id="viewer-canvas"></canvas>
-            </div>
-            <div class="viewer__flavors" id="viewer-flavors">
-              <button data-can="blueberry" class="is-active">Blueberry Limeade</button>
-              <button data-can="peach">Golden Peach</button>
-            </div>
-            <p class="viewer__hint">↔ Agarrá la lata y hacela girar</p>
-          </div>
-        </div>
+        <a href="#pack" class="btn btn--solid btn--lg" data-txt="heroCta1">Quiero comprar</a>
       </div>
     </section>
 
-    <!-- ============ MARQUEE ============ -->
-    <div class="marquee" aria-hidden="true">
-      <div class="marquee__track">
-        <span>Ready cocktails&nbsp;&nbsp;·&nbsp;&nbsp;El color se toma&nbsp;&nbsp;·&nbsp;&nbsp;210 ml&nbsp;&nbsp;·&nbsp;&nbsp;10% vol.&nbsp;&nbsp;·&nbsp;&nbsp;Hecho en Argentina&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-        <span>Ready cocktails&nbsp;&nbsp;·&nbsp;&nbsp;El color se toma&nbsp;&nbsp;·&nbsp;&nbsp;210 ml&nbsp;&nbsp;·&nbsp;&nbsp;10% vol.&nbsp;&nbsp;·&nbsp;&nbsp;Hecho en Argentina&nbsp;&nbsp;·&nbsp;&nbsp;</span>
-      </div>
-    </div>
-
-    <!-- ============ LOS 4 SABORES (se presentan, no se venden sueltos) ============ -->
-    <section class="section section--soft" id="sabores">
-      <div class="container">
-        <div class="section__head reveal">
-          <p class="eyebrow" data-txt="shopEyebrow">Sabores</p>
-          <h2 data-txt="shopTitle">Los 4 sabores</h2>
-          <p class="section__sub" data-txt="shopSub">Vienen juntos, en el pack. Venta solo a mayores de 18.</p>
-        </div>
-        <div class="grid grid--4 flavors" id="flavors">
-          <!-- Los sabores se generan desde js/main.js con datos del panel -->
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ EL PACK (lo único a la venta) ============ -->
     <section class="section" id="pack">
       <div class="container">
-        <div class="section__head reveal">
-          <p class="eyebrow">Edición exclusiva</p>
-          <h2 data-txt="packTitle">El pack</h2>
-          <p class="section__sub" data-txt="packSub">Una lata de cada sabor.</p>
-        </div>
-        <div class="pack-grid" id="products">
-          <!-- El pack se genera desde js/main.js con datos del panel -->
-        </div>
+        <h2 class="section__title" data-txt="packTitle">Pack x4</h2>
+        <p class="section__sub" data-txt="packSub">Una lata de cada sabor.</p>
+        <div id="products"><!-- js/main.js --></div>
       </div>
     </section>
 
-    <!-- ============ BENEFICIOS ============ -->
-    <section class="section" id="beneficios">
+    <section class="section section--soft" id="sabores">
       <div class="container">
-        <div class="section__head reveal">
-          <h2 data-txt="benefitsTitle">Por qué BUBA</h2>
-        </div>
-
-        <div class="grid grid--3">
-          <article class="card reveal">
-            <div class="card__num">01</div>
-            <h3 data-txt="benefit1Title">Listo para tomar</h3>
-            <p data-txt="benefit1Text">Enfriás, abrís y listo. El trago ya viene hecho, con vodka premium.</p>
-          </article>
-          <article class="card reveal">
-            <div class="card__num">02</div>
-            <h3 data-txt="benefit2Title">La esfera</h3>
-            <p data-txt="benefit2Text">Un envase que no se parece a nada. Llega a la mesa y arranca la conversación.</p>
-          </article>
-          <article class="card reveal">
-            <div class="card__num">03</div>
-            <h3 data-txt="benefit3Title">Hecho en Argentina</h3>
-            <p data-txt="benefit3Text">Por dos emprendedores de acá. Envíos a todo el país.</p>
-          </article>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ NOSOTROS ============ -->
-    <section class="section" id="nosotros">
-      <div class="container split">
-        <div class="split__media reveal" id="about-media">
-          <!-- La imagen se carga desde el panel (Imágenes → Nosotros) -->
-          <div class="photo photo--tall" data-flavor="blueberry">
-            <span class="photo__label">FOTO NOSOTROS — se carga desde el panel</span>
-          </div>
-        </div>
-        <div class="split__copy reveal">
-          <p class="eyebrow" data-txt="aboutEyebrow">Nosotros</p>
-          <h2 data-txt="aboutTitle">Empezamos con una pregunta simple</h2>
-          <p data-txt="aboutP1">
-            ¿Por qué todos los tragos listos para tomar se ven iguales? Góndolas
-            enteras de latas idénticas, con mucha promesa y poco adentro.
-          </p>
-          <p data-txt="aboutP2">
-            BUBA nace para cambiar eso: un cocktail frutal elaborado con vodka
-            premium, en una lata esférica que no se confunde con nada. Que el
-            producto hable por su color, y que la etiqueta diga poco porque el
-            trago dice todo.
-          </p>
-          <a href="#pack" class="btn btn--solid" data-txt="aboutCta">Probalo vos</a>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ MAYORISTAS / DISTRIBUIDORES ============ -->
-    <section class="section section--dark" id="mayoristas">
-      <div class="container">
-        <div class="mayorista">
-          <div class="mayorista__copy reveal">
-            <p class="eyebrow" data-txt="wholesaleEyebrow">Mayoristas &amp; distribuidores</p>
-            <h2 data-txt="wholesaleTitle">Llevá BUBA a tu comercio</h2>
-            <p class="mayorista__sub" data-txt="wholesaleSub">
-              ¿Tenés un bar, restaurante, vinoteca, kiosco o distribuidora?
-              Trabajamos con precios mayoristas, entregas programadas y material
-              de marca para tu punto de venta.
-            </p>
-            <ul class="mayorista__list">
-              <li data-txt="wholesaleItem1">Precios especiales por volumen</li>
-              <li data-txt="wholesaleItem2">Reposición programada, sin quiebres de stock</li>
-              <li data-txt="wholesaleItem3">Material de exhibición y marca</li>
-              <li data-txt="wholesaleItem4">Atención directa, sin intermediarios</li>
-            </ul>
-            <div class="mayorista__cta">
-              <a href="#" class="btn btn--light" id="wholesale-whatsapp" target="_blank" rel="noopener">
-                <span data-txt="wholesaleCta">Hablar por WhatsApp</span>
-              </a>
-              <a href="mailto:bubadrinks0@gmail.com" class="btn btn--ghost-light" id="wholesale-email">bubadrinks0@gmail.com</a>
-            </div>
-            <p class="mayorista__note" data-txt="wholesaleNote">Respondemos el mismo día, de lunes a sábado.</p>
-          </div>
-          <div class="mayorista__media reveal" id="wholesale-media">
-            <!-- La imagen se carga desde el panel (Imágenes → Mayoristas) -->
-            <div class="photo photo--tall" data-flavor="pack">
-              <span class="photo__label">FOTO MAYORISTAS — se carga desde el panel</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ============ FAQ ============ -->
-    <section class="section section--soft" id="faq">
-      <div class="container container--narrow">
-        <div class="section__head reveal">
-          <p class="eyebrow" data-txt="faqEyebrow">FAQ</p>
-          <h2 data-txt="faqTitle">Preguntas frecuentes</h2>
-        </div>
-
-        <div class="faq reveal">
-          <details class="faq__item">
-            <summary data-txt="faq1Q">¿Qué es BUBA?</summary>
-            <p data-txt="faq1A">Un ready cocktail: trago frutal con vodka premium, listo para tomar, en una lata esférica de 210 ml con 10% de alcohol. Hecho en Argentina.</p>
-          </details>
-          <details class="faq__item">
-            <summary data-txt="faq2Q">¿Cuánto alcohol tiene?</summary>
-            <p data-txt="faq2A">10% vol. Venta exclusiva para mayores de 18 años. Beber con moderación.</p>
-          </details>
-          <details class="faq__item">
-            <summary data-txt="faq3Q">¿Hacen envíos?</summary>
-            <p data-txt="faq3A">Sí: moto en el día para CABA y GBA, y Correo Argentino o Andreani al resto del país. El costo se calcula en el checkout.</p>
-          </details>
-          <details class="faq__item">
-            <summary data-txt="faq4Q">¿Cómo pago?</summary>
-            <p data-txt="faq4A">Con Mercado Pago (tarjeta, dinero en cuenta o cuotas) o coordinando por WhatsApp. Para compras por mayor, escribinos desde la sección <a href="#mayoristas">Mayoristas</a>.</p>
-          </details>
-      </div>
-    </section>
-
-    <!-- ============ CONTACTO / NEWSLETTER ============ -->
-    <section class="section" id="contacto">
-      <div class="container container--narrow">
-        <div class="section__head reveal">
-          <p class="eyebrow" data-txt="contactEyebrow">Contacto</p>
-          <h2 data-txt="contactTitle">Enterate antes que nadie</h2>
-          <p class="section__sub" data-txt="contactSub">Nuevos sabores, tandas limitadas y descuentos. Sin spam, palabra.</p>
-        </div>
-        <form class="newsletter reveal" id="newsletter-form">
-          <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
-          <button type="submit" class="btn btn--solid" data-txt="newsletterCta">Sumarme</button>
-        </form>
-        <p class="newsletter__ok" id="newsletter-ok" hidden data-txt="newsletterOk">¡Listo! Ya estás en la lista.</p>
-        <div class="contact-direct reveal">
-          <a href="#" id="contact-whatsapp" target="_blank" rel="noopener">WhatsApp directo</a>
-          <span>·</span>
-          <a href="mailto:bubadrinks0@gmail.com" id="contact-email">bubadrinks0@gmail.com</a>
-          <span>·</span>
-          <a href="https://instagram.com/buba.drinks" target="_blank" rel="noopener" id="contact-ig">@buba.drinks</a>
-        </div>
+        <h2 class="section__title" data-txt="shopTitle">Los 4 sabores</h2>
+        <p class="section__sub" data-txt="shopSub">Vienen juntos en el pack.</p>
+        <div class="flavors" id="flavors"><!-- js/main.js --></div>
       </div>
     </section>
 
@@ -302,26 +96,15 @@
   <!-- ============ FOOTER ============ -->
   <footer class="footer">
     <div class="container footer__inner">
-      <div class="footer__brand">
-        <a href="#top" class="logo"><img class="logo__img logo__img--footer" src="assets/img/logo-full-white.png" alt="BUBA Ready Cocktails"></a>
-        <p data-txt="footerTagline">Cocktail frutal con vodka premium.<br>Hecho en Argentina. bubadrinks.com.ar</p>
-      </div>
-      <nav class="footer__nav">
-        <a href="#sabores">Sabores</a>
-        <a href="#nosotros">Nosotros</a>
-        <a href="#mayoristas">Mayoristas</a>
-        <a href="#faq">FAQ</a>
-      </nav>
+      <a href="#top" class="logo"><img class="logo__img logo__img--footer" src="assets/img/logo-full-white.png" alt="BUBA Ready Cocktails"></a>
+      <p class="footer__tagline" data-txt="footerTagline">Ready cocktails. Hecho en Argentina.</p>
       <div class="footer__contact">
         <p id="footer-wa"></p>
         <p id="footer-email">bubadrinks0@gmail.com</p>
-        <p id="footer-email-mayoristas" hidden></p>
         <p id="footer-ig">@buba.drinks</p>
       </div>
-    </div>
-    <div class="container footer__legal">
       <p class="footer__warning" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
-      <p>© 2026 BUBA. Todos los derechos reservados. · <a class="footer__admin" id="admin-link" href="admin/">Panel de administración</a></p>
+      <p class="footer__copy">© 2026 BUBA · <a class="footer__admin" id="admin-link" href="admin/">Panel</a></p>
     </div>
   </footer>
 
@@ -340,7 +123,7 @@
       <button class="cart__close" id="cart-close" aria-label="Cerrar carrito">✕</button>
     </div>
     <div class="cart__items" id="cart-items">
-      <p class="cart__empty">Todavía no agregaste nada.<br>Tu color te está esperando.</p>
+      <p class="cart__empty">Todavía no agregaste nada.</p>
     </div>
     <div class="cart__foot">
       <div class="cart__total">
@@ -348,15 +131,16 @@
         <strong id="cart-total">$0</strong>
       </div>
       <div class="cart-quote">
-        <label for="cart-cp">Calculá tu envío</label>
+        <label class="cart-quote__label" for="cart-cp">¿A dónde lo enviamos?</label>
+        <p class="cart-quote__hint">Escribí tu código postal y te decimos cuánto sale el envío.</p>
         <div class="cart-quote__row">
-          <input type="text" id="cart-cp" inputmode="numeric" placeholder="Código postal" maxlength="4" autocomplete="postal-code">
-          <button type="button" class="btn btn--outline btn--sm" id="cart-quote-btn">Cotizar</button>
+          <input type="text" id="cart-cp" inputmode="numeric" pattern="[0-9]*" placeholder="Código postal" maxlength="4" autocomplete="postal-code">
+          <button type="button" class="btn btn--solid" id="cart-quote-btn">Cotizar</button>
         </div>
         <p class="cart-quote__result" id="cart-quote-result"></p>
       </div>
-      <button class="btn btn--solid btn--block" id="cart-checkout">Iniciar compra</button>
-      <p class="cart__note">Venta solo a mayores de 18. Pago seguro con Mercado Pago.</p>
+      <button class="btn btn--solid btn--block" id="cart-checkout">Comprar</button>
+      <p class="cart__note">Pago seguro con Mercado Pago · Solo +18</p>
     </div>
   </aside>
 
@@ -421,7 +205,7 @@
 
       <!-- Paso 3: resumen + pago -->
       <div class="checkout__step" id="step-3" hidden>
-        <h3>Resumen del pedido</h3>
+        <h3>Tu pedido</h3>
         <div class="summary" id="summary"></div>
         <div class="promo-row">
           <input type="text" id="promo-input" placeholder="Código de descuento">
@@ -430,7 +214,7 @@
         </div>
         <div class="pay-actions">
           <button type="button" class="btn btn--solid btn--block" id="pay-mp">Pagar con Mercado Pago</button>
-          <button type="button" class="btn btn--outline btn--block" id="pay-wa">Coordinar pago por WhatsApp</button>
+          <button type="button" class="btn btn--ghost btn--block" id="pay-wa">Prefiero coordinar por WhatsApp</button>
         </div>
         <p class="cart__note" data-txt="legal">Beber con moderación. Prohibida su venta a menores de 18 años.</p>
         <div class="checkout__nav">

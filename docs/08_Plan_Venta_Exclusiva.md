@@ -38,9 +38,14 @@ sistema de gestión, y se ve desde cualquier celular.
 - El carrito cotiza el envío antes de comprar; el CP pasa al checkout y
   el envío queda preseleccionado. Fuera de cobertura: aviso + solo retiro.
 - Panel: gestión del pack y ficha de cada sabor (nombre, texto, foto).
+- Precio del pack cargado: $24.000.
+- Tarifas reales de Mandalo Ya cargadas: CABA $3.800 · 1er cordón $6.200 ·
+  2do y 3er cordón $8.500.
+- La web se simplificó a un flujo de una sola pantalla en el celular:
+  portada → pack con cantidad → sabores.
 
-**Falta de David:** precio real del pack, stock inicial, tarifas reales
-de Mandalo Ya por cordón, fotos del pack y de los sabores nuevos.
+**Falta de David:** fotos del pack (portada y producto) y de Pink
+Lemonade / Strawberry Ice, y el stock inicial real.
 
 ### Fase 2 — Stock y pedidos compartidos (Google Sheets)
 - Una planilla con dos pestañas: **Stock** y **Pedidos**.

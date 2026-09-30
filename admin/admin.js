@@ -141,13 +141,14 @@ function renderDashboard(box) {
   const valid = ORDERS.filter((o) => o.status !== "cancelado");
   const ventas = valid.reduce((s, o) => s + (o.total || 0), 0);
   const pendientes = ORDERS.filter((o) => o.status === "pendiente").length;
+  const pack = STORE.products[0] || {};
   const lowStock = STORE.products.filter((p) => p.active !== false && (p.stock ?? 0) <= 10);
 
   box.innerHTML = `
     <div class="cards">
       <div class="stat"><div class="stat__label">Ventas registradas</div><div class="stat__value">${money(ventas)}</div><div class="stat__hint">${valid.length} pedidos</div></div>
       <div class="stat"><div class="stat__label">Pedidos pendientes</div><div class="stat__value">${pendientes}</div><div class="stat__hint">por gestionar</div></div>
-      <div class="stat"><div class="stat__label">Productos activos</div><div class="stat__value">${STORE.products.filter((p) => p.active !== false).length}</div><div class="stat__hint">en la tienda</div></div>
+      <div class="stat"><div class="stat__label">Pack x4</div><div class="stat__value">${money(pack.price || 0)}</div><div class="stat__hint">${pack.active === false ? "oculto · " : ""}stock: ${pack.stock ?? 0}</div></div>
       <div class="stat"><div class="stat__label">Stock bajo</div><div class="stat__value">${lowStock.length}</div><div class="stat__hint">≤ 10 unidades</div></div>
     </div>
     <div class="panel">
@@ -450,14 +451,16 @@ function renderClients(box) {
    ========================================================================== */
 function renderShipping(box) {
   box.innerHTML = `
+    <p class="hint">Tarifas de Mandalo Ya (bonificadas). Si te cambian el precio, tocá la zona y editalo; después Publicar.</p>
     <div class="panel">
       <div class="panel__head">
         <h3>Zonas de envío (Mandalo Ya)</h3>
         <button class="btn btn--solid btn--sm" id="add-ship">+ Agregar zona</button>
       </div>
-      <p class="lead">Cada zona tiene su precio y los códigos postales que cubre. La web
-      detecta la zona sola con el CP del cliente. Una zona sin códigos postales se ofrece
-      siempre (retiro en persona).</p>
+      <p class="lead">Las zonas son CABA, GBA 1er cordón, GBA 2do y 3er cordón y Retiro. Cada una tiene
+      su precio y los códigos postales que cubre. La web detecta la zona sola con el CP del cliente
+      (si un CP cae en dos zonas, gana la primera de la lista). Una zona sin códigos postales se
+      ofrece siempre (retiro en persona).</p>
       ${STORE.shipping.map((m, i) => `
         <div class="zone ${m.active === false ? "is-off" : ""}">
           <div class="form-grid">
@@ -595,39 +598,25 @@ function renderPromos(box) {
    TEXTOS
    ========================================================================== */
 const TEXT_GROUPS = [
-  { title: "Barra de arriba", icon: "📢", keys: { announce: "Texto de la barra de anuncio" } },
-  { title: "Portada (hero)", icon: "🏠", keys: {
-      heroEyebrow: "Etiqueta chica de arriba", heroTitle: "Título grande (Enter = salto de línea)",
-      heroSub: "Texto descriptivo", heroCta1: "Botón principal", heroCta2: "Botón secundario",
-      heroBadge1: "Dato 1", heroBadge2: "Dato 2", heroBadge3: "Dato 3" } },
-  { title: "Tienda", icon: "🛒", keys: { shopEyebrow: "Etiqueta chica", shopTitle: "Título", shopSub: "Bajada" } },
-  { title: "Por qué BUBA", icon: "⭐", keys: {
-      benefitsTitle: "Título de la sección",
-      benefit1Title: "Beneficio 1 — título", benefit1Text: "Beneficio 1 — texto",
-      benefit2Title: "Beneficio 2 — título", benefit2Text: "Beneficio 2 — texto",
-      benefit3Title: "Beneficio 3 — título", benefit3Text: "Beneficio 3 — texto" } },
-  { title: "Nosotros", icon: "👥", keys: {
-      aboutEyebrow: "Etiqueta chica", aboutTitle: "Título", aboutP1: "Párrafo 1",
-      aboutP2: "Párrafo 2", aboutCta: "Botón" } },
-  { title: "Mayoristas", icon: "🏪", keys: {
-      wholesaleEyebrow: "Etiqueta chica", wholesaleTitle: "Título", wholesaleSub: "Bajada",
-      wholesaleItem1: "Viñeta 1", wholesaleItem2: "Viñeta 2", wholesaleItem3: "Viñeta 3",
-      wholesaleItem4: "Viñeta 4", wholesaleCta: "Botón de WhatsApp", wholesaleNote: "Nota al pie" } },
-  { title: "Preguntas frecuentes", icon: "❓", keys: {
-      faqEyebrow: "Etiqueta chica", faqTitle: "Título",
-      faq1Q: "Pregunta 1", faq1A: "Respuesta 1", faq2Q: "Pregunta 2", faq2A: "Respuesta 2",
-      faq3Q: "Pregunta 3", faq3A: "Respuesta 3", faq4Q: "Pregunta 4", faq4A: "Respuesta 4" } },
-  { title: "Contacto / newsletter", icon: "✉️", keys: {
-      contactEyebrow: "Etiqueta chica", contactTitle: "Título", contactSub: "Bajada",
-      newsletterCta: "Botón de suscripción", newsletterOk: "Mensaje al suscribirse" } },
+  { title: "Portada", icon: "🏠", keys: {
+      heroTitle: "Título grande (Enter = salto de línea)",
+      heroSub: "Frase corta debajo del título",
+      heroCta1: "Botón principal (lleva al pack)" } },
+  { title: "El pack y los sabores", icon: "🛒", keys: {
+      packTitle: "Título de la sección del pack",
+      packSub: "Bajada del pack",
+      packCta: "Texto del botón de compra",
+      shopTitle: "Título de la sección de sabores",
+      shopSub: "Bajada de los sabores" } },
   { title: "Pie de página y legales", icon: "📄", keys: {
-      footerTagline: "Texto de marca del pie", legal: "Leyenda legal (+18)", bigQuote: "Cita editorial" } },
+      footerTagline: "Texto de marca del pie",
+      legal: "Leyenda legal (+18)" } },
 ];
 
 function renderTexts(box) {
   box.innerHTML = `
-    <p class="lead">Tocá cualquier texto, escribí y se guarda solo. Después tocá
-    <strong>Publicar</strong> para que lo vea todo el mundo.</p>
+    <p class="lead">La web tiene pocos textos a propósito. Tocá uno, escribí y se guarda solo.
+    Después tocá <strong>Publicar</strong>.</p>
     ${TEXT_GROUPS.map((g, gi) => `
       <details class="panel panel--acc" ${gi === 0 ? "open" : ""}>
         <summary><span>${g.icon}</span> ${esc(g.title)}</summary>
@@ -655,8 +644,7 @@ function renderTexts(box) {
    IMÁGENES DE LA WEB
    ========================================================================== */
 const IMAGE_SLOTS = [
-  { key: "about", label: "Foto de la sección Nosotros", hint: "Vertical. Producción, equipo o lifestyle." },
-  { key: "wholesale", label: "Foto de la sección Mayoristas", hint: "Vertical. Cajas, punto de venta o distribución." },
+  { key: "hero", label: "Foto grande de la portada (el pack x4)", hint: "Vertical o cuadrada, fondo limpio. Es lo primero que ve el cliente en el celular." },
 ];
 
 /* Cargador de imágenes reutilizable: comprime antes de guardar para que
@@ -706,7 +694,7 @@ function wireImageBox(scope, id, onPick) {
 }
 
 function renderImages(box) {
-  if (!STORE.images) STORE.images = { about: "", wholesale: "" };
+  if (!STORE.images) STORE.images = { hero: "" };
   box.innerHTML = `
     <p class="lead">Cambiá las fotos de la web. Se achican solas para que el sitio
     cargue rápido en el celular.</p>
@@ -719,9 +707,8 @@ function renderImages(box) {
       </div>`).join("")}
     <div class="panel">
       <h3>Fotos de los productos</h3>
-      <p class="hint">Las fotos de cada sabor se cambian desde <strong>Productos</strong>,
-      tocando el producto que quieras.</p>
-      <button class="btn btn--outline btn--block" id="go-products">Ir a Productos →</button>
+      <p class="hint">La foto del pack se cambia desde <strong>El pack y los sabores</strong>, tocando el pack. Las fotos de cada sabor, tocando el sabor.</p>
+      <button class="btn btn--outline btn--block" id="go-products">Ir a El pack y los sabores →</button>
     </div>`;
 
   IMAGE_SLOTS.forEach((slot) =>
@@ -934,7 +921,7 @@ async function checkDominio() {
 function renderSetup(box) {
   const c = STORE.config;
   const conectado = isConnected();
-  const conFotos = (STORE.images?.about || "") !== "" || (STORE.images?.wholesale || "") !== "";
+  const conFotos = (STORE.images?.hero || "") !== "" || (STORE.products?.[0]?.img || "") !== "";
   const pasos = [
     { ok: true, titulo: "La web está online", detalle: "davidsued1.github.io/buba", accion: null },
     { ok: conectado, titulo: "El panel publica a la web",
@@ -945,9 +932,9 @@ function renderSetup(box) {
     { ok: !!c.apiBase, titulo: "Cobros con Mercado Pago",
       detalle: c.apiBase ? c.apiBase : "Pendiente: hace falta la cuenta de Mercado Pago",
       accion: { txt: c.apiBase ? "Probar" : "Conectar", fn: openMPWizard } },
-    { ok: conFotos, titulo: "Fotos de las secciones",
-      detalle: conFotos ? "Cargadas" : "Nosotros y Mayoristas siguen con el marcador gris",
-      accion: { txt: "Cargar fotos", view: "images" } },
+    { ok: conFotos, titulo: "Cargar la foto del pack",
+      detalle: conFotos ? "Cargada" : "Portada y pack: una foto linda del pack x4 alcanza para arrancar.",
+      accion: { txt: "Cargar foto", view: "images" } },
     { ok: location.hostname === DOMINIO, titulo: `Dominio propio (${DOMINIO})`,
       detalle: location.hostname === DOMINIO
         ? "Andando: estás entrando por tu dominio"
