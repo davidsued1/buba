@@ -19,8 +19,12 @@
   function mergeStore(base, over) {
     const out = { ...base };
     for (const k of ["config", "texts"]) if (over[k]) out[k] = { ...base[k], ...over[k] };
-    for (const k of ["products", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+    const vieja = (over.version || 1) < (base.version || 1);
+    if (!vieja) {
+      for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+    }
     if (over.images) out.images = { ...base.images, ...over.images };
+    out.version = Math.max(base.version || 1, over.version || 1);
     return out;
   }
 
@@ -68,6 +72,16 @@
         ["Ideal para", "Previas, cumpleaños, regalos que no fallan"],
       ],
     },
+  };
+  DETAILS.pack4 = {
+    tagline: "Edición exclusiva: los cuatro sabores, una lata de cada uno.",
+    rows: [
+      ["Incluye", "4 latas: Blueberry Limeade, Golden Peach, Pink Lemonade y Strawberry Ice"],
+      ["Base", "Vodka premium"],
+      ["Graduación", "10% vol. cada una"],
+      ["Contenido", "210 ml por lata — lata esférica PET"],
+      ["Envío", "CABA y GBA con Mandalo Ya. Cotizás el envío en el carrito."],
+    ],
   };
   const GENERIC_DETAIL = {
     tagline: "",

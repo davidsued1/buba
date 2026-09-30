@@ -44,11 +44,17 @@ function mergeStore(base, over) {
   for (const k of ["config", "texts"]) {
     if (over[k]) out[k] = { ...base[k], ...over[k] };
   }
-  for (const k of ["products", "shipping", "promos", "comingSoon"]) {
-    if (Array.isArray(over[k])) out[k] = over[k];
+  // Si lo guardado es de una estructura anterior, las listas (productos,
+  // envíos, sabores) se descartan: manda la estructura nueva. Los textos y
+  // la configuración se conservan siempre.
+  const vieja = (over.version || 1) < (base.version || 1);
+  if (!vieja) {
+    for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) {
+      if (Array.isArray(over[k])) out[k] = over[k];
+    }
   }
   if (over.images) out.images = { ...base.images, ...over.images };
-  if (over.version) out.version = over.version;
+  out.version = Math.max(base.version || 1, over.version || 1);
   return out;
 }
 
@@ -474,47 +480,78 @@ function setupViewer() {
 const activeProducts = () => STORE.products.filter((p) => p.active !== false);
 const findProduct = (id) => STORE.products.find((p) => p.id === id);
 
+const activeFlavors = () => (STORE.flavors || []).filter((f) => f.active !== false);
+
+// color de relleno cuando un sabor todavía no tiene foto
+function flavorColor(f) {
+  const n = (f.name + " " + f.id).toLowerCase();
+  if (/pink|rosa|lemonade/.test(n)) return "radial-gradient(120% 120% at 30% 20%, #ffb1d4 0%, #ec5f9f 55%, #96285f 100%)";
+  if (/straw|frutilla|roja|ice/.test(n)) return "radial-gradient(120% 120% at 30% 20%, #ff8f8f 0%, #e03e3e 55%, #8a1010 100%)";
+  if (/peach|durazno|naranja/.test(n)) return "var(--ph-peach)";
+  return "var(--ph-blueberry)";
+}
+
+function renderFlavors() {
+  const grid = $("flavors");
+  if (!grid) return;
+  grid.innerHTML = activeFlavors().map((f) => `
+    <article class="flavor reveal is-visible">
+      ${f.img
+        ? `<div class="flavor__media"><img src="${esc(f.img)}" alt="${esc(f.name)}" loading="lazy"></div>`
+        : `<div class="flavor__media flavor__media--color" style="background:${flavorColor(f)}"><span>${esc(f.name.split(" ")[0])}</span></div>`}
+      <h3 class="flavor__name">${esc(f.name)}</h3>
+      <p class="flavor__desc">${esc(f.desc || "")}</p>
+    </article>`).join("");
+}
+
+// texto de disponibilidad del pack según el stock real
+function stockLabel(p) {
+  const st = p.stock ?? 0;
+  if (st <= 0) return { cls: "is-out", txt: "Agotado por ahora" };
+  if (st <= 10) return { cls: "is-low", txt: `¡Quedan ${st}!` };
+  return { cls: "is-ok", txt: "En stock" };
+}
+
 function renderProducts() {
   const grid = $("products");
-  const cards = activeProducts().map((p) => {
+  if (!grid) return;
+  renderFlavors();
+  const items = activeProducts();
+  if (!items.length) {
+    grid.innerHTML = '<p class="pack-empty">Muy pronto abrimos la venta.</p>';
+    return;
+  }
+  grid.innerHTML = items.map((p) => {
     const out = (p.stock ?? 0) <= 0;
+    const st = stockLabel(p);
     const href = "producto.html?id=" + encodeURIComponent(p.id);
     return `
-    <article class="product reveal is-visible">
-      <a class="product__link" href="${href}">
+    <article class="pack reveal is-visible">
+      <a class="pack__media" href="${href}">
         ${p.img
-          ? `<div class="product__media"><img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy"></div>`
-          : `<div class="photo" data-flavor="${esc(p.id)}"><span class="photo__label">FOTO ${esc(p.name).toUpperCase()}</span></div>`}
-        <h3 class="product__name product__name--card">${esc(p.name)}</h3>
+          ? `<img src="${esc(p.img)}" alt="${esc(p.name)}" loading="lazy">`
+          : `<div class="photo photo--tall" data-flavor="pack"><span class="photo__label">FOTO DEL PACK</span></div>`}
       </a>
-      <div class="product__body">
-        <p class="product__desc">${esc(p.desc)}</p>
-        <div class="product__row">
-          <span class="product__price">${money(p.price)}</span>
-          ${out
-            ? '<span class="product__stock-tag">Sin stock</span>'
-            : `<button class="btn btn--outline btn--sm" data-add="${esc(p.id)}">Agregar</button>`}
-        </div>
+      <div class="pack__body">
+        <span class="pack__stock ${st.cls}">${st.txt}</span>
+        <h3 class="pack__name">${esc(p.name)}</h3>
+        <p class="pack__desc">${esc(p.desc)}</p>
+        <p class="pack__price">${money(p.price)}</p>
+        ${out
+          ? `<a href="#" class="btn btn--outline btn--block" id="pack-waitlist">Avisame cuando vuelva</a>`
+          : `<button class="btn btn--solid btn--block" data-add="${esc(p.id)}">Agregar al carrito</button>`}
+        <a class="pack__more" href="${href}">Ver el detalle →</a>
       </div>
     </article>`;
+  }).join("");
+
+  const wl = $("pack-waitlist");
+  if (wl) wl.addEventListener("click", (e) => {
+    e.preventDefault();
+    const url = waLink("¡Hola BUBA! Quiero que me avisen cuando vuelva el pack.");
+    if (url) window.open(url, "_blank");
+    else document.getElementById("contacto")?.scrollIntoView({ behavior: "smooth" });
   });
-
-  const soonColor = (name) => {
-    if (/pink|magenta|rosa/i.test(name)) return "radial-gradient(120% 120% at 30% 20%, #ffb1d4 0%, #ec5f9f 55%, #96285f 100%)";
-    if (/straw|frutilla|roja/i.test(name)) return "radial-gradient(120% 120% at 30% 20%, #ff8f8f 0%, #e03e3e 55%, #8a1010 100%)";
-    return "radial-gradient(120% 120% at 30% 20%, #d9d9d9 0%, #a8a8a8 55%, #6b6b6b 100%)";
-  };
-  const soon = (STORE.comingSoon || []).map((name) => `
-    <article class="product product--soon reveal is-visible">
-      <div class="product__media product__media--soon" style="background:${soonColor(name)}"><span>Pronto</span></div>
-      <div class="product__body">
-        <h3 class="product__name">${esc(name)}</h3>
-        <p class="product__desc">Nuevo sabor en camino.</p>
-        <div class="product__row"><span class="product__soon-tag">Próximamente</span></div>
-      </div>
-    </article>`);
-
-  grid.innerHTML = cards.concat(soon).join("");
 }
 
 /* ---------- Carrito ---------- */
@@ -580,6 +617,8 @@ const checkoutState = { step: 1, customer: null, shipping: null, promo: null, ge
 function openCheckout() {
   if (!cartEntries().length) return;
   closeCart();
+  const cp = ($("cart-cp") && $("cart-cp").value.trim()) || lsGet("buba-cp") || "";
+  if (cp && $("f-cp") && !$("f-cp").value) $("f-cp").value = cp;
   gotoStep(1);
   $("checkout").hidden = false;
   $("checkout-overlay").hidden = false;
@@ -650,27 +689,39 @@ function shipPrice(method) {
   return method.price;
 }
 
-// Zona según provincia + código postal: caba | gba | interior
-function detectZone(province, cp) {
-  const n = parseInt(String(cp).replace(/\D/g, ""), 10) || 0;
-  if (province === "CABA" || (n >= 1000 && n <= 1499)) return "caba";
-  if (province === "Buenos Aires" && n >= 1500 && n <= 2000) return "gba";
-  return "interior";
+/* Zonas de envío por código postal.
+   Cada método de envío tiene "cps": rangos y listas ("1000-1499, 1602").
+   Un método sin códigos postales se ofrece siempre (retiro en persona). */
+function cpMatches(cps, cp) {
+  const n = parseInt(String(cp).replace(/\D/g, ""), 10);
+  if (!n) return false;
+  return String(cps || "").split(",").some((part) => {
+    const t = part.trim();
+    if (!t) return false;
+    const m = t.match(/^(\d{4})\s*-\s*(\d{4})$/);
+    if (m) return n >= Number(m[1]) && n <= Number(m[2]);
+    return Number(t) === n;
+  });
 }
 
-const ZONE_LABELS = { caba: "CABA", gba: "GBA", interior: "Interior del país" };
+// métodos disponibles para un CP: los que lo cubren + los que no piden CP
+function methodsForCp(cp) {
+  const all = STORE.shipping.filter((m) => m.active !== false);
+  return all.filter((m) => !String(m.cps || "").trim() || cpMatches(m.cps, cp));
+}
+const deliveryFor = (cp) => methodsForCp(cp).find((m) => String(m.cps || "").trim());
 
 function renderShipOptions() {
   const box = $("ship-options");
   const addr = checkoutState.customer?.address || {};
-  const zone = detectZone(addr.province, addr.cp);
-  let methods = STORE.shipping.filter((m) => m.active !== false);
-  // la moto solo llega a CABA y GBA
-  methods = methods.filter((m) => m.id !== "moto" || zone !== "interior");
+  const methods = methodsForCp(addr.cp);
+  const delivery = methods.find((m) => String(m.cps || "").trim());
   if (checkoutState.shipping && !methods.some((m) => m.id === checkoutState.shipping.id)) {
     checkoutState.shipping = null;
   }
-  const zoneNote = `<p class="ship-zone">Enviando a: <strong>${esc(addr.city || "")}, ${esc(addr.province || "")}</strong> (zona ${ZONE_LABELS[zone]})</p>`;
+  const zoneNote = delivery
+    ? `<p class="ship-zone">Enviamos a <strong>${esc(addr.city || "")} (CP ${esc(addr.cp || "")})</strong> con Mandalo Ya.</p>`
+    : `<p class="ship-zone ship-zone--none">${esc(STORE.config.envioNoCubierto || "Por ahora no llegamos a ese código postal.")}</p>`;
   box.innerHTML = zoneNote + methods.map((m) => {
     const price = shipPrice(m);
     return `
@@ -693,7 +744,43 @@ function renderShipOptions() {
       $("next-3").disabled = false;
     });
   });
+  // el envío a domicilio queda preseleccionado; si no hay cobertura, el retiro
+  if (!checkoutState.shipping) {
+    const pre = delivery || methods[0];
+    const inp = pre && box.querySelector(`input[name=ship][value="${pre.id}"]`);
+    if (inp) { inp.checked = true; inp.dispatchEvent(new Event("change")); }
+  }
   $("next-3").disabled = !checkoutState.shipping;
+}
+
+/* Cotizador del carrito: el cliente ve cuánto sale el envío antes de comprar */
+function setupCartQuote() {
+  const btn = $("cart-quote-btn"), inp = $("cart-cp"), out = $("cart-quote-result");
+  if (!btn || !inp || !out) return;
+  const quote = () => {
+    const cp = inp.value.trim();
+    if (cp.length < 4) { out.className = "cart-quote__result"; out.textContent = "Escribí los 4 números del código postal."; return; }
+    const d = deliveryFor(cp);
+    lsSet("buba-cp", cp);
+    if (d) {
+      const price = shipPrice(d);
+      out.className = "cart-quote__result is-ok";
+      out.innerHTML = `${esc(d.name)}: <strong>${price === 0 ? "GRATIS" : money(price)}</strong> · ${esc(d.eta)}`;
+    } else {
+      out.className = "cart-quote__result is-none";
+      out.textContent = STORE.config.envioNoCubierto || "Por ahora no llegamos a ese código postal.";
+    }
+  };
+  btn.addEventListener("click", quote);
+  inp.addEventListener("keydown", (e) => { if (e.key === "Enter") { e.preventDefault(); quote(); } });
+  let liveTimer = null;
+  inp.addEventListener("input", () => {
+    clearTimeout(liveTimer);
+    if (inp.value.trim().length === 4) liveTimer = setTimeout(quote, 250);
+    else out.textContent = "";
+  });
+  const saved = lsGet("buba-cp");
+  if (saved) { inp.value = saved; quote(); }
 }
 
 /* ---------- Paso 3: resumen + promos + pago ---------- */
@@ -843,6 +930,8 @@ function setupCheckout() {
   $("checkout-close").addEventListener("click", closeCheckout);
   $("checkout-overlay").addEventListener("click", closeCheckout);
 
+  const savedCp = lsGet("buba-cp");
+  if (savedCp && $("f-cp") && !$("f-cp").value) $("f-cp").value = savedCp;
   $("step-1").addEventListener("submit", (e) => {
     e.preventDefault();
     checkoutState.customer = collectCustomer();
@@ -1001,6 +1090,7 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupNewsletter();
   setupReveal();
   setupCheckout();
+  setupCartQuote();
 
   $("cart-open").addEventListener("click", openCart);
   $("cart-close").addEventListener("click", closeCart);

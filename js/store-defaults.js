@@ -8,7 +8,7 @@
    ========================================================================== */
 
 window.BUBA_DEFAULTS = {
-  version: 1,
+  version: 2,
 
   config: {
     storeName: "BUBA",
@@ -17,7 +17,8 @@ window.BUBA_DEFAULTS = {
     emailGeneral: "bubadrinks0@gmail.com",
     emailMayoristas: "bubadrinks0@gmail.com",
     apiBase: "",                  // URL del backend (Mercado Pago). Vacío = modo demo
-    freeShippingFrom: 40000,      // envío gratis desde este subtotal (0 = nunca)
+    freeShippingFrom: 0,          // envío gratis desde este subtotal (0 = nunca)
+    envioNoCubierto: "Por ahora enviamos a CABA y GBA. Para otras zonas escribinos por WhatsApp y lo vemos.",
     adminPin: "buba2026",         // PIN de acceso al panel
     // Modo privado: la web queda tapada con una pantalla de "Muy pronto" y
     // solo entra quien tenga el código. Se maneja desde el panel.
@@ -36,8 +37,10 @@ window.BUBA_DEFAULTS = {
     heroSub: "El cocktail con vodka premium, listo para tomar, en una esfera que se ve venir de lejos.",
     benefitsTitle: "Por qué BUBA",
     benefitsSub: "",
-    shopTitle: "Elegí tu color",
-    shopSub: "Venta solo a mayores de 18.",
+    shopTitle: "Los 4 sabores",
+    shopSub: "Vienen juntos, en el pack. Venta solo a mayores de 18.",
+    packTitle: "El pack",
+    packSub: "Edición exclusiva: una lata de cada sabor.",
     aboutTitle: "Dos amigos y una esfera",
     aboutP1: "BUBA nace de dos emprendedores que convirtieron una idea en un producto real: un cocktail listo para tomar, en una lata que no se confunde con nada.",
     aboutP2: "Los mejores recuerdos nacen cuando la gente se junta. BUBA está para hacer esos momentos más divertidos.",
@@ -48,12 +51,12 @@ window.BUBA_DEFAULTS = {
     footerTagline: "Ready cocktails. El color se toma.\nHecho en Argentina. bubadrinks.com.ar",
     legal: "Beber con moderación. Prohibida su venta a menores de 18 años.",
     announce: "Envíos a todo el país · Venta exclusiva +18 · Hecho en Argentina",
-    heroCta1: "Comprar ahora",
+    heroCta1: "Comprar el pack",
     heroCta2: "Soy mayorista →",
     heroBadge1: "Vodka premium",
     heroBadge2: "210 ml · 10% vol.",
     heroBadge3: "Envíos a todo el país",
-    shopEyebrow: "Tienda",
+    shopEyebrow: "Sabores",
     aboutEyebrow: "Nosotros",
     aboutCta: "Probalo vos",
     wholesaleEyebrow: "Mayoristas & distribuidores",
@@ -85,37 +88,28 @@ window.BUBA_DEFAULTS = {
     bigQuote: "“Los mejores recuerdos nacen cuando las personas se juntan. BUBA está para hacer esos momentos más divertidos.”",
   },
 
+  // Lo único que se vende por ahora: el pack con los cuatro sabores.
   products: [
     {
-      id: "blueberry",
-      name: "Blueberry Limeade",
-      desc: "La Azul.",
-      price: 3500,
-      stock: 100,
-      active: true,
-      img: "assets/img/blueberry.webp",
-    },
-    {
-      id: "peach",
-      name: "Golden Peach",
-      desc: "La Naranja. Durazno.",
-      price: 3500,
-      stock: 100,
-      active: true,
-      img: "assets/img/peach.webp",
-    },
-    {
-      id: "pack",
-      name: "Pack x8",
-      desc: "Cuatro de cada sabor.",
-      price: 26000,
+      id: "pack4",
+      name: "Pack x4 — Los 4 sabores",
+      desc: "Una lata de cada sabor. Edición exclusiva.",
+      price: 14000,
       stock: 50,
       active: true,
       img: "assets/img/pack.webp",
     },
   ],
 
-  comingSoon: ["Pink Lemonade", "Strawberry Ice"],
+  // Los sabores se muestran (no se venden sueltos). Foto y texto desde el panel.
+  flavors: [
+    { id: "blueberry", name: "Blueberry Limeade", desc: "La Azul. Arándanos y lima.", img: "assets/img/blueberry.webp", active: true },
+    { id: "peach", name: "Golden Peach", desc: "La Naranja. Durazno dorado.", img: "assets/img/peach.webp", active: true },
+    { id: "pink", name: "Pink Lemonade", desc: "La Rosa. Limonada frutal.", img: "", active: true },
+    { id: "strawberry", name: "Strawberry Ice", desc: "La Roja. Frutilla helada.", img: "", active: true },
+  ],
+
+  comingSoon: [],
 
   // Imágenes de secciones de la web (vacío = placeholder). Se cargan desde el panel.
   images: {
@@ -123,11 +117,19 @@ window.BUBA_DEFAULTS = {
     wholesale: "",   // sección Mayoristas
   },
 
+  // Envíos con Mandalo Ya: la zona se detecta por código postal.
+  // "cps" acepta rangos y listas: "1000-1499, 1602, 1636-1640".
+  // Una zona sin códigos postales se ofrece siempre (retiro en persona).
   shipping: [
-    { id: "moto", name: "Moto (CABA y GBA)", eta: "En el día", price: 3500, active: true },
-    { id: "correo", name: "Correo Argentino", eta: "3 a 6 días hábiles", price: 4500, active: true },
-    { id: "andreani", name: "Andreani", eta: "2 a 4 días hábiles", price: 6000, active: true },
-    { id: "retiro", name: "Retiro en punto de entrega", eta: "Coordinamos por WhatsApp", price: 0, active: true },
+    { id: "caba", name: "Envío a CABA", eta: "24 a 48 hs hábiles", price: 3800, active: true,
+      cps: "1000-1499" },
+    { id: "gba1", name: "Envío a GBA — 1er cordón", eta: "24 a 72 hs hábiles", price: 4800, active: true,
+      cps: "1602-1611, 1636-1644, 1646-1648, 1650-1657, 1672-1678, 1702-1714, 1751-1757, 1822-1836, 1870-1875" },
+    { id: "gba2", name: "Envío a GBA — 2do cordón", eta: "48 a 72 hs hábiles", price: 5800, active: true,
+      cps: "1612-1628, 1660-1669, 1716-1727, 1740-1746, 1759-1778, 1804-1812, 1838-1856, 1876-1893" },
+    { id: "gba3", name: "Envío a GBA — 3er cordón", eta: "48 a 96 hs hábiles", price: 6800, active: true,
+      cps: "1629-1635, 1730-1739, 1748, 1814-1816, 1858-1868, 1894-1900, 1980-1984" },
+    { id: "retiro", name: "Retiro en persona", eta: "Coordinamos por WhatsApp", price: 0, active: true, cps: "" },
   ],
 
   promos: [

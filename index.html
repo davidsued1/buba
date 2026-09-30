@@ -93,7 +93,7 @@
             Enfriás, abrís y listo.
           </p>
           <div class="hero__cta">
-            <a href="#sabores" class="btn btn--solid" data-txt="heroCta1">Comprar ahora</a>
+            <a href="#pack" class="btn btn--solid" data-txt="heroCta1">Comprar el pack</a>
             <a href="#mayoristas" class="btn btn--ghost" data-txt="heroCta2">Soy mayorista →</a>
           </div>
           <ul class="hero__badges">
@@ -128,17 +128,30 @@
       </div>
     </div>
 
-    <!-- ============ SABORES / TIENDA ============ -->
+    <!-- ============ LOS 4 SABORES (se presentan, no se venden sueltos) ============ -->
     <section class="section section--soft" id="sabores">
       <div class="container">
         <div class="section__head reveal">
-          <p class="eyebrow" data-txt="shopEyebrow">Tienda</p>
-          <h2 data-txt="shopTitle">Elegí tu color</h2>
-          <p class="section__sub" data-txt="shopSub">Venta solo a mayores de 18.</p>
+          <p class="eyebrow" data-txt="shopEyebrow">Sabores</p>
+          <h2 data-txt="shopTitle">Los 4 sabores</h2>
+          <p class="section__sub" data-txt="shopSub">Vienen juntos, en el pack. Venta solo a mayores de 18.</p>
         </div>
+        <div class="grid grid--4 flavors" id="flavors">
+          <!-- Los sabores se generan desde js/main.js con datos del panel -->
+        </div>
+      </div>
+    </section>
 
-        <div class="grid grid--4" id="products">
-          <!-- Las tarjetas de producto se generan desde js/main.js con datos del panel -->
+    <!-- ============ EL PACK (lo único a la venta) ============ -->
+    <section class="section" id="pack">
+      <div class="container">
+        <div class="section__head reveal">
+          <p class="eyebrow">Edición exclusiva</p>
+          <h2 data-txt="packTitle">El pack</h2>
+          <p class="section__sub" data-txt="packSub">Una lata de cada sabor.</p>
+        </div>
+        <div class="pack-grid" id="products">
+          <!-- El pack se genera desde js/main.js con datos del panel -->
         </div>
       </div>
     </section>
@@ -192,7 +205,7 @@
             producto hable por su color, y que la etiqueta diga poco porque el
             trago dice todo.
           </p>
-          <a href="#sabores" class="btn btn--solid" data-txt="aboutCta">Probalo vos</a>
+          <a href="#pack" class="btn btn--solid" data-txt="aboutCta">Probalo vos</a>
         </div>
       </div>
     </section>
@@ -334,8 +347,16 @@
         <span>Subtotal</span>
         <strong id="cart-total">$0</strong>
       </div>
+      <div class="cart-quote">
+        <label for="cart-cp">Calculá tu envío</label>
+        <div class="cart-quote__row">
+          <input type="text" id="cart-cp" inputmode="numeric" placeholder="Código postal" maxlength="4" autocomplete="postal-code">
+          <button type="button" class="btn btn--outline btn--sm" id="cart-quote-btn">Cotizar</button>
+        </div>
+        <p class="cart-quote__result" id="cart-quote-result"></p>
+      </div>
       <button class="btn btn--solid btn--block" id="cart-checkout">Iniciar compra</button>
-      <p class="cart__note">Venta solo a mayores de 18. El envío se calcula en el próximo paso.</p>
+      <p class="cart__note">Venta solo a mayores de 18. Pago seguro con Mercado Pago.</p>
     </div>
   </aside>
 

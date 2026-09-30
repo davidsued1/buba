@@ -1200,3 +1200,73 @@ body.is-locked { overflow: hidden; }
   letter-spacing: 0.16em;
   color: var(--gray-400);
 }
+
+/* ---------- Los 4 sabores (galería, no se venden sueltos) ---------- */
+.flavor { text-align: center; }
+.flavor__media {
+  height: 240px;
+  display: flex; align-items: center; justify-content: center;
+  padding: 22px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: radial-gradient(72% 62% at 50% 45%, #ffffff 0%, #f2ede6 100%);
+  margin-bottom: 16px;
+}
+.flavor__media img { max-height: 100%; max-width: 100%; object-fit: contain; filter: drop-shadow(0 16px 20px rgba(23, 21, 18, 0.2)); }
+.flavor__media--color span {
+  color: rgba(255, 255, 255, 0.95); font-family: var(--display); font-weight: 900;
+  font-size: 1.3rem; text-transform: uppercase; letter-spacing: 0.2em;
+}
+.flavor__name { font-size: 1rem; margin-bottom: 4px; }
+.flavor__desc { font-size: 0.86rem; color: var(--gray-600); }
+
+/* ---------- El pack (único producto) ---------- */
+.pack-grid { display: grid; grid-template-columns: 1fr; max-width: 980px; margin: 0 auto; }
+.pack {
+  display: grid; grid-template-columns: 1.05fr 0.95fr; gap: 48px; align-items: center;
+  background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius);
+  padding: 34px; box-shadow: var(--shadow-soft);
+}
+.pack__media {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 320px; padding: 20px;
+  background: radial-gradient(72% 62% at 50% 45%, #ffffff 0%, #f2ede6 100%);
+  border-radius: var(--radius);
+}
+.pack__media img { max-height: 420px; max-width: 100%; object-fit: contain; filter: drop-shadow(0 22px 28px rgba(23, 21, 18, 0.22)); }
+.pack__stock {
+  display: inline-block; font-size: 0.66rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.18em; padding: 6px 12px; border-radius: 999px; margin-bottom: 14px;
+  background: #e9f7ee; color: #10693f;
+}
+.pack__stock.is-low { background: #fff3dc; color: #8a5203; }
+.pack__stock.is-out { background: #f3e3e3; color: #8a1b1b; }
+.pack__name { font-size: clamp(1.5rem, 3vw, 2.1rem); margin-bottom: 8px; }
+.pack__desc { color: var(--gray-600); margin-bottom: 18px; }
+.pack__price { font-family: var(--display); font-weight: 900; font-size: 1.8rem; margin-bottom: 20px; }
+.pack__more { display: inline-block; margin-top: 14px; font-size: 0.86rem; color: var(--gray-600); }
+.pack-empty { text-align: center; color: var(--gray-600); padding: 30px; }
+
+/* ---------- Cotizador de envío en el carrito ---------- */
+.cart-quote { border-top: 1px solid var(--line); padding-top: 14px; margin-bottom: 14px; }
+.cart-quote label { display: block; font-size: 0.7rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.16em; color: var(--gray-600); margin-bottom: 8px; }
+.cart-quote__row { display: flex; gap: 8px; }
+.cart-quote__row input { flex: 1; min-width: 0; padding: 11px 12px; border: 1px solid #cfc9c0; border-radius: var(--radius); font: inherit; }
+.cart-quote__row input:focus { outline: none; border-color: var(--ink); }
+.cart-quote__result { font-size: 0.86rem; color: var(--gray-600); margin-top: 8px; min-height: 1.2em; }
+.cart-quote__result.is-ok { color: var(--ink); }
+.cart-quote__result.is-none { color: #8a1b1b; }
+.ship-zone--none { color: #8a1b1b; }
+
+@media (max-width: 860px) {
+  .pack { grid-template-columns: 1fr; gap: 22px; padding: 18px; }
+  .pack__media { min-height: 240px; }
+  .pack__media img { max-height: 300px; }
+  .flavor__media { height: 200px; }
+}
+@media (max-width: 640px) {
+  .flavors { grid-template-columns: 1fr 1fr; gap: 14px; }
+  .flavor__media { height: 160px; padding: 12px; }
+  .flavor__name { font-size: 0.9rem; }
+  .flavor__desc { font-size: 0.78rem; }
+}

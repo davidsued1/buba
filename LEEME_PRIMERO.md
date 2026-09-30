@@ -71,9 +71,13 @@ un botón para resolver cada punto. Al día de hoy:
 - [x] Panel conectado (publica solo)
 - [x] Web cerrada con código
 - [x] Dominio delegado y verificado
+- [x] Modo venta exclusiva: solo el pack x4, sabores en galería, envíos por CP
 - [ ] Candado (HTTPS) del dominio — lo emite GitHub solo
+- [ ] Precio real del pack, stock inicial y tarifas de Mandalo Ya (panel)
+- [ ] Fotos del pack, de los sabores nuevos, y de Nosotros y Mayoristas
+- [ ] Stock y pedidos compartidos en una planilla (Fase 2 del plan)
 - [ ] Mercado Pago — falta la cuenta de la sociedad
-- [ ] Fotos propias en Nosotros y Mayoristas
+- [ ] Mandalo Ya — esperando su respuesta sobre cómo recibir pedidos
 
 ---
 
@@ -92,6 +96,7 @@ un botón para resolver cada punto. Al día de hoy:
 
 | Archivo | De qué trata |
 |---|---|
+| `docs/08_Plan_Venta_Exclusiva.md` | El plan por fases: pack único, stock compartido, Mercado Pago, Mandalo Ya |
 | `docs/RESPALDO_Y_ACCESOS.md` | Cómo asegurar todo y compartirlo con el socio |
 | `docs/DOMINIO_NIC.md` | Conectar bubadrinks.com.ar paso a paso |
 | `backend/README.md` | Poner a andar los cobros con Mercado Pago |

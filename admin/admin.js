@@ -22,8 +22,12 @@ let currentView = "dashboard";
 function mergeStore(base, over) {
   const out = { ...base };
   for (const k of ["config", "texts"]) if (over[k]) out[k] = { ...base[k], ...over[k] };
-  for (const k of ["products", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+  const vieja = (over.version || 1) < (base.version || 1);
+  if (!vieja) {
+    for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+  }
   if (over.images) out.images = { ...base.images, ...over.images };
+  out.version = Math.max(base.version || 1, over.version || 1);
   return out;
 }
 
@@ -113,7 +117,7 @@ const VIEWS = {
   setup: { title: "Puesta en marcha", render: renderSetup },
   cobros: { title: "Cobros", render: renderCobros },
   orders: { title: "Pedidos", render: renderOrders },
-  products: { title: "Productos y fotos", render: renderProducts },
+  products: { title: "El pack y los sabores", render: renderProducts },
   clients: { title: "Clientes", render: renderClients },
   shipping: { title: "Envíos", render: renderShipping },
   promos: { title: "Promociones", render: renderPromos },
@@ -260,10 +264,20 @@ function renderProducts(box) {
       </table></div>
     </div>
     <div class="panel">
-      <h3>Tarjetas "Próximamente"</h3>
-      <p class="hint" style="margin-bottom:10px">Una por línea. Se muestran al final de la tienda.</p>
-      <label class="label-block"><textarea id="coming-soon" rows="2">${esc((STORE.comingSoon || []).join("\n"))}</textarea></label>
-      <button class="btn btn--solid btn--sm" id="save-coming">Guardar</button>
+      <div class="panel__head">
+        <h3>Los 4 sabores</h3>
+        <button class="btn btn--outline btn--sm" id="add-flavor">+ Agregar sabor</button>
+      </div>
+      <p class="hint">Se muestran en la web como presentación. No se venden sueltos: lo que se
+      vende es el pack de arriba. Tocá un sabor para cambiarle la foto o el texto.</p>
+      <div class="flavor-list">
+        ${(STORE.flavors || []).map((f, i) => `
+          <button class="flavor-row ${f.active === false ? "is-off" : ""}" data-flavor="${i}">
+            ${f.img ? `<img class="thumb" src="${absImg(f.img)}" alt="">` : '<span class="thumb thumb--empty">📷</span>'}
+            <span class="flavor-row__txt"><strong>${esc(f.name)}</strong><span class="hint">${esc(f.desc || "")}${f.active === false ? " · oculto" : ""}</span></span>
+            <span class="flavor-row__go">›</span>
+          </button>`).join("")}
+      </div>
     </div>`;
 
   box.querySelectorAll("[data-price]").forEach((inp) =>
@@ -294,9 +308,55 @@ function renderProducts(box) {
   box.querySelectorAll("[data-edit]").forEach((b) =>
     b.addEventListener("click", () => editProduct(Number(b.dataset.edit))));
   $("add-product").addEventListener("click", () => editProduct(-1));
-  $("save-coming").addEventListener("click", () => {
-    STORE.comingSoon = $("coming-soon").value.split("\n").map((s) => s.trim()).filter(Boolean);
-    saveLocal();
+  box.querySelectorAll("[data-flavor]").forEach((b) =>
+    b.addEventListener("click", () => editFlavor(Number(b.dataset.flavor))));
+  $("add-flavor").addEventListener("click", () => editFlavor(-1));
+}
+
+/* Ficha de un sabor: nombre, texto, foto y si se muestra */
+function editFlavor(index) {
+  if (!STORE.flavors) STORE.flavors = [];
+  const isNew = index < 0;
+  const f = isNew ? { id: "sabor-" + Date.now().toString(36), name: "", desc: "", img: "", active: true } : STORE.flavors[index];
+  openModal(isNew ? "Nuevo sabor" : f.name, `
+    <div class="form-grid">
+      <label class="span-2">Nombre<input id="fl-name" value="${esc(f.name)}"></label>
+      <label class="span-2">Texto corto<input id="fl-desc" value="${esc(f.desc || "")}" placeholder="La Azul. Arándanos y lima."></label>
+      <div class="span-2">
+        <p class="hint" style="margin-bottom:8px">Foto del sabor</p>
+        ${imageBox(f.img, "fl-img")}
+      </div>
+      <label class="check-row span-2"><input type="checkbox" id="fl-active" ${f.active !== false ? "checked" : ""}> Mostrar en la web</label>
+    </div>
+    <div class="form-foot">
+      ${isNew ? "" : '<button class="btn btn--danger btn--sm" id="fl-del">Borrar</button>'}
+      <button class="btn btn--outline btn--sm" id="fl-cancel">Cancelar</button>
+      <button class="btn btn--solid btn--sm" id="fl-save">Guardar</button>
+    </div>`);
+  let imgData = f.img;
+  const modal = document.getElementById("modal");
+  function onPick(data) {
+    imgData = data;
+    const drop = modal.querySelector('[data-drop="fl-img"]');
+    drop.innerHTML = `<img src="${data}" alt=""><span class="img-drop__txt">Tocá para cambiarla</span>` +
+      '<input type="file" accept="image/*" hidden>';
+    wireImageBox(modal, "fl-img", onPick);
+  }
+  wireImageBox(modal, "fl-img", onPick);
+  $("fl-cancel").addEventListener("click", closeModal);
+  if ($("fl-del")) $("fl-del").addEventListener("click", () => {
+    if (!confirm(`¿Borrar "${f.name}"?`)) return;
+    STORE.flavors.splice(index, 1);
+    saveLocal(); closeModal(); renderView();
+  });
+  $("fl-save").addEventListener("click", () => {
+    f.name = $("fl-name").value.trim();
+    f.desc = $("fl-desc").value.trim();
+    f.img = imgData;
+    f.active = $("fl-active").checked;
+    if (!f.name) { alert("Poné un nombre."); return; }
+    if (isNew) STORE.flavors.push(f);
+    saveLocal(); closeModal(); renderView();
   });
 }
 
@@ -392,24 +452,38 @@ function renderShipping(box) {
   box.innerHTML = `
     <div class="panel">
       <div class="panel__head">
-        <h3>Métodos de envío</h3>
-        <button class="btn btn--solid btn--sm" id="add-ship">+ Agregar método</button>
+        <h3>Zonas de envío (Mandalo Ya)</h3>
+        <button class="btn btn--solid btn--sm" id="add-ship">+ Agregar zona</button>
       </div>
-      <div class="table-scroll"><table>
-        <tr><th>Método</th><th>Tiempo estimado</th><th class="num">Precio</th><th>Estado</th><th></th></tr>
-        ${STORE.shipping.map((m, i) => `
-          <tr>
-            <td><input class="inline" value="${esc(m.name)}" data-sname="${i}"></td>
-            <td><input class="inline" value="${esc(m.eta)}" data-seta="${i}"></td>
-            <td class="num"><input class="inline inline--num" type="number" value="${m.price}" data-sprice="${i}"></td>
-            <td>${m.active !== false ? '<span class="pill pill--pagado">activo</span>' : '<span class="pill pill--off">oculto</span>'}</td>
-            <td class="row-actions">
-              <button class="btn btn--outline" data-stoggle="${i}">${m.active !== false ? "Ocultar" : "Mostrar"}</button>
-              <button class="btn btn--danger" data-sdel="${i}">Borrar</button>
-            </td>
-          </tr>`).join("")}
-      </table></div>
-      <div class="note">Estos métodos son los que ve el cliente en el checkout. Cuando integremos las APIs de Correo Argentino / Andreani, el precio se va a poder calcular automático por código postal; hoy es una tarifa fija por método.</div>
+      <p class="lead">Cada zona tiene su precio y los códigos postales que cubre. La web
+      detecta la zona sola con el CP del cliente. Una zona sin códigos postales se ofrece
+      siempre (retiro en persona).</p>
+      ${STORE.shipping.map((m, i) => `
+        <div class="zone ${m.active === false ? "is-off" : ""}">
+          <div class="form-grid">
+            <label class="span-2">Nombre<input value="${esc(m.name)}" data-sname="${i}"></label>
+            <label>Precio ($)<input type="number" value="${m.price}" data-sprice="${i}"></label>
+            <label>Tiempo estimado<input value="${esc(m.eta)}" data-seta="${i}"></label>
+            <label class="span-2">Códigos postales que cubre
+              <span class="hint">— rangos y listas separados por coma: 1000-1499, 1602. Vacío = siempre disponible</span>
+              <textarea rows="2" data-scps="${i}">${esc(m.cps || "")}</textarea>
+            </label>
+          </div>
+          <div class="row-actions">
+            <button class="btn btn--outline btn--sm" data-stoggle="${i}">${m.active !== false ? "Ocultar" : "Mostrar"}</button>
+            <button class="btn btn--danger btn--sm" data-sdel="${i}">Borrar</button>
+          </div>
+        </div>`).join("")}
+      <div class="note">Los precios son los de <strong>Mandalo Ya</strong>. Cuando te pasen la
+      tarifa nueva, la cambiás acá y publicás. Probá un CP en la web con el cotizador del carrito.</div>
+    </div>
+    <div class="panel">
+      <h3>Probar un código postal</h3>
+      <div class="cart-quote__row">
+        <input id="zone-test" inputmode="numeric" maxlength="4" placeholder="1414">
+        <button class="btn btn--outline btn--sm" id="zone-test-btn">Ver zona</button>
+      </div>
+      <p class="wiz-status" id="zone-test-out"></p>
     </div>
     <div class="panel">
       <h3>Envío gratis</h3>
@@ -428,6 +502,24 @@ function renderShipping(box) {
   upd("sname", "name");
   upd("seta", "eta");
   upd("sprice", "price", (v) => Number(v) || 0);
+  upd("scps", "cps", (v) => v.trim());
+
+  const cpMatches = (cps, cp) => {
+    const n = parseInt(String(cp).replace(/\D/g, ""), 10);
+    if (!n) return false;
+    return String(cps || "").split(",").some((part) => {
+      const t = part.trim(); if (!t) return false;
+      const r = t.match(/^(\d{4})\s*-\s*(\d{4})$/);
+      return r ? n >= Number(r[1]) && n <= Number(r[2]) : Number(t) === n;
+    });
+  };
+  $("zone-test-btn").addEventListener("click", () => {
+    const cp = $("zone-test").value.trim();
+    const out = $("zone-test-out");
+    const z = STORE.shipping.find((m) => m.active !== false && String(m.cps || "").trim() && cpMatches(m.cps, cp));
+    out.className = "wiz-status " + (z ? "ok" : "err");
+    out.textContent = z ? `${cp} → ${z.name}: ${money(z.price)} · ${z.eta}` : `${cp} no está en ninguna zona: el cliente solo va a poder retirar en persona.`;
+  });
 
   box.querySelectorAll("[data-stoggle]").forEach((b) =>
     b.addEventListener("click", () => {
@@ -441,7 +533,7 @@ function renderShipping(box) {
       saveLocal(); renderView();
     }));
   $("add-ship").addEventListener("click", () => {
-    STORE.shipping.push({ id: "ship-" + Date.now().toString(36), name: "Nuevo método", eta: "", price: 0, active: true });
+    STORE.shipping.push({ id: "ship-" + Date.now().toString(36), name: "Nueva zona", eta: "", price: 0, active: true, cps: "" });
     saveLocal(); renderView();
   });
   $("save-free").addEventListener("click", () => {
@@ -1132,6 +1224,11 @@ async function publishOnline() {
             p.gallery[i] = await uploadImage(gh, p.gallery[i], `prod-${p.id}-${i + 1}`, `Foto de ${p.name}`);
           }
         }
+      }
+    }
+    for (const f of store.flavors || []) {
+      if (f.img && f.img.startsWith("data:")) {
+        f.img = await uploadImage(gh, f.img, `sabor-${f.id}`, `Foto de ${f.name}`);
       }
     }
     for (const key of Object.keys(store.images || {})) {
