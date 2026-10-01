@@ -41,9 +41,14 @@ module.exports = async (req, res) => {
     // la tienda: la que se configure, o la que hizo la compra
     const siteUrl = (process.env.SITE_URL || origin || "https://davidsued1.github.io/buba").replace(/\/$/, "");
 
+    // la marca va siempre adelante: es lo que el cliente ve en Mercado Pago y en el mail
+    const MARCA = "BUBA Drinks";
+    const conMarca = (txt) => (/buba/i.test(txt) ? txt : `${MARCA} · ${txt}`).slice(0, 250);
+
     const items = order.items.map((it) => ({
       id: String(it.id || ""),
-      title: String(it.name).slice(0, 250),
+      title: conMarca(String(it.name)),
+      description: `${MARCA} — cóctel frutal con vodka premium`,
       quantity: Number(it.qty),
       unit_price: Number(it.price),
       currency_id: "ARS",
@@ -57,7 +62,7 @@ module.exports = async (req, res) => {
     if (order.shipping?.price > 0) {
       items.push({
         id: "envio",
-        title: "Envío — " + order.shipping.name,
+        title: conMarca(order.shipping.name),
         quantity: 1,
         unit_price: Number(order.shipping.price),
         currency_id: "ARS",
