@@ -61,9 +61,9 @@
     const texts = store.texts || {};
     const title = product
       ? product.name + " — BUBA Drinks"
-      : "BUBA Drinks — " + (texts.heroEyebrow || "Ready cocktails");
+      : "BUBA Drinks — " + (texts.heroEyebrow || "Pack de 4");
     const desc = (product ? product.desc : texts.heroSub) ||
-      "Cocktails con vodka premium, listos para tomar, en lata esférica. Venta solo a mayores de 18.";
+      "Prelanzamiento del pack de 4 cócteles frutales con vodka premium. Edición limitada. Venta solo a mayores de 18.";
     // imagen: la del producto, o la primera del catálogo, o el logo
     const first = (store.products || []).find((p) => p.img);
     const img = (product && product.img) || (first && first.img) || LOGO;

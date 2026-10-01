@@ -343,6 +343,7 @@ input.inline--num { width: 90px; text-align: right; font-variant-numeric: tabula
 }
 .form-grid input:focus, .form-grid select:focus, .form-grid textarea:focus,
 .label-block input:focus, .label-block textarea:focus { border-color: var(--ink); }
+.form-grid input[type=color] { padding: 4px; height: 44px; cursor: pointer; }
 .label-block { margin-bottom: 14px; }
 .check-row { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.88rem; color: var(--ink); }
 .check-row input { accent-color: var(--ink); width: 17px; height: 17px; }

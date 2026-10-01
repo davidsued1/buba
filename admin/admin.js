@@ -21,10 +21,16 @@ let currentView = "dashboard";
 
 function mergeStore(base, over) {
   const out = { ...base };
-  for (const k of ["config", "texts"]) if (over[k]) out[k] = { ...base[k], ...over[k] };
+  // Si lo guardado es de una estructura anterior, las listas (productos,
+  // envíos, sabores) y los textos se descartan: manda la estructura nueva.
+  // Solo se conservan la configuración y las imágenes.
   const vieja = (over.version || 1) < (base.version || 1);
+  if (over.config) out.config = { ...base.config, ...over.config };
   if (!vieja) {
-    for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+    if (over.texts) out.texts = { ...base.texts, ...over.texts };
+    for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) {
+      if (Array.isArray(over[k])) out[k] = over[k];
+    }
   }
   if (over.images) out.images = { ...base.images, ...over.images };
   out.version = Math.max(base.version || 1, over.version || 1);
@@ -275,7 +281,7 @@ function renderProducts(box) {
         ${(STORE.flavors || []).map((f, i) => `
           <button class="flavor-row ${f.active === false ? "is-off" : ""}" data-flavor="${i}">
             ${f.img ? `<img class="thumb" src="${absImg(f.img)}" alt="">` : '<span class="thumb thumb--empty">📷</span>'}
-            <span class="flavor-row__txt"><strong>${esc(f.name)}</strong><span class="hint">${esc(f.desc || "")}${f.active === false ? " · oculto" : ""}</span></span>
+            <span class="flavor-row__txt"><strong>${esc(f.name)}</strong><span class="hint">${esc((f.notes && f.notes.length) ? f.notes.join(" · ") : (f.desc || "").slice(0, 60))}${f.active === false ? " · oculto" : ""}</span></span>
             <span class="flavor-row__go">›</span>
           </button>`).join("")}
       </div>
@@ -314,15 +320,18 @@ function renderProducts(box) {
   $("add-flavor").addEventListener("click", () => editFlavor(-1));
 }
 
-/* Ficha de un sabor: nombre, texto, foto y si se muestra */
+/* Ficha de un sabor: nombre, descripción, notas, colores, foto y si se muestra */
 function editFlavor(index) {
   if (!STORE.flavors) STORE.flavors = [];
   const isNew = index < 0;
-  const f = isNew ? { id: "sabor-" + Date.now().toString(36), name: "", desc: "", img: "", active: true } : STORE.flavors[index];
+  const f = isNew ? { id: "sabor-" + Date.now().toString(36), name: "", desc: "", notes: [], color: "#f5f5f7", ink: "#1d1d1f", img: "", active: true } : STORE.flavors[index];
   openModal(isNew ? "Nuevo sabor" : f.name, `
     <div class="form-grid">
       <label class="span-2">Nombre<input id="fl-name" value="${esc(f.name)}"></label>
-      <label class="span-2">Texto corto<input id="fl-desc" value="${esc(f.desc || "")}" placeholder="La Azul. Arándanos y lima."></label>
+      <label class="span-2">Descripción (lo que se lee al tocar el sabor)<textarea id="fl-desc" rows="4">${esc(f.desc || "")}</textarea></label>
+      <label class="span-2">Notas de sabor (separadas por coma)<input id="fl-notes" value="${esc((f.notes || []).join(", "))}" placeholder="Frambuesa, Lima-limón"></label>
+      <label>Color de fondo<input type="color" id="fl-color" value="${esc(f.color || "#f5f5f7")}"></label>
+      <label>Color del texto<input type="color" id="fl-ink" value="${esc(f.ink || "#1d1d1f")}"></label>
       <div class="span-2">
         <p class="hint" style="margin-bottom:8px">Foto del sabor</p>
         ${imageBox(f.img, "fl-img")}
@@ -353,6 +362,9 @@ function editFlavor(index) {
   $("fl-save").addEventListener("click", () => {
     f.name = $("fl-name").value.trim();
     f.desc = $("fl-desc").value.trim();
+    f.notes = $("fl-notes").value.split(",").map((n) => n.trim()).filter(Boolean);
+    f.color = $("fl-color").value;
+    f.ink = $("fl-ink").value;
     f.img = imgData;
     f.active = $("fl-active").checked;
     if (!f.name) { alert("Poné un nombre."); return; }
@@ -599,6 +611,7 @@ function renderPromos(box) {
    ========================================================================== */
 const TEXT_GROUPS = [
   { title: "Portada", icon: "🏠", keys: {
+      heroEyebrow: "Etiqueta chica de arriba (ej: Prelanzamiento · Edición limitada)",
       heroTitle: "Título grande (Enter = salto de línea)",
       heroSub: "Frase corta debajo del título",
       heroCta1: "Botón principal (lleva al pack)" } },
@@ -606,6 +619,7 @@ const TEXT_GROUPS = [
       packTitle: "Título de la sección del pack",
       packSub: "Bajada del pack",
       packCta: "Texto del botón de compra",
+      packNote: "Aclaración debajo del botón (envíos)",
       shopTitle: "Título de la sección de sabores",
       shopSub: "Bajada de los sabores" } },
   { title: "Pie de página y legales", icon: "📄", keys: {

@@ -39,14 +39,13 @@ async function resolveStore() {
 // merge superficial por sección: cada bloque del panel reemplaza al default
 function mergeStore(base, over) {
   const out = { ...base };
-  for (const k of ["config", "texts"]) {
-    if (over[k]) out[k] = { ...base[k], ...over[k] };
-  }
   // Si lo guardado es de una estructura anterior, las listas (productos,
-  // envíos, sabores) se descartan: manda la estructura nueva. Los textos y
-  // la configuración se conservan siempre.
+  // envíos, sabores) y los textos se descartan: manda la estructura nueva.
+  // Solo se conservan la configuración y las imágenes.
   const vieja = (over.version || 1) < (base.version || 1);
+  if (over.config) out.config = { ...base.config, ...over.config };
   if (!vieja) {
+    if (over.texts) out.texts = { ...base.texts, ...over.texts };
     for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) {
       if (Array.isArray(over[k])) out[k] = over[k];
     }
@@ -194,20 +193,76 @@ function renderFlavors() {
   const grid = $("flavors");
   if (!grid) return;
   grid.innerHTML = activeFlavors().map((f) => `
-    <article class="flavor">
+    <button type="button" class="flavor" data-flavor="${esc(f.id)}" aria-label="Ver ${esc(f.name)}">
       ${f.img
         ? `<div class="flavor__media"><img src="${esc(f.img)}" alt="${esc(f.name)}" loading="lazy"></div>`
-        : `<div class="flavor__media flavor__media--color" style="background:${flavorColor(f)}"><span>${esc(f.name.split(" ")[0])}</span></div>`}
-      <h3 class="flavor__name">${esc(f.name)}</h3>
-      <p class="flavor__desc">${esc(f.desc || "")}</p>
-    </article>`).join("");
+        : `<div class="flavor__media flavor__media--color" style="background:${esc(f.color || flavorColor(f))}"><span style="color:${esc(f.ink || "#fff")}">${esc(f.name.split(" ")[0])}</span></div>`}
+      <span class="flavor__name">${esc(f.name)}</span>
+      <span class="flavor__notes">${esc((f.notes || []).join(" · "))}</span>
+    </button>`).join("");
+}
+
+/* ---------- Ficha del sabor (hoja inferior / diálogo) ---------- */
+let flavorOpener = null;
+
+function openFlavor(id) {
+  const f = activeFlavors().find((x) => x.id === id);
+  if (!f || !$("flavor-sheet")) return;
+  flavorOpener = document.activeElement;
+
+  $("fs-name").textContent = f.name;
+
+  const desc = $("fs-desc");
+  desc.textContent = "";
+  String(f.desc || "").split("\n").forEach((line, i) => {
+    if (i) desc.appendChild(document.createElement("br"));
+    desc.appendChild(document.createTextNode(line));
+  });
+
+  const notes = $("fs-notes");
+  notes.textContent = "";
+  (f.notes || []).forEach((n) => {
+    const li = document.createElement("li");
+    li.textContent = n;
+    notes.appendChild(li);
+  });
+
+  const media = $("fs-media");
+  media.textContent = "";
+  if (f.img) {
+    const img = document.createElement("img");
+    img.src = f.img;
+    img.alt = f.name;
+    media.appendChild(img);
+    media.hidden = false;
+  } else {
+    media.hidden = true;
+  }
+
+  const sheet = $("flavor-sheet");
+  sheet.style.setProperty("--fs-bg", f.color || "#f5f5f7");
+  sheet.style.setProperty("--fs-ink", f.ink || "#1d1d1f");
+  sheet.hidden = false;
+  $("flavor-overlay").hidden = false;
+  document.body.style.overflow = "hidden";
+  $("fs-close").focus();
+}
+
+function closeFlavor() {
+  const sheet = $("flavor-sheet");
+  if (!sheet || sheet.hidden) return;
+  sheet.hidden = true;
+  $("flavor-overlay").hidden = true;
+  document.body.style.overflow = "";
+  if (flavorOpener && flavorOpener.focus) flavorOpener.focus();
+  flavorOpener = null;
 }
 
 // texto de disponibilidad del pack según el stock real
 function stockLabel(p) {
   const st = p.stock ?? 0;
   if (st <= 0) return { cls: "is-out", txt: "Sin stock" };
-  if (st <= 10) return { cls: "is-low", txt: `Quedan ${st}` };
+  if (st <= 10) return { cls: "is-low", txt: `Últimas ${st}` };
   return { cls: "is-ok", txt: "Hay stock" };
 }
 
@@ -241,14 +296,14 @@ function renderProducts() {
         </div>
         <p class="pack__limit" id="pack-limit" hidden></p>
         <button type="button" class="btn btn--solid btn--lg btn--block" id="pack-buy">${esc(STORE.texts.packCta || "Comprar")}</button>
-        <p class="pack__note">Envío a CABA y GBA con Mandalo Ya. Cotizás en el carrito.</p>`}
+        <p class="pack__note">${esc(STORE.texts.packNote || "Envío a CABA y GBA. Lo cotizás en el carrito con tu código postal.")}</p>`}
       </div>
     </article>`;
 
   const wl = $("pack-waitlist");
   if (wl) wl.addEventListener("click", (e) => {
     e.preventDefault();
-    const url = waLink("¡Hola BUBA! Quiero que me avisen cuando vuelva el pack.");
+    const url = waLink("¡Hola BUBA! Quiero que me avisen cuando vuelva el pack de 4.");
     if (url) window.open(url, "_blank");
   });
 
@@ -793,8 +848,14 @@ document.addEventListener("DOMContentLoaded", async () => {
   }
   if ($("cart-overlay")) $("cart-overlay").addEventListener("click", closeCart);
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") { closeCart(); closeCheckout(); }
+    if (e.key === "Escape") { closeFlavor(); closeCart(); closeCheckout(); }
   });
+  if ($("flavors")) $("flavors").addEventListener("click", (e) => {
+    const card = e.target.closest("[data-flavor]");
+    if (card) openFlavor(card.dataset.flavor);
+  });
+  if ($("fs-close")) $("fs-close").addEventListener("click", closeFlavor);
+  if ($("flavor-overlay")) $("flavor-overlay").addEventListener("click", closeFlavor);
 
   document.body.addEventListener("click", (e) => {
     const inc = e.target.closest("[data-inc]");

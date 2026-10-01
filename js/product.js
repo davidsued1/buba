@@ -18,10 +18,16 @@
 
   function mergeStore(base, over) {
     const out = { ...base };
-    for (const k of ["config", "texts"]) if (over[k]) out[k] = { ...base[k], ...over[k] };
+    // Si lo guardado es de una estructura anterior, las listas (productos,
+    // envíos, sabores) y los textos se descartan: manda la estructura nueva.
+    // Solo se conservan la configuración y las imágenes.
     const vieja = (over.version || 1) < (base.version || 1);
+    if (over.config) out.config = { ...base.config, ...over.config };
     if (!vieja) {
-      for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) if (Array.isArray(over[k])) out[k] = over[k];
+      if (over.texts) out.texts = { ...base.texts, ...over.texts };
+      for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) {
+        if (Array.isArray(over[k])) out[k] = over[k];
+      }
     }
     if (over.images) out.images = { ...base.images, ...over.images };
     out.version = Math.max(base.version || 1, over.version || 1);
@@ -42,46 +48,16 @@
   /* Ficha por producto (doc 07 módulo 1). Los productos nuevos que se creen
      desde el panel usan la ficha genérica. */
   const DETAILS = {
-    blueberry: {
-      tagline: "La Azul. Arándanos y lima, bien frío.",
+    pack4: {
+      tagline: "Prelanzamiento de edición limitada: los cuatro sabores, una lata de cada uno.",
       rows: [
-        ["Sabor", "Blueberry Limeade — arándanos con limeade cítrica"],
-        ["Base", "Vodka premium"],
-        ["Graduación", "10% vol."],
-        ["Contenido", "210 ml — lata esférica PET"],
-        ["Cómo se toma", "Directo de la lata, bien fría. O sobre hielo."],
-      ],
-    },
-    peach: {
-      tagline: "La Naranja. Durazno dorado, dulce y fresco.",
-      rows: [
-        ["Sabor", "Golden Peach — durazno"],
-        ["Base", "Vodka premium"],
-        ["Graduación", "10% vol."],
-        ["Contenido", "210 ml — lata esférica PET"],
-        ["Cómo se toma", "Directo de la lata, bien fría. O sobre hielo."],
-      ],
-    },
-    pack: {
-      tagline: "Para la juntada: cuatro de cada sabor.",
-      rows: [
-        ["Incluye", "8 latas: 4 Blueberry Limeade + 4 Golden Peach"],
+        ["Incluye", "4 latas de 210 ml: Blueberry Limeade, Golden Peach, Pink Lemonade y Strawberry Ice"],
         ["Base", "Vodka premium"],
         ["Graduación", "10% vol. cada una"],
-        ["Contenido", "210 ml por lata"],
-        ["Ideal para", "Previas, cumpleaños, regalos que no fallan"],
+        ["Edición", "Prelanzamiento, unidades limitadas"],
+        ["Envío", "CABA y GBA. Lo cotizás en el carrito."],
       ],
     },
-  };
-  DETAILS.pack4 = {
-    tagline: "Edición exclusiva: los cuatro sabores, una lata de cada uno.",
-    rows: [
-      ["Incluye", "4 latas: Blueberry Limeade, Golden Peach, Pink Lemonade y Strawberry Ice"],
-      ["Base", "Vodka premium"],
-      ["Graduación", "10% vol. cada una"],
-      ["Contenido", "210 ml por lata — lata esférica PET"],
-      ["Envío", "CABA y GBA con Mandalo Ya. Cotizás el envío en el carrito."],
-    ],
   };
   const GENERIC_DETAIL = {
     tagline: "",
@@ -144,8 +120,8 @@
     $("pdp-desc").textContent = detail.tagline || product.desc || "";
     $("pdp-price").textContent = money(product.price);
     $("pdp-stock").textContent = out
-      ? "Sin stock por ahora — volvé pronto."
-      : (product.stock <= 10 ? `¡Últimas ${product.stock} unidades!` : "En stock, listo para enviarse.");
+      ? "Sin stock por ahora."
+      : (product.stock <= 10 ? `Últimas ${product.stock}.` : "Hay stock.");
     $("pdp-stock").classList.toggle("is-out", out);
     if (out) $("pdp-buy").hidden = true;
 

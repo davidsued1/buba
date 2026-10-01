@@ -3,8 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>BUBA — Cocktail frutal con vodka premium</title>
-  <meta name="description" content="BUBA: pack de 4 cocktails con vodka premium, en lata esférica de 210 ml. Envíos a CABA y GBA. Solo +18.">
+  <title>BUBA — Pack de 4 · Edición limitada</title>
+  <meta name="description" content="BUBA: prelanzamiento del pack de 4 cócteles frutales con vodka premium, edición limitada. Envíos a CABA y GBA. Solo +18.">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230b0b0c'/%3E%3Ctext x='50' y='68' font-size='55' font-weight='900' font-family='Arial' fill='white' text-anchor='middle'%3EB%3C/text%3E%3C/svg%3E">
   <link rel="stylesheet" href="css/style.css?v=dev">
 </head>
@@ -16,8 +16,8 @@
   <div class="curtain" id="curtain" hidden>
     <div class="curtain__box">
       <img class="curtain__logo" src="assets/img/logo-full.png" alt="BUBA Ready Cocktails">
-      <h1 class="curtain__title" data-txt="privadoTitulo">Muy pronto</h1>
-      <p class="curtain__text" data-txt="privadoTexto">Estamos preparando algo que se ve venir de lejos.</p>
+      <h1 class="curtain__title" data-txt="privadoTitulo">Prelanzamiento</h1>
+      <p class="curtain__text" data-txt="privadoTexto">Una edición limitada, antes que nadie. Dejanos tu mail y te avisamos cuando abrimos.</p>
 
       <form class="curtain__news" id="curtain-news">
         <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
@@ -66,27 +66,28 @@
 
     <section class="hero" id="top">
       <div class="hero__inner">
-        <h1 class="hero__title" data-txt="heroTitle">El pack de 4.</h1>
-        <p class="hero__sub" data-txt="heroSub">Cuatro sabores. Vodka premium. Listo para tomar.</p>
+        <p class="hero__eyebrow" data-txt="heroEyebrow">Prelanzamiento · Edición limitada</p>
+        <h1 class="hero__title" data-txt="heroTitle">Pack de 4</h1>
+        <p class="hero__sub" data-txt="heroSub">Cuatro cócteles frutales con vodka premium.<br>Una edición limitada, antes que nadie.</p>
         <div class="hero__media" id="hero-media">
           <!-- js/main.js pone acá la foto (images.hero) o el lugar reservado -->
         </div>
-        <a href="#pack" class="btn btn--solid btn--lg" data-txt="heroCta1">Quiero comprar</a>
+        <a href="#pack" class="btn btn--solid btn--lg" data-txt="heroCta1">Quiero el mío</a>
       </div>
     </section>
 
     <section class="section" id="pack">
       <div class="container">
-        <h2 class="section__title" data-txt="packTitle">Pack x4</h2>
-        <p class="section__sub" data-txt="packSub">Una lata de cada sabor.</p>
+        <h2 class="section__title" data-txt="packTitle">Reservá el tuyo</h2>
+        <p class="section__sub" data-txt="packSub">Una lata de cada sabor · 210 ml · 10% vol.<br>Unidades limitadas.</p>
         <div id="products"><!-- js/main.js --></div>
       </div>
     </section>
 
     <section class="section section--soft" id="sabores">
       <div class="container">
-        <h2 class="section__title" data-txt="shopTitle">Los 4 sabores</h2>
-        <p class="section__sub" data-txt="shopSub">Vienen juntos en el pack.</p>
+        <h2 class="section__title" data-txt="shopTitle">Los cuatro sabores</h2>
+        <p class="section__sub" data-txt="shopSub">Tocá cada uno para conocerlo.</p>
         <div class="flavors" id="flavors"><!-- js/main.js --></div>
       </div>
     </section>
@@ -97,7 +98,7 @@
   <footer class="footer">
     <div class="container footer__inner">
       <a href="#top" class="logo"><img class="logo__img logo__img--footer" src="assets/img/logo-full-white.png" alt="BUBA Ready Cocktails"></a>
-      <p class="footer__tagline" data-txt="footerTagline">Ready cocktails. Hecho en Argentina.</p>
+      <p class="footer__tagline" data-txt="footerTagline">Cócteles frutales con vodka premium.<br>Hecho en Argentina.</p>
       <div class="footer__contact">
         <p id="footer-wa"></p>
         <p id="footer-email">bubadrinks0@gmail.com</p>
@@ -114,6 +115,18 @@
       <path d="M12 2a10 10 0 0 0-8.7 14.9L2 22l5.3-1.4A10 10 0 1 0 12 2zm0 18.2c-1.6 0-3.1-.4-4.4-1.2l-.3-.2-3.1.8.8-3-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.6-6.1c-.3-.1-1.5-.7-1.7-.8-.2-.1-.4-.1-.6.1-.2.3-.6.8-.8 1-.1.2-.3.2-.5.1a6.7 6.7 0 0 1-2-1.2 7.5 7.5 0 0 1-1.4-1.7c-.1-.3 0-.4.1-.5l.4-.5c.1-.2.2-.3.3-.5v-.5c0-.1-.6-1.4-.8-1.9-.2-.5-.4-.4-.6-.4h-.5c-.2 0-.5.1-.7.3-.2.3-.9.9-.9 2.1s.9 2.5 1 2.6c.1.2 1.8 2.7 4.3 3.8.6.3 1.1.4 1.5.6.6.2 1.2.2 1.6.1.5-.1 1.5-.6 1.7-1.2.2-.6.2-1.1.2-1.2l-.3-.2z"/>
     </svg>
   </a>
+
+  <!-- ============ FICHA DEL SABOR ============ -->
+  <div class="flavor-sheet-overlay" id="flavor-overlay" hidden></div>
+  <div class="flavor-sheet" id="flavor-sheet" role="dialog" aria-modal="true" aria-labelledby="fs-name" hidden>
+    <button class="flavor-sheet__close" id="fs-close" aria-label="Cerrar">✕</button>
+    <div class="flavor-sheet__media" id="fs-media"></div>
+    <h3 class="flavor-sheet__name" id="fs-name"></h3>
+    <p class="flavor-sheet__desc" id="fs-desc"></p>
+    <p class="flavor-sheet__label">Notas de sabor</p>
+    <ul class="flavor-sheet__notes" id="fs-notes"></ul>
+    <p class="flavor-sheet__foot">Viene en el pack de 4 · 210 ml · 10% vol.</p>
+  </div>
 
   <!-- ============ CARRITO (drawer) ============ -->
   <div class="cart-overlay" id="cart-overlay" hidden></div>

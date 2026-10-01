@@ -8,7 +8,7 @@
    ========================================================================== */
 
 window.BUBA_DEFAULTS = {
-  version: 3,
+  version: 4,
 
   config: {
     storeName: "BUBA",
@@ -24,8 +24,8 @@ window.BUBA_DEFAULTS = {
     // solo entra quien tenga el código. Se maneja desde el panel.
     privado: true,
     codigoAcceso: "buba2026",
-    privadoTitulo: "Muy pronto",
-    privadoTexto: "Estamos preparando algo que se ve venir de lejos.\nDejanos tu mail y te avisamos antes que a nadie.",
+    privadoTitulo: "Prelanzamiento",
+    privadoTexto: "Una edición limitada, antes que nadie.\nDejanos tu mail y te avisamos cuando abrimos.",
     ga4Id: "",                    // Google Analytics 4 (G-XXXXXXX)
     metaPixelId: "",              // Meta / Facebook Pixel
     tiktokPixelId: "",            // TikTok Pixel
@@ -33,15 +33,17 @@ window.BUBA_DEFAULTS = {
 
   // Pocos textos, todos editables desde el panel → Textos.
   texts: {
-    heroTitle: "El pack de 4.",
-    heroSub: "Cuatro sabores. Vodka premium. Listo para tomar.",
-    heroCta1: "Quiero comprar",
-    shopTitle: "Los 4 sabores",
-    shopSub: "Vienen juntos en el pack.",
-    packTitle: "Pack x4",
-    packSub: "Una lata de cada sabor.",
+    heroEyebrow: "Prelanzamiento · Edición limitada",
+    heroTitle: "Pack de 4",
+    heroSub: "Cuatro cócteles frutales con vodka premium.\nUna edición limitada, antes que nadie.",
+    heroCta1: "Quiero el mío",
+    packTitle: "Reservá el tuyo",
+    packSub: "Una lata de cada sabor · 210 ml · 10% vol.\nUnidades limitadas.",
     packCta: "Comprar",
-    footerTagline: "Ready cocktails. Hecho en Argentina.",
+    packNote: "Envío a CABA y GBA. Lo cotizás en el carrito con tu código postal.",
+    shopTitle: "Los cuatro sabores",
+    shopSub: "Tocá cada uno para conocerlo.",
+    footerTagline: "Cócteles frutales con vodka premium.\nHecho en Argentina.",
     legal: "Beber con moderación. Prohibida su venta a menores de 18 años.",
   },
 
@@ -50,7 +52,7 @@ window.BUBA_DEFAULTS = {
   products: [
     {
       id: "pack4",
-      name: "Pack x4",
+      name: "Pack de 4",
       desc: "Una lata de cada sabor.",
       price: 24000,
       stock: 50,
@@ -59,12 +61,21 @@ window.BUBA_DEFAULTS = {
     },
   ],
 
-  // Los sabores se muestran (no se venden sueltos). Foto y texto desde el panel.
+  // Los sabores se presentan (no se venden sueltos). Al tocarlos se abre su ficha.
+  // notes = notas de sabor · color/ink = fondo y texto de la ficha (los de cada pieza).
   flavors: [
-    { id: "blueberry", name: "Blueberry Limeade", desc: "La Azul. Arándanos y lima.", img: "assets/img/blueberry.webp", active: true },
-    { id: "peach", name: "Golden Peach", desc: "La Naranja. Durazno dorado.", img: "assets/img/peach.webp", active: true },
-    { id: "pink", name: "Pink Lemonade", desc: "La Rosa. Limonada frutal.", img: "", active: true },
-    { id: "strawberry", name: "Strawberry Ice", desc: "La Roja. Frutilla helada.", img: "", active: true },
+    { id: "blueberry", name: "Blueberry Limeade", active: true, img: "assets/img/blueberry.webp",
+      color: "#1c6fd6", ink: "#ffffff", notes: ["Frambuesa", "Lima-limón", "Cereza"],
+      desc: "La intensidad de la frambuesa se combina con la frescura de la lima y un sutil toque de cereza. Un sabor diferente, fresco y con mucha personalidad." },
+    { id: "peach", name: "Golden Peach", active: true, img: "assets/img/peach.webp",
+      color: "#fde3b6", ink: "#e5801f", notes: ["Durazno"],
+      desc: "El sabor clásico del durazno convertido en un suave cóctel, fresco y fácil de disfrutar.\nDulce, frutal y perfectamente equilibrado." },
+    { id: "pink", name: "Pink Lemonade", active: true, img: "",
+      color: "#f9c6dc", ink: "#d63f7f", notes: ["Frambuesa", "Lima-limón"],
+      desc: "Una mezcla vibrante de lima-limón y frambuesa, el contraste perfecto. Refrescante, suave y con ese toque dulce que invita al siguiente trago." },
+    { id: "strawberry", name: "Strawberry Ice", active: true, img: "",
+      color: "#d7191f", ink: "#ffffff", notes: ["Frutilla", "Lima-limón"],
+      desc: "Frutilla madura con un final cítrico lima-limón, que la vuelve increíblemente refrescante.\nDulce en boca, fresca hasta la última gota." },
   ],
 
   comingSoon: [],
