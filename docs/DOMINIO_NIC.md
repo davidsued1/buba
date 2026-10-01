@@ -60,3 +60,22 @@ GitHub, así que nunca se queda sin sitio.
 | GitHub dice "improperly configured" | Faltan registros A o la nube está naranja |
 | No deja tildar Enforce HTTPS | El certificado tarda: reintentar en una hora |
 | Entra sin candado / aviso de inseguro | Poner Cloudflare en SSL **Full** y esperar |
+| `ERR_CERT_COMMON_NAME_INVALID` | El dominio no está guardado en GitHub → Pages: escribirlo y **Save** |
+| `ERR_CERT_AUTHORITY_INVALID` | Algo entre la compu y la web cambia el certificado (antivirus o red del trabajo). Probar en el celular con datos móviles; ver abajo |
+
+### `ERR_CERT_AUTHORITY_INVALID` paso a paso
+
+1. **Probar en el celular con datos móviles** (Wi-Fi apagado). Si ahí
+   entra con candado, la web está bien: el problema es esa compu o esa red.
+2. **Ver quién firmó el certificado:** en el aviso de Chrome tocar
+   **No es seguro** (a la izquierda de la dirección) → **El certificado no
+   es válido** → **Emitido por**.
+   - *Let's Encrypt* → es el de GitHub, está bien.
+   - El nombre de un antivirus (Kaspersky, Avast, ESET, Bitdefender…) →
+     desactivar su "análisis de HTTPS / conexiones cifradas".
+   - El nombre de la empresa o de un firewall (Fortinet, Sophos, Palo
+     Alto…) → es la red del trabajo; usar otra red.
+3. Si **también falla en el celular con datos**: GitHub → Settings → Pages
+   → **Remove** el dominio, esperar un minuto, volver a escribir
+   `bubadrinks.com.ar` → **Save**. Esperar el certificado (de 15 minutos a
+   un día) y tildar **Enforce HTTPS**.

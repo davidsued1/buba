@@ -103,6 +103,7 @@ un botón para resolver cada punto. Al día de hoy:
 | `docs/RESPALDO_Y_ACCESOS.md` | Cómo asegurar todo y compartirlo con el socio |
 | `docs/DOMINIO_NIC.md` | Conectar bubadrinks.com.ar paso a paso |
 | `backend/README.md` | Poner a andar los cobros con Mercado Pago |
+| `docs/09_Mercado_Pago_del_Socio.md` | Cobrar con la cuenta del socio mientras sale el CUIT, y cómo cambiarla después |
 | `docs/MANUAL_DE_MARCA.pdf` | Manual de marca original |
 | `docs/00` a `docs/07` | Documentos de visión y especificación |
 
