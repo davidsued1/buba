@@ -7,13 +7,13 @@
     "emailGeneral": "bubadrinks0@gmail.com",
     "emailMayoristas": "bubadrinks0@gmail.com",
     "apiBase": "https://buba-pagos.vercel.app",
-    "freeShippingFrom": 40000,
+    "freeShippingFrom": 0,
     "envioNoCubierto": "Por ahora enviamos a CABA y GBA. Para otras zonas escribinos por WhatsApp y lo vemos.",
     "adminPin": "buba2026",
     "privado": true,
     "codigoAcceso": "buba2026",
-    "privadoTitulo": "Muy pronto",
-    "privadoTexto": "Estamos preparando algo que se ve venir de lejos.\nDejanos tu mail y te avisamos antes que a nadie.",
+    "privadoTitulo": "Prelanzamiento",
+    "privadoTexto": "Una edición limitada, antes que nadie.\nDejanos tu mail y te avisamos cuando abrimos.",
     "ga4Id": "",
     "metaPixelId": "",
     "tiktokPixelId": ""
@@ -99,9 +99,7 @@
   ],
   "comingSoon": [],
   "images": {
-    "hero": "",
-    "about": "",
-    "wholesale": ""
+    "hero": ""
   },
   "shipping": [
     {

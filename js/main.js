@@ -28,11 +28,16 @@ let STORE = window.BUBA_DEFAULTS;
 async function resolveStore() {
   let store = window.BUBA_DEFAULTS;
   try {
-    const r = await fetch("data/store.json", { cache: "no-store" });
+    const r = await fetch("data/store.json?t=" + Date.now(), { cache: "no-store" });
     if (r.ok) store = mergeStore(store, await r.json());
   } catch { /* offline o file:// → defaults */ }
+  // Lo guardado en este navegador solo vale si tiene cambios sin publicar
+  // (vista previa del panel) y es de la misma estructura. Si no, manda lo
+  // publicado: así una copia vieja nunca pisa ni se vuelve a publicar.
   const local = lsJSON("buba-store");
-  if (local) store = mergeStore(store, local);
+  let pendiente = false;
+  try { pendiente = localStorage.getItem("buba-dirty") === "1"; } catch {}
+  if (local && pendiente && (local.version || 1) >= (store.version || 1)) store = mergeStore(store, local);
   return store;
 }
 
@@ -44,6 +49,11 @@ function mergeStore(base, over) {
   // Solo se conservan la configuración y las imágenes.
   const vieja = (over.version || 1) < (base.version || 1);
   if (over.config) out.config = { ...base.config, ...over.config };
+  // Un valor vacío guardado en un navegador no borra uno publicado
+  // (por ejemplo, la dirección de pagos).
+  for (const k of Object.keys(over.config || {})) {
+    if (over.config[k] === "" && base.config && base.config[k]) out.config[k] = base.config[k];
+  }
   if (!vieja) {
     if (over.texts) out.texts = { ...base.texts, ...over.texts };
     for (const k of ["products", "flavors", "shipping", "promos", "comingSoon"]) {
@@ -579,6 +589,8 @@ function orderTotal() {
 }
 
 function renderSummary() {
+  // el botón de Mercado Pago solo aparece si el servidor de pagos está conectado
+  if ($("pay-mp")) $("pay-mp").hidden = !STORE.config.apiBase;
   const rows = cartEntries().map(({ product: p, qty }) =>
     `<div class="summary__row"><span>${qty} × ${esc(p.name)}</span><strong>${money(p.price * qty)}</strong></div>`);
   rows.push(`<div class="summary__row"><span>Subtotal</span><strong>${money(cartSubtotal())}</strong></div>`);
@@ -674,9 +686,8 @@ async function payWithMP() {
   const order = buildOrder("mercadopago");
   const api = STORE.config.apiBase;
   if (!api) {
-    finishOrder(order,
-      "Registramos tu pedido. El pago online con Mercado Pago se está terminando de configurar: " +
-      "te vamos a contactar por WhatsApp o email para completar el pago.");
+    // sin servidor de pagos no se finge un pago: se ofrece coordinarlo por WhatsApp
+    alert("El pago con Mercado Pago no está disponible en este momento. Podés coordinar el pago por WhatsApp.");
     return;
   }
   const btn = $("pay-mp");
