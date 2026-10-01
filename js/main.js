@@ -805,33 +805,68 @@ function trackPurchase(order) {
 }
 
 /* ---------- Vuelta desde Mercado Pago ---------- */
-function checkPaymentReturn() {
-  const q = new URLSearchParams(location.search);
-  const estado = q.get("pago");
-  if (!estado) return;
-  const pedido = q.get("pedido") || "";
-  const textos = {
-    ok: ["¡Listo, pago confirmado! 🎉", "Ya estamos preparando tu pedido. Te escribimos por WhatsApp para coordinar la entrega."],
-    pendiente: ["Tu pago está en proceso", "Cuando Mercado Pago lo confirme te avisamos. Si pagaste en efectivo, puede tardar unas horas."],
-    error: ["El pago no se pudo completar", "No se te cobró nada. Podés intentar de nuevo o escribirnos por WhatsApp para coordinar."],
-  }[estado];
-  if (!textos) return;
+/* Vuelta desde Mercado Pago.
+   La dirección de vuelta (?pago=ok|pendiente|error) no siempre coincide con
+   lo que pasó: en el celular el cliente puede pagar desde la app de Mercado
+   Pago y volver por otro camino. Por eso se le pregunta al servidor el estado
+   real del pedido y el mensaje se arma con esa respuesta. */
+const PAGO_TEXTOS = {
+  ok: ["¡Listo, pago confirmado! 🎉", "Ya estamos preparando tu pedido. Te escribimos por WhatsApp para coordinar la entrega."],
+  pendiente: ["Tu pago está en proceso", "Cuando Mercado Pago lo confirme te avisamos. Si pagaste en efectivo, puede tardar unas horas."],
+  error: ["El pago no se completó", "Si ves el débito en tu cuenta, no te preocupes: escribinos por WhatsApp con tu número de pedido y lo revisamos. Si no, podés intentar de nuevo."],
+  verificando: ["Verificando tu pago…", "Estamos confirmando el pago con Mercado Pago. Un momento."],
+};
 
-  // marcar el pedido como pagado en el historial local
+// estados de Mercado Pago → mensaje de la web
+const estadoDesdeMP = (s) =>
+  s === "approved" ? "ok"
+  : (s === "pending" || s === "in_process" || s === "authorized") ? "pendiente"
+  : (s === "rejected" || s === "cancelled" || s === "null") ? "error"
+  : null;
+
+function showPaymentResult(estado, pedido) {
+  const textos = PAGO_TEXTOS[estado];
+  if (!textos) return;
   if (estado === "ok" && pedido) {
     const orders = lsJSON("buba-orders") || [];
     const o = orders.find((x) => x.code === pedido);
     if (o) { o.status = "pagado"; lsSet("buba-orders", JSON.stringify(orders)); }
   }
-
-  history.replaceState(null, "", location.pathname);
+  if (estado === "ok") { cart = {}; lsSet("buba-cart", JSON.stringify(cart)); updateCartUI(); }
   $("done-msg").textContent = textos[1];
   $("done-code").textContent = pedido ? "Nº de pedido: " + pedido : "";
   $("step-done").querySelector("h3").textContent = textos[0];
+  const icon = $("step-done").querySelector(".done-icon");
+  if (icon) icon.textContent = { ok: "✓", pendiente: "…", verificando: "…", error: "!" }[estado] || "✓";
   $("checkout").hidden = false;
   $("checkout-overlay").hidden = false;
   document.body.style.overflow = "hidden";
   gotoStep(4);
+}
+
+async function checkPaymentReturn() {
+  const q = new URLSearchParams(location.search);
+  const vuelta = q.get("pago");
+  if (!vuelta) return;
+  const pedido = q.get("pedido") || q.get("external_reference") || "";
+  const paymentId = q.get("payment_id") || q.get("collection_id") || "";
+  // lo que dice Mercado Pago en la propia dirección de vuelta, si lo trae
+  let estado = estadoDesdeMP(q.get("collection_status") || q.get("status")) || vuelta;
+  history.replaceState(null, "", location.pathname);
+
+  const api = String(STORE.config.apiBase || "").replace(/\/$/, "");
+  if (!api || (!pedido && !paymentId) || estado === "ok") { showPaymentResult(estado, pedido); return; }
+
+  showPaymentResult("verificando", pedido);
+  try {
+    const params = paymentId && /^\d+$/.test(paymentId) ? "id=" + paymentId : "pedido=" + encodeURIComponent(pedido);
+    const r = await fetch(`${api}/api/estado-pago?${params}`, { cache: "no-store" });
+    const data = r.ok ? await r.json() : null;
+    const real = data && data.ok ? estadoDesdeMP(data.estado) : null;
+    if (real) estado = real;
+    else if (data && data.ok && data.estado === "sin_pago" && estado !== "pendiente") estado = "error";
+  } catch { /* sin respuesta: queda lo que dijo la vuelta */ }
+  showPaymentResult(estado, pedido);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

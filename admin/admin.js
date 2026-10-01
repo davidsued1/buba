@@ -1024,7 +1024,7 @@ async function renderCobros(box) {
           <div class="cobro__row"><strong>${money(p.monto)}</strong><span class="tag">${esc(p.estado)}</span></div>
           <p class="hint">${esc(p.medio || "")}${p.cuotas > 1 ? ` · ${p.cuotas} cuotas` : ""}
             ${p.pedido ? " · pedido " + esc(p.pedido) : ""}</p>
-          <p class="hint">${esc(p.email || "")} · ${new Date(p.fecha).toLocaleString("es-AR")}</p>
+          <p class="hint">${new Date(p.fecha).toLocaleString("es-AR")}</p>
         </div>`).join("")}`;
   } catch (err) {
     box.innerHTML = `<div class="panel"><p class="wiz-status err">${esc(err.message)}</p>

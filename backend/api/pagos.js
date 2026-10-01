@@ -40,7 +40,6 @@ module.exports = async (req, res) => {
       neto: p.transaction_details?.net_received_amount ?? null,
       medio: p.payment_method_id,
       cuotas: p.installments,
-      email: p.payer?.email || null,
       fecha: p.date_created,
     }));
     return res.status(200).json({ ok: true, pagos });
