@@ -83,7 +83,7 @@ creó sola, **la etiqueta adjunta** lista para imprimir. Usa [Resend](https://re
 |---|---|---|
 | `RESEND_API_KEY` | Sí | La API key de Resend |
 | `MAIL_AVISOS` | Sí | Mails que reciben los avisos, separados por coma. Mientras el dominio no esté verificado en Resend, tiene que ser el mismo mail con el que te registraste |
-| `MAIL_FROM` | No | Remitente. Cuando verifiques el dominio `bubadrinks.com.ar` en Resend, usá algo como `BUBA Drinks <ventas@bubadrinks.com.ar>`. Por defecto sale de `onboarding@resend.dev` |
+| `MAIL_FROM` | No | Remitente. Por defecto `BUBA Drinks <hola@bubadrinks.com.ar>` (dominio verificado en Resend) |
 
 3. Hacé **Redeploy**.
 
@@ -107,18 +107,18 @@ Con cada pago aprobado, además del aviso para vos, el comprador recibe un **mai
 confirmación de pedido** con la marca de BUBA: lo que compró, el total, cuándo sale
 y llega (primer día hábil siguiente a la compra, más 24 hs hábiles de Fast Mail), la
 dirección, el número de seguimiento si la guía se creó sola y botones de WhatsApp e
-Instagram. En retiro en persona avisa que lo contactan por WhatsApp.
+Instagram.
 
-Para que salga hace falta:
-
-1. **Verificar el dominio** `bubadrinks.com.ar` en Resend (Domains). Sin dominio verificado,
-   Resend solo deja escribirle al dueño de la cuenta, no a clientes.
-2. Cargar `MAIL_FROM` en Vercel con ese dominio, por ejemplo `BUBA Drinks <hola@bubadrinks.com.ar>`.
-   **Si `MAIL_FROM` no está, el mail al cliente no se manda** (el aviso de venta sigue saliendo).
+El dominio `bubadrinks.com.ar` está **verificado en Resend** (octubre 2026), así que todos los
+mails salen de `BUBA Drinks <hola@bubadrinks.com.ar>` y el mail al cliente está **prendido**.
+Sin dominio verificado Resend solo deja escribirle al dueño de la cuenta: si algún día se
+desverifica, cargar `MAIL_FROM = BUBA Drinks <onboarding@resend.dev>` (el aviso de venta sigue
+llegando y el mail al cliente se apaga solo).
 
 | Variable | Obligatoria | Para qué |
 |---|---|---|
-| `MAIL_FROM` | Sí, para que salga | Remitente con el dominio verificado |
+| `MAIL_FROM` | No | Remitente. Por defecto `BUBA Drinks <hola@bubadrinks.com.ar>` |
+| `MAIL_CLIENTES` | No | `no` apaga el mail de confirmación al comprador |
 | `MAIL_REPLY_TO` | No | A dónde le llegan las respuestas del cliente. Por defecto `bubadrinks0@gmail.com` |
 | `SITE_URL` | No | Dirección del sitio, de donde se carga el logo. Por defecto `https://bubadrinks.com.ar` |
 

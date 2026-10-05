@@ -4,9 +4,11 @@
  * Variables de entorno (Vercel → Settings → Environment Variables):
  *   RESEND_API_KEY → clave de la API de Resend
  *   MAIL_AVISOS    → mails que reciben los avisos, separados por coma
- *   MAIL_FROM      → (opcional) remitente, ej. "BUBA Drinks <hola@bubadrinks.com.ar>"
- *                    Por defecto "BUBA Drinks <onboarding@resend.dev>". Es obligatorio
- *                    (con dominio verificado) para mandarle el mail de confirmación al cliente.
+ *   MAIL_FROM      → (opcional) remitente. Por defecto "BUBA Drinks <hola@bubadrinks.com.ar>"
+ *                    (el dominio bubadrinks.com.ar está verificado en Resend). Si algún día se
+ *                    desverifica, cargar MAIL_FROM = "BUBA Drinks <onboarding@resend.dev>" para que
+ *                    sigan llegando los avisos al dueño (al cliente no se le puede escribir así).
+ *   MAIL_CLIENTES  → (opcional) "no" apaga el mail de confirmación al comprador.
  */
 
 /** true si están cargadas RESEND_API_KEY y MAIL_AVISOS */
@@ -14,13 +16,17 @@ function mailConfigurado() {
   return !!process.env.RESEND_API_KEY && destinatarios().length > 0;
 }
 
+/** Remitente de todos los mails: MAIL_FROM si está, si no la dirección del dominio verificado. */
+const remitente = () => String(process.env.MAIL_FROM || "").trim() || "BUBA Drinks <hola@bubadrinks.com.ar>";
+
 /**
- * true si se puede escribirle a clientes: hace falta RESEND_API_KEY y MAIL_FROM.
- * Resend solo deja mandar a terceros desde un dominio verificado; sin MAIL_FROM
- * salimos de onboarding@resend.dev, que únicamente llega al dueño de la cuenta.
+ * true si se puede escribirle a clientes: hace falta RESEND_API_KEY y salir de un dominio propio
+ * verificado (Resend no deja escribirle a terceros desde onboarding@resend.dev).
  */
 function puedeMandarAClientes() {
-  return !!process.env.RESEND_API_KEY && !!String(process.env.MAIL_FROM || "").trim();
+  if (!process.env.RESEND_API_KEY) return false;
+  if (String(process.env.MAIL_CLIENTES || "").toLowerCase() === "no") return false;
+  return !/@resend\.dev\b/i.test(remitente());
 }
 
 function destinatarios() {
@@ -52,7 +58,7 @@ async function enviarMail({ asunto, html, texto, adjuntos = [], idempotencia, pa
       method: "POST",
       headers,
       body: JSON.stringify({
-        from: process.env.MAIL_FROM || "BUBA Drinks <onboarding@resend.dev>",
+        from: remitente(),
         to: para ? (Array.isArray(para) ? para : [para]) : destinatarios(),
         ...(responderA ? { reply_to: responderA } : {}),
         subject: asunto,
