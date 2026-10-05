@@ -59,30 +59,55 @@ Lemonade / Strawberry Ice, y el stock inicial real.
 **Falta de David:** una cuenta de Google para la planilla (sirve
 bubadrinks0@gmail.com) y el mail del socio.
 
-### Fase 3 — Mercado Pago
-Todo está armado (`backend/README.md`). Cuando exista la cuenta de la
-sociedad: asistente del panel → pegar el Access Token en Vercel → pegar
-la dirección → Probar el cobro. Cinco minutos.
+### Fase 3 — Mercado Pago ✅ (funcionando)
+Conectado con la cuenta del socio mientras sale la de la sociedad
+(`docs/09_Mercado_Pago_del_Socio.md`). Compra real probada: cobra, vuelve a
+la web y la web confirma el estado real con Mercado Pago. Cuando exista la
+cuenta de la sociedad se cambia solo la clave en Vercel.
 
-### Fase 4 — Mandalo Ya
-Hoy no tienen API. Caminos, del más simple al más completo:
+### Fase 4 — Logística con Fast Mail (Presis)
+Fast Mail (grupo de MandaloYa) confirmó que la integración **no** va por
+MandaloYa sino por **Presis**, su plataforma nueva con API propia.
 
-1. **Preguntarles** si aceptan pedidos por mail, planilla (CSV) o si tienen
-   integración con alguna plataforma: muchas logísticas la tienen aunque
-   no la publiciten. Esto define el resto.
-2. **Aviso automático por mail** con el pedido listo para cargar (se
-   resuelve en la Fase 2, sin costo).
-3. **Exportar los pedidos del día** en el formato que ellos pidan (CSV o
-   Excel) desde el panel, para importarlos de una.
-4. **Carga automática en su web** (un robot que entra con el usuario de
-   BUBA y carga cada pedido). Es viable, pero es lo último: se rompe si
-   ellos cambian su pantalla.
+Lo que ofrece la API, según su equipo de integración:
+- **Carga de órdenes** desde la web.
+- **Etiquetas:** al crear la orden asigna un número de guía, que figura en
+  la etiqueta; la etiqueta se baja por la API.
+- **Seguimiento:** estado de cada envío por número de guía. El destinatario
+  recibe avisos de Fast Mail (ingreso a depósito, salida a distribución)
+  con link de seguimiento en fastmail.com.ar.
+- **Cotizador propio:** los códigos postales están agrupados en cordones
+  asociados a servicios (en el día, día siguiente, interior). El precio
+  sale de cordón de retiro + cordón de entrega + servicio + **medidas y
+  peso** del paquete.
 
-**Falta de David:** la respuesta de Mandalo Ya y el enlace de la web donde
-hoy carga los pedidos, para ver qué datos pide y en qué formato.
+Estado de la cuenta:
+- Alta de cuenta corriente y usuario en fastmail.com.ar: hecha (usuario
+  BUBADRINKS). Sucursal y CP de retiro informados por Fast Mail (CP 1425).
+- Enviaron además una integración para WooCommerce (no aplica: la web es
+  propia). Su token **no** se guarda acá; para Presis van a dar
+  credenciales nuevas, que se cargan solo en Vercel.
+- Colectas: hoy se piden por formulario con 24 hs de anticipación (antes
+  de las 10 hs sale en el día). Falta confirmar si con la API es automático.
+- Seguimiento para el cliente: CABA y GBA en fastmail.com.ar; interior por
+  Andreani.
+
+Cómo va a quedar:
+1. En el carrito, el cliente pone su CP y la web le pide el precio al
+   cotizador de Presis (a través del servidor de Vercel).
+2. Paga con Mercado Pago. Los datos de envío viajan guardados dentro del
+   pago (metadata), así el servidor los tiene al aprobarse.
+3. Al aprobarse el pago, el servidor crea la orden en Presis, recibe el
+   número de guía y la etiqueta, y avisa a los socios con todo listo.
+4. El cliente recibe los avisos de seguimiento de Fast Mail.
+
+**Falta:** el link real de la documentación de Presis (el mail lo trae
+vacío), las credenciales de Presis tras el alta comercial, qué servicios
+quedan habilitados (en el día / día siguiente / interior), y medidas y
+peso de la caja del pack.
 
 ## Orden sugerido
 1. Fase 1 → cargar precio, stock y fotos desde el panel (hoy).
 2. Fase 2 → planilla compartida (próxima sesión, no depende de nadie).
-3. Fase 3 → en cuanto esté la cuenta de Mercado Pago.
-4. Fase 4 → en cuanto responda Mandalo Ya.
+3. Fase 3 → hecha con la cuenta del socio; cambiar la clave cuando esté la de la sociedad.
+4. Fase 4 → en cuanto lleguen la documentación y las credenciales de Presis.
