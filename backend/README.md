@@ -68,6 +68,27 @@ Pago, el backend puede crear solo la guía en Fast Mail (e-Presis).
 - Si Mercado Pago avisa dos veces el mismo pago, no se duplica la guía.
 - Después de cambiar variables en Vercel hay que hacer **Redeploy**.
 
+## Avisos por mail
+
+Cada vez que se aprueba un pago, el backend te manda un mail con el pedido,
+los productos, los datos del cliente, el envío y, si la guía de Fast Mail se
+creó sola, **la etiqueta adjunta** lista para imprimir. Usa [Resend](https://resend.com).
+
+1. Creá una cuenta en <https://resend.com> y generá una **API key**.
+2. En Vercel → Settings → Environment Variables cargá:
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `RESEND_API_KEY` | Sí | La API key de Resend |
+| `MAIL_AVISOS` | Sí | Mails que reciben los avisos, separados por coma. Mientras el dominio no esté verificado en Resend, tiene que ser el mismo mail con el que te registraste |
+| `MAIL_FROM` | No | Remitente. Cuando verifiques el dominio `bubadrinks.com.ar` en Resend, usá algo como `BUBA Drinks <ventas@bubadrinks.com.ar>`. Por defecto sale de `onboarding@resend.dev` |
+
+3. Hacé **Redeploy**.
+
+- Si Mercado Pago avisa dos veces el mismo pago, el mail sale una sola vez.
+- Si falta `RESEND_API_KEY` o `MAIL_AVISOS`, simplemente no se mandan mails (lo demás sigue andando).
+- El resultado del envío de cada mail queda en los logs de Vercel (`[BUBA] Mail de venta`).
+
 ## Probar sin cobrar de verdad
 
 Usá el Access Token de **prueba** (empieza con `TEST-`) en vez del de

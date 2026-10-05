@@ -13,7 +13,7 @@
  *   SITE_URL → dirección de la tienda. Si no se define, se toma sola del
  *              pedido que llega desde la web.
  */
-const { datosEnvio } = require("../lib/envio");
+const { datosEnvio, datosCliente } = require("../lib/envio");
 
 const cors = (res, origin) => {
   res.setHeader("Access-Control-Allow-Origin", origin || "*");
@@ -97,7 +97,7 @@ module.exports = async (req, res) => {
       },
       auto_return: "approved",
       notification_url: webhookUrl(req),
-      metadata: { pedido: order.code, total: order.total, envio: datosEnvio(order) },
+      metadata: { pedido: order.code, total: order.total, envio: datosEnvio(order), cliente: datosCliente(order) },
     };
     if (!preference.metadata.envio) delete preference.metadata.envio;
     if (!preference.notification_url) delete preference.notification_url;

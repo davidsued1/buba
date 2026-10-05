@@ -2,6 +2,7 @@
  * BUBA — Armado de envíos para Fast Mail (funciones puras, sin red)
  *
  * datosEnvio(order)  → datos compactos que viajan en el `metadata` de Mercado Pago
+ * datosCliente(order) → datos del cliente y del pedido (siempre), para el mail de aviso
  * armarGuia(envio)   → body de api/v2/multi-guias.json (ver docs/10_API_Presis.md §2.3)
  */
 
@@ -28,6 +29,23 @@ function datosEnvio(order) {
     notas: txt(a.notes),
     metodo: txt(ship.id),
     bultos: Math.max(1, bultos),
+  };
+}
+
+/** Datos del cliente y del pedido para el aviso de venta. Siempre viaja, haya envío o retiro. */
+function datosCliente(order) {
+  const o = order || {};
+  const c = o.customer || {};
+  const s = o.shipping || {};
+  return {
+    pedido: txt(o.code),
+    nombre: txt(c.name),
+    email: txt(c.email),
+    telefono: txt(c.phone),
+    metodo_envio: txt(s.id),
+    envio_nombre: txt(s.name),
+    envio_precio: Number(s.price) || 0,
+    notas: txt((c.address && c.address.notes) || ""),
   };
 }
 
@@ -218,4 +236,4 @@ function armarGuia(envio, { remito, codigoServicio, cpOrigen, sucursal } = {}) {
   };
 }
 
-module.exports = { datosEnvio, separarCalle, separarPisoDepto, provinciaPresis, armarGuia };
+module.exports = { datosEnvio, datosCliente, separarCalle, separarPisoDepto, provinciaPresis, armarGuia };
