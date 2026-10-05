@@ -516,7 +516,18 @@ function renderShipping(box) {
         <input type="number" id="free-from" value="${STORE.config.freeShippingFrom}">
       </label>
       <button class="btn btn--solid btn--sm" id="save-free">Guardar</button>
+    </div>
+    <div class="panel">
+      <h3>Días sin despacho (feriados)</h3>
+      <p class="hint">Una fecha por línea, formato AAAA-MM-DD. Esos días no sale ningún pedido; la web corre la fecha al día hábil siguiente.</p>
+      <textarea id="feriados" rows="4">${esc((STORE.config.feriados || []).join("\n"))}</textarea>
     </div>`;
+
+  $("feriados").addEventListener("input", (e) => {
+    const fechas = e.target.value.split("\n").map((l) => l.trim()).filter((l) => /^\d{4}-\d{2}-\d{2}$/.test(l));
+    STORE.config.feriados = [...new Set(fechas)].sort();
+    queueSave();
+  });
 
   const upd = (attr, field, transform = (v) => v) =>
     box.querySelectorAll(`[data-${attr}]`).forEach((inp) =>

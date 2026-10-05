@@ -29,6 +29,7 @@ window.BUBA_DEFAULTS = {
     ga4Id: "",                    // Google Analytics 4 (G-XXXXXXX)
     metaPixelId: "",              // Meta / Facebook Pixel
     tiktokPixelId: "",            // TikTok Pixel
+    feriados: [],                 // fechas sin despacho, "AAAA-MM-DD"
   },
 
   // Pocos textos, todos editables desde el panel → Textos.

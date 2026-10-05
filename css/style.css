@@ -276,6 +276,9 @@ a.btn--cart { text-decoration: none; }
 .pack__limit { color: #8a1b1b; font-size: 0.85rem; margin: -6px 0 6px; }
 .pack__limit + .btn { margin-top: 10px; }
 .pack__note { font-size: 0.85rem; color: var(--gray-600); margin-top: 14px; }
+.pack__dispatch { font-size: 0.9rem; color: var(--gray-600); text-align: center; margin-top: 4px; }
+.cart-quote__ship { font-size: 0.9rem; color: var(--gray-600); }
+.ship-dispatch { font-size: 0.9rem; color: var(--gray-600); margin: 6px 0 14px; }
 .pack-empty { text-align: center; color: var(--gray-600); padding: 30px 0; }
 
 /* ---------- Los 4 sabores ---------- */

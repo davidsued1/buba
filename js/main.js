@@ -268,6 +268,27 @@ function closeFlavor() {
   flavorOpener = null;
 }
 
+/* Despacho: el pedido de un día D sale el primer día hábil posterior a D
+   (lunes a viernes, sin los feriados que carga el panel). */
+const DIAS_ES = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
+function fechaDespacho(desde = new Date()) {
+  const feriados = (STORE.config && STORE.config.feriados) || [];
+  const iso = (x) => `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, "0")}-${String(x.getDate()).padStart(2, "0")}`;
+  const d = new Date(desde.getFullYear(), desde.getMonth(), desde.getDate());
+  for (let i = 0; i < 30; i++) {
+    d.setDate(d.getDate() + 1);
+    const dow = d.getDay();
+    if (dow !== 0 && dow !== 6 && !feriados.includes(iso(d))) break;
+  }
+  return d;
+}
+function textoDespacho(d) {
+  const hoy = new Date();
+  const manana = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate() + 1);
+  const esManana = d.getFullYear() === manana.getFullYear() && d.getMonth() === manana.getMonth() && d.getDate() === manana.getDate();
+  return `${esManana ? "mañana" : "el"} ${DIAS_ES[d.getDay()]} ${d.getDate()}/${d.getMonth() + 1}`;
+}
+
 // texto de disponibilidad del pack según el stock real
 function stockLabel(p) {
   const st = p.stock ?? 0;
@@ -306,7 +327,8 @@ function renderProducts() {
         </div>
         <p class="pack__limit" id="pack-limit" hidden></p>
         <button type="button" class="btn btn--solid btn--lg btn--block" id="pack-buy">${esc(STORE.texts.packCta || "Comprar")}</button>
-        <p class="pack__note">${esc(STORE.texts.packNote || "Envío a CABA y GBA. Lo cotizás en el carrito con tu código postal.")}</p>`}
+        <p class="pack__note">${esc(STORE.texts.packNote || "Envío a CABA y GBA. Lo cotizás en el carrito con tu código postal.")}</p>
+        <p class="pack__dispatch">Si comprás hoy, sale ${esc(textoDespacho(fechaDespacho()))}.</p>`}
       </div>
     </article>`;
 
@@ -516,7 +538,10 @@ function renderShipOptions() {
   const zoneNote = delivery
     ? `<p class="ship-zone">Enviamos a <strong>${esc(addr.city || "")} (CP ${esc(addr.cp || "")})</strong> con Mandalo Ya.</p>`
     : `<p class="ship-zone ship-zone--none">${esc(STORE.config.envioNoCubierto || "Por ahora no llegamos a ese código postal.")}</p>`;
-  box.innerHTML = zoneNote + methods.map((m) => {
+  const dispatchNote = delivery
+    ? `<p class="ship-dispatch">Armamos tu pedido y sale ${esc(textoDespacho(fechaDespacho()))}. Los pedidos de viernes a domingo salen el lunes.</p>`
+    : "";
+  box.innerHTML = zoneNote + dispatchNote + methods.map((m) => {
     const price = shipPrice(m);
     return `
     <label class="ship-option${checkoutState.shipping?.id === m.id ? " is-selected" : ""}">
@@ -559,7 +584,7 @@ function setupCartQuote() {
     if (d) {
       const price = shipPrice(d);
       out.className = "cart-quote__result is-ok";
-      out.innerHTML = `${esc(d.name)}: <strong>${price === 0 ? "GRATIS" : money(price)}</strong> · ${esc(d.eta)}`;
+      out.innerHTML = `${esc(d.name)}: <strong>${price === 0 ? "GRATIS" : money(price)}</strong><br><span class="cart-quote__ship">Sale ${esc(textoDespacho(fechaDespacho()))} · ${esc(d.eta)}</span>`;
     } else {
       out.className = "cart-quote__result is-none";
       out.textContent = STORE.config.envioNoCubierto || "Por ahora no llegamos a ese código postal.";
