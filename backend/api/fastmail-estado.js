@@ -12,32 +12,7 @@
  *
  * Especificación de la API: docs/10_API_Presis.md
  */
-const BASE = "https://epresislv.fastmail.com.ar/";
-
-async function presis(ruta, body = {}) {
-  const sucursal = process.env.FASTMAIL_SUCURSAL || "";
-  const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 10000);
-  try {
-    const r = await fetch(BASE + ruta, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "aws-x-prs-wp": "presis-bubadrinks.com.ar" },
-      body: JSON.stringify({
-        api_token: process.env.FASTMAIL_TOKEN || "",
-        cp_origen: process.env.FASTMAIL_CP || "",
-        codigo_sucursal: sucursal,
-        sucursal,
-        ...body,
-      }),
-      signal: ctrl.signal,
-    });
-    const texto = await r.text();
-    try { return { http: r.status, data: JSON.parse(texto) }; }
-    catch { return { http: r.status, data: null, texto: texto.slice(0, 200) }; }
-  } finally {
-    clearTimeout(timer);
-  }
-}
+const { presis } = require("../lib/presis");
 
 module.exports = async (req, res) => {
   res.setHeader("Access-Control-Allow-Origin", req.headers.origin || "*");

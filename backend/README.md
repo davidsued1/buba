@@ -49,6 +49,25 @@ transferencia, efectivo (Rapipago / Pago Fácil) y hasta 12 cuotas.
 | `/api/create-preference` | La usa la web al tocar "Pagar con Mercado Pago" |
 | `/api/mp-webhook` | Mercado Pago avisa acá cuando se confirma un pago |
 
+## Envíos con Fast Mail
+
+Cuando un pago con envío a domicilio (no "retiro") se aprueba en Mercado
+Pago, el backend puede crear solo la guía en Fast Mail (e-Presis).
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `FASTMAIL_TOKEN` | Sí | Token de la API que mandó Fast Mail |
+| `FASTMAIL_SUCURSAL` | Sí | Código de sucursal (ej. `APP003`) |
+| `FASTMAIL_CP` | Sí | Código postal de retiro (ej. `1425`) |
+| `FASTMAIL_SERVICIO` | No | Código de servicio. Por defecto `24` (Servicio 24hs) |
+| `FASTMAIL_AUTO` | No | Poné `si` para activar las guías automáticas. **Apagado por defecto**: sin esto solo se anota en los logs |
+
+- Para probar la conexión sin crear nada, abrí `/api/fastmail-estado`.
+- Las guías aparecen en tu cuenta web de Fast Mail, desde ahí se imprimen las etiquetas.
+- Cada pack es una caja de 15 × 15 × 7,5 cm y se declara 1 kg por caja.
+- Si Mercado Pago avisa dos veces el mismo pago, no se duplica la guía.
+- Después de cambiar variables en Vercel hay que hacer **Redeploy**.
+
 ## Probar sin cobrar de verdad
 
 Usá el Access Token de **prueba** (empieza con `TEST-`) en vez del de
