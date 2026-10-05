@@ -51,6 +51,12 @@ transferencia, efectivo (Rapipago / Pago Fácil) y hasta 12 cuotas.
 | `/api/suscribir` | La usa el formulario "Avisame" de la web para anotar un mail (ver "Contactos para novedades") |
 | `/api/stock`, `/api/stock-movimiento`, `/api/stock-movimientos` | Stock compartido y app de Stock (ver "Stock compartido") |
 
+**Límite de 12 funciones.** El plan gratis de Vercel acepta hasta 12 archivos en `api/`
+(con más, el deploy falla). Las rutas de menos tráfico (`stock-movimiento`, `stock-movimientos`,
+`pagotic-estado`, `fastmail-estado`, `mail-prueba`) viven en `rutas/` y las atiende una sola
+función, `api/[ruta].js`, con las mismas direcciones. Una ruta nueva va en `rutas/` y se suma
+a la lista de `api/[ruta].js`, no como archivo nuevo en `api/`.
+
 ## Envíos con Fast Mail
 
 Cuando un pago con envío a domicilio (no "retiro") se aprueba en Mercado
