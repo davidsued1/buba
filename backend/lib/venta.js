@@ -147,14 +147,13 @@ const sello = (pago) => (pago.proveedor === "pagotic" ? "Pago TIC" : "MP");
 
 // ---------- flujo de venta ----------
 
-// DUDA: no sabemos qué devuelve seguimiento.json cuando el remito no existe. Según el plugin,
-// existe si trae status "ok" y guia; si no sabemos, cualquier objeto/array con contenido que no sea error cuenta como "existe".
+// Un remito "ya existe" solo si Fast Mail devuelve datos de una guía (campo guia, que en
+// seguimiento.json viene como objeto con las fechas). Cualquier otra respuesta (error, vacía,
+// sin guía) cuenta como "no existe", así un formato inesperado nunca frena el envío ni el mail.
 function remitoYaExiste(data) {
-  if (!data || typeof data !== "object") return false;
-  if (Array.isArray(data)) return data.length > 0 && !(data[0] && data[0].message && !data[0].guia);
-  if (data.status === "ok" || data.guia) return true;
-  if (data.message || data.status) return false;
-  return Object.keys(data).length > 0;
+  const conGuia = (x) => !!(x && typeof x === "object" && !x.message && (x.guia || x.numero_guia || x.nro_guia));
+  if (Array.isArray(data)) return data.some(conGuia);
+  return conGuia(data);
 }
 
 /** Crea la guía en Fast Mail (el remito es pago.remito: ver remitoDeVenta). Devuelve { estado: "creada", guia } | "apagada" | "ya_existia" | "error" (con motivo). */
@@ -163,8 +162,9 @@ async function crearGuia(pago) {
   const pedido = pago.external_reference || envio.pedido;
   const remito = pago.remito;
 
-  if (process.env.FASTMAIL_AUTO !== "si") {
-    console.log("[BUBA] Envío NO creado (FASTMAIL_AUTO apagado)", pedido, remito);
+  // prendida por defecto; FASTMAIL_AUTO = "no" la apaga (por ejemplo, para cargar envíos a mano)
+  if (String(process.env.FASTMAIL_AUTO || "").toLowerCase() === "no") {
+    console.log("[BUBA] Envío NO creado (FASTMAIL_AUTO = no)", pedido, remito);
     return { estado: "apagada" };
   }
 

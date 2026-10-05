@@ -124,7 +124,7 @@ siguiente del despacho.
 - **Variables en Vercel** (los valores nunca van al repositorio ni al chat):
   `MP_ACCESS_TOKEN`, `FASTMAIL_TOKEN`, `FASTMAIL_SUCURSAL`, `FASTMAIL_CP`,
   `RESEND_API_KEY`, `MAIL_AVISOS`. Opcionales: `FASTMAIL_SERVICIO` (24 por
-  defecto), `FASTMAIL_AUTO` ("si" prende la guía automática), `MAIL_FROM`.
+  defecto), `FASTMAIL_AUTO` (guía automática prendida por defecto; "no" la apaga), `MAIL_FROM`.
 - **Fast Mail:** conectado (`/api/fastmail-estado` → ok). Servicio a usar:
   **24** (Servicio 24hs). Guía automática programada y **apagada** hasta que
   Fast Mail confirme si hay ambiente de pruebas o cómo anular una guía.

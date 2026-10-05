@@ -61,7 +61,7 @@ Pago, el backend puede crear solo la guía en Fast Mail (e-Presis).
 | `FASTMAIL_SUCURSAL` | Sí | Código de sucursal (ej. `APP003`) |
 | `FASTMAIL_CP` | Sí | Código postal de retiro (ej. `1425`) |
 | `FASTMAIL_SERVICIO` | No | Código de servicio. Por defecto `24` (Servicio 24hs) |
-| `FASTMAIL_AUTO` | No | Poné `si` para activar las guías automáticas. **Apagado por defecto**: sin esto solo se anota en los logs |
+| `FASTMAIL_AUTO` | No | Guías automáticas **prendidas por defecto**. Poné `no` para apagarlas (los envíos se cargan a mano y el mail de venta lo avisa) |
 
 - Para probar la conexión sin crear nada, abrí `/api/fastmail-estado`.
 - Las guías aparecen en tu cuenta web de Fast Mail, desde ahí se imprimen las etiquetas.

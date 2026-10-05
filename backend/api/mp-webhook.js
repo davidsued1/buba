@@ -5,8 +5,8 @@
  * Consultamos el pago y dejamos registrado el resultado en los logs.
  *
  * Si el pago está aprobado y el pedido es con envío a domicilio, crea la
- * guía en Fast Mail (e-Presis). Solo si FASTMAIL_AUTO = "si" (apagado por
- * defecto). Ver backend/README.md y docs/10_API_Presis.md.
+ * guía en Fast Mail (e-Presis). Prendido por defecto; FASTMAIL_AUTO = "no" lo
+ * apaga. Ver backend/README.md y docs/10_API_Presis.md.
  *
  * Además avisa por mail (Resend) de cada venta aprobada, con la etiqueta de
  * Fast Mail adjunta si se creó la guía. Ver backend/lib/mail.js.
