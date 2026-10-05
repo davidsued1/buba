@@ -42,6 +42,16 @@
       "stock": 50,
       "active": true,
       "img": ""
+    },
+    {
+      "id": "prueba",
+      "name": "Producto de prueba",
+      "desc": "Solo para probar compras. No se envía nada real.",
+      "price": 100,
+      "stock": 99,
+      "active": true,
+      "img": "",
+      "prueba": true
     }
   ],
   "flavors": [

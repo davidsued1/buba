@@ -60,6 +60,8 @@ window.BUBA_DEFAULTS = {
       active: true,
       img: "",
     },
+    // Solo para que el dueño pruebe todo el circuito de compra. Se ve únicamente con la web cerrada (privado).
+    { id: "prueba", name: "Producto de prueba", desc: "Solo para probar compras. No se envía nada real.", price: 100, stock: 99, active: true, img: "", prueba: true },
   ],
 
   // Los sabores se presentan (no se venden sueltos). Al tocarlos se abre su ficha.

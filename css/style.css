@@ -238,6 +238,16 @@ a.btn--cart { text-decoration: none; }
   line-height: 1.1;
   margin: 10px 0 14px;
 }
+.pack-test {
+  border: 2px dashed #c7c7cc; border-radius: 14px; padding: 16px;
+  margin: 24px auto 0; max-width: 520px; text-align: center;
+}
+.pack-test__title { font-weight: 700; margin: 0 0 4px; }
+.pack-test__text { font-size: 13px; color: #6e6e73; margin: 0 0 12px; }
+.pack-test__row { display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: 8px 12px; }
+.pack-test__name { font-weight: 600; }
+.pack-test__price { color: #6e6e73; font-size: 14px; }
+.pack-test__row .btn { margin-top: 4px; }
 .pack__stock {
   display: block;
   width: fit-content;

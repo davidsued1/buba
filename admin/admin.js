@@ -158,7 +158,7 @@ function renderDashboard(box) {
   const ventas = valid.reduce((s, o) => s + (o.total || 0), 0);
   const pendientes = ORDERS.filter((o) => o.status === "pendiente").length;
   const pack = STORE.products[0] || {};
-  const lowStock = STORE.products.filter((p) => p.active !== false && (p.stock ?? 0) <= 10);
+  const lowStock = STORE.products.filter((p) => p.active !== false && p.prueba !== true && (p.stock ?? 0) <= 10);
 
   box.innerHTML = `
     <div class="cards">
@@ -268,7 +268,7 @@ function renderProducts(box) {
         ${STORE.products.map((p, i) => `
           <tr>
             <td>${p.img ? `<img class="thumb" src="${absImg(p.img)}" alt="">` : '<span class="thumb thumb--empty">?</span>'}</td>
-            <td><strong>${esc(p.name)}</strong><br><span class="hint">${esc(p.desc)}</span></td>
+            <td><strong>${esc(p.name)}</strong>${p.prueba === true ? ' <span class="pill pill--off">🧪 PRUEBA</span>' : ""}<br><span class="hint">${esc(p.desc)}</span></td>
             <td class="num"><input class="inline inline--num" type="number" value="${p.price}" data-price="${i}"></td>
             <td class="num"><input class="inline inline--num" type="number" value="${p.stock ?? 0}" data-stock="${i}"></td>
             <td>${p.active !== false ? '<span class="pill pill--pagado">activo</span>' : '<span class="pill pill--off">oculto</span>'}</td>
@@ -279,6 +279,7 @@ function renderProducts(box) {
             </td>
           </tr>`).join("")}
       </table></div>
+      ${STORE.products.some((p) => p.prueba === true) ? '<p class="hint">El producto de prueba solo se ve mientras la web está cerrada con código. Desactivalo o borralo cuando termines de probar.</p>' : ""}
     </div>
     <div class="panel">
       <div class="panel__head">

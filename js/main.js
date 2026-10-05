@@ -185,7 +185,10 @@ function setupAgeGate() {
 /* ==========================================================================
    TIENDA + CARRITO
    ========================================================================== */
-const activeProducts = () => STORE.products.filter((p) => p.active !== false);
+const activeProducts = () => STORE.products.filter((p) => p.active !== false && p.prueba !== true);
+// Productos de prueba: solo se ven con la web cerrada (modo privado) para que el dueño pruebe la compra.
+const testProducts = () =>
+  STORE.config.privado ? STORE.products.filter((p) => p.prueba === true && p.active !== false) : [];
 const findProduct = (id) => STORE.products.find((p) => p.id === id);
 
 const activeFlavors = () => (STORE.flavors || []).filter((f) => f.active !== false);
@@ -330,7 +333,27 @@ function renderProducts() {
         <p class="pack__note">${esc(STORE.texts.packNote || "Envío a CABA y GBA. Lo cotizás en el carrito con tu código postal.")}</p>
         <p class="pack__dispatch">Si comprás hoy, sale ${esc(textoDespacho(fechaDespacho()))}.</p>`}
       </div>
-    </article>`;
+    </article>${testProducts().length ? `
+    <div class="pack-test">
+      <p class="pack-test__title">🧪 Modo prueba</p>
+      <p class="pack-test__text">Solo se ve con la web cerrada. El envío de esta compra sale $0.</p>
+      ${testProducts().map((t) => `
+      <div class="pack-test__row">
+        <span class="pack-test__name">${esc(t.name)}</span>
+        <span class="pack-test__price">${money(t.price)}</span>
+        <button type="button" class="btn btn--outline btn--block" data-add-prueba="${esc(t.id)}">Agregar al carrito</button>
+      </div>`).join("")}
+    </div>` : ""}`;
+
+  if (!grid.dataset.pruebaBound) {
+    grid.dataset.pruebaBound = "1";
+    grid.addEventListener("click", (e) => {
+      const b = e.target.closest("[data-add-prueba]");
+      if (!b) return;
+      addToCart(b.dataset.addPrueba, 1);
+      openCart();
+    });
+  }
 
   const wl = $("pack-waitlist");
   if (wl) wl.addEventListener("click", (e) => {
@@ -375,7 +398,8 @@ let cart = lsJSON("buba-cart") || {};
 const cartEntries = () =>
   Object.entries(cart)
     .map(([id, qty]) => ({ product: findProduct(id), qty }))
-    .filter((e) => e.product && e.qty > 0);
+    // un producto de prueba no cuenta si la web ya está abierta al público
+    .filter((e) => e.product && e.qty > 0 && !(e.product.prueba && !STORE.config.privado));
 
 const cartSubtotal = () => cartEntries().reduce((s, e) => s + e.product.price * e.qty, 0);
 const cartCount = () => cartEntries().reduce((s, e) => s + e.qty, 0);
@@ -500,6 +524,9 @@ function setupGeo() {
 
 /* ---------- Paso 2: envío ---------- */
 function shipPrice(method) {
+  // Carrito solo con productos de prueba: el envío sale $0
+  const entries = cartEntries();
+  if (entries.length && entries.every((e) => e.product.prueba === true)) return 0;
   const free = STORE.config.freeShippingFrom;
   if (free > 0 && cartSubtotal() >= free) return 0;
   return method.price;
