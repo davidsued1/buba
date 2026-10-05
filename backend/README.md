@@ -89,6 +89,16 @@ creó sola, **la etiqueta adjunta** lista para imprimir. Usa [Resend](https://re
 - Si falta `RESEND_API_KEY` o `MAIL_AVISOS`, simplemente no se mandan mails (lo demás sigue andando).
 - El resultado del envío de cada mail queda en los logs de Vercel (`[BUBA] Mail de venta`).
 
+**Mail de devolución.** Si Mercado Pago devuelve la plata de una venta (reembolso
+total, devolución parcial o contracargo), el backend manda un segundo mail, con
+asunto 🔴 *Venta devuelta*, 🔴 *Contracargo* o 🟠 *Devolución parcial*. Trae el
+pedido, el monto, lo devuelto y los datos del cliente, y te recuerda dar de baja
+la guía en fastmail.com.ar (si Fast Mail está configurado, busca el número de
+guía por el remito). **No anula nada solo**: es solo un recordatorio, y en las
+devoluciones parciales no se vuelve a crear la guía ni a mandar el mail de venta.
+También sale una sola vez por devolución (log: `[BUBA] Mail de devolución`). Los
+pagos cancelados o rechazados no mandan nada.
+
 ## Probar sin cobrar de verdad
 
 Usá el Access Token de **prueba** (empieza con `TEST-`) en vez del de

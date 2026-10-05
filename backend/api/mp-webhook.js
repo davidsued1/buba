@@ -10,6 +10,10 @@
  *
  * Además avisa por mail (Resend) de cada venta aprobada, con la etiqueta de
  * Fast Mail adjunta si se creó la guía. Ver backend/lib/mail.js.
+ *
+ * Si la plata vuelve (reembolso total, parcial o contracargo) manda un segundo
+ * mail de recordatorio para dar de baja la guía de Fast Mail a mano. No anula
+ * nada solo. Los pagos cancelados o rechazados no hacen nada (nunca se aprobaron).
  */
 const { presis, etiqueta, configurado } = require("../lib/presis");
 const { enviarMail, mailConfigurado } = require("../lib/mail");
@@ -244,6 +248,163 @@ async function avisarVenta(pago, envioRes) {
   }
 }
 
+// ---------- mail de devolución ----------
+
+/** "total" | "contracargo" | "parcial" si el pago devolvió la plata; null si no. */
+function tipoDevolucion(pago) {
+  if (pago.status === "refunded") return "total";
+  if (pago.status === "charged_back") return "contracargo";
+  if (pago.status === "approved" && pago.status_detail === "partially_refunded") return "parcial";
+  return null;
+}
+
+/** Número de guía dentro de la respuesta de seguimiento.json, o null. */
+function numeroGuia(data) {
+  const deItem = (o) => {
+    if (!o || typeof o !== "object") return null;
+    for (const k of ["guia", "numero_guia", "nro_guia"]) {
+      const v = o[k];
+      if ((typeof v === "string" && v.trim()) || (typeof v === "number" && v)) return String(v).trim();
+    }
+    return null;
+  };
+  if (Array.isArray(data)) return deItem(data[0]);
+  return deItem(data) || deItem(data && data.guia);
+}
+
+/** Cuadro "Fast Mail" del mail de devolución. Nunca lanza. { color, fondo, texto } */
+async function avisoDevolucionEnvio(pago) {
+  const remito = String(pago.id);
+  const md = pago.metadata || {};
+  const pedido = pago.external_reference || md.pedido || (md.envio && md.envio.pedido) || `pago ${pago.id}`;
+  if (!md.envio) {
+    return { color: "#1d1d1f", fondo: "#f2f2f4", texto: "Era retiro en persona: no hay envío para anular." };
+  }
+  let guia = null;
+  if (configurado()) {
+    try {
+      const r = await presis("api/v2/seguimiento.json", { remito });
+      guia = numeroGuia(r.data);
+    } catch (err) {
+      console.error("[BUBA] No se pudo consultar la guía en Fast Mail:", err.name === "AbortError" ? "Fast Mail no respondió a tiempo" : err.message);
+    }
+  }
+  if (guia) {
+    return { color: "#b42318", fondo: "#fdecea", texto: `Este pedido tenía envío con Fast Mail. Entrá a fastmail.com.ar y dá de baja la guía Nº ${guia} (remito ${remito}).` };
+  }
+  return {
+    color: "#9a6700", fondo: "#fff6df",
+    texto: `Este pedido tenía envío a domicilio. Si se había creado la guía en Fast Mail, buscala por el remito ${remito} o por el pedido ${pedido} y dala de baja. Si la guía automática estaba apagada, no hay nada que anular.`,
+  };
+}
+
+/** Arma { asunto, html, texto } del aviso de devolución. tipo: "total" | "contracargo" | "parcial" */
+function armarMailDevolucion(pago, tipo, aviso) {
+  const md = pago.metadata || {};
+  const env = md.envio || null;
+  const cli = md.cliente || {};
+  const payer = pago.payer || {};
+  const payerNombre = [payer.first_name, payer.last_name].filter(Boolean).join(" ");
+  const payerTel = payer.phone && (payer.phone.number ? `${payer.phone.area_code || ""}${payer.phone.number}` : "");
+
+  const pedido = pago.external_reference || cli.pedido || (env && env.pedido) || `pago ${pago.id}`;
+  const monto = pesos(pago.transaction_amount);
+  const devueltoNum = pago.transaction_amount_refunded != null && pago.transaction_amount_refunded !== ""
+    ? Number(pago.transaction_amount_refunded)
+    : (tipo === "parcial" ? 0 : Number(pago.transaction_amount));
+  const devuelto = pesos(devueltoNum);
+  const nombre = cli.nombre || (env && env.nombre) || payerNombre || "";
+  const email = cli.email || (env && env.email) || payer.email || "";
+  const telefono = cli.telefono || (env && env.telefono) || payerTel || "";
+  const envioLinea = cli.envio_nombre || cli.metodo_envio || (env ? "Envío a domicilio" : "Retiro en persona");
+
+  const titulo = tipo === "contracargo" ? "🔴 Contracargo BUBA" : tipo === "parcial" ? "🟠 Devolución parcial BUBA" : "🔴 Venta devuelta BUBA";
+  const asunto = tipo === "parcial"
+    ? `${titulo} — ${pedido} — $${devuelto} de $${monto}`
+    : `${titulo} — ${pedido} — $${monto}`;
+  const intro = tipo === "contracargo"
+    ? "El cliente desconoció el pago (contracargo)."
+    : tipo === "parcial"
+      ? "Se devolvió una parte del pago."
+      : "Se devolvió el pago completo.";
+  const pie = "La devolución de la plata ya figura en Mercado Pago. Este mail es solo un recordatorio.";
+
+  const t = [
+    titulo.replace(/^\S+\s/, "").toUpperCase(),
+    intro,
+    ``,
+    `Pedido: ${pedido}`,
+    `Fecha de la venta: ${fechaAR(pago)}`,
+    `Monto: $${monto}`,
+    `Monto devuelto: $${devuelto}`,
+    `ID de pago de Mercado Pago: ${pago.id}`,
+    ``,
+    `CLIENTE`,
+    `Nombre: ${nombre || "—"}`,
+    `Email: ${email || "—"}`,
+    `Teléfono: ${telefono || "—"}`,
+    ``,
+    `ENVÍO`,
+    envioLinea,
+    ``,
+    `FAST MAIL`,
+    aviso.texto,
+    ``,
+    pie,
+  ];
+
+  const fila = (k, v) => `<tr><td style="padding:4px 12px 4px 0;color:#6e6e73;vertical-align:top">${esc(k)}</td><td style="padding:4px 0;color:#1d1d1f">${v}</td></tr>`;
+  const h2 = (x) => `<h2 style="margin:22px 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#6e6e73">${x}</h2>`;
+  const tabla = (filas) => `<table role="presentation" style="border-collapse:collapse;font-size:15px;width:100%">${filas.join("")}</table>`;
+  const h = `<!doctype html><html lang="es"><body style="margin:0;padding:0;background:#f5f5f7">
+<div style="max-width:560px;margin:0 auto;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
+<div style="background:#ffffff;border-radius:14px;padding:20px">
+<h1 style="margin:0 0 4px;font-size:20px;color:#1d1d1f">${esc(titulo)}</h1>
+<p style="margin:0 0 12px;font-size:15px;color:#6e6e73">${esc(intro)}</p>
+${tabla([
+  fila("Pedido", `<strong>${esc(pedido)}</strong>`),
+  fila("Fecha de la venta", esc(fechaAR(pago))),
+  fila("Monto", `$${esc(monto)}`),
+  fila("Monto devuelto", `<strong>$${esc(devuelto)}</strong>`),
+  fila("ID de pago MP", esc(pago.id)),
+])}
+${h2("Cliente")}
+${tabla([
+  fila("Nombre", esc(nombre || "—")),
+  fila("Email", email ? `<a href="mailto:${esc(email)}" style="color:#0066cc">${esc(email)}</a>` : "—"),
+  fila("Teléfono", esc(telefono || "—")),
+])}
+${h2("Envío")}
+${tabla([fila("Método", esc(envioLinea))])}
+${h2("Fast Mail")}
+<div style="background:${aviso.fondo};color:${aviso.color};border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.4">${esc(aviso.texto)}</div>
+<p style="margin:20px 0 0;font-size:13px;color:#6e6e73">${esc(pie)}</p>
+</div></div></body></html>`;
+
+  return { asunto, html: h, texto: t.join("\n") };
+}
+
+/** Mail de aviso de devolución / contracargo. Nunca lanza. */
+async function avisarDevolucion(pago, tipo) {
+  console.log("[BUBA] Pago devuelto", { pedido: pago.external_reference, tipo, id: pago.id });
+  if (!mailConfigurado()) return;
+  try {
+    const aviso = await avisoDevolucionEnvio(pago);
+    const m = armarMailDevolucion(pago, tipo, aviso);
+    const r = await enviarMail({
+      asunto: m.asunto,
+      html: m.html,
+      texto: m.texto,
+      idempotencia: tipo === "parcial"
+        ? `devolucion-parcial-${pago.id}-${pago.transaction_amount_refunded}`
+        : `devolucion-${pago.id}`,
+    });
+    console.log("[BUBA] Mail de devolución", { ok: r.ok, id: r.id, error: r.error });
+  } catch (err) {
+    console.error("[BUBA] Error armando el mail de devolución:", err.message);
+  }
+}
+
 module.exports = async (req, res) => {
   const token = process.env.MP_ACCESS_TOKEN;
   try {
@@ -261,9 +422,15 @@ module.exports = async (req, res) => {
           monto: pago.transaction_amount,
           email: pago.payer?.email,
         });
-        if (pago.status === "approved") {
+        const devolucion = tipoDevolucion(pago);
+        if (devolucion) {
+          // plata devuelta: solo recordatorio por mail (aunque sea "approved", no se repite el flujo de venta)
+          await avisarDevolucion(pago, devolucion);
+        } else if (pago.status === "approved") {
           const envioRes = await resolverEnvio(pago);
           await avisarVenta(pago, envioRes);
+        } else if (pago.status === "cancelled" || pago.status === "rejected") {
+          console.log("[BUBA] Pago no aprobado, no se hace nada", pago.external_reference, pago.status);
         }
       }
     }
