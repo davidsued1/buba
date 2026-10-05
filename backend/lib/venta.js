@@ -4,7 +4,7 @@
  * Mercado Pago (api/mp-webhook.js) y Pago TIC (api/pagotic-webhook.js) traducen
  * el pago verificado a una "venta" normalizada y la pasan por acá:
  *
- *   procesarVentaAprobada(venta)      → guía de Fast Mail, mail de venta al dueño,
+ *   procesarVentaAprobada(venta)      → guía de Fast Mail, descuento de stock, mail de venta al dueño,
  *                                       mail de confirmación al cliente, contacto en Resend
  *   procesarDevolucion(venta, tipo)   → mail de aviso de devolución / contracargo
  *                                       (tipo: "total" | "contracargo" | "parcial")
@@ -30,6 +30,7 @@ const { enviarMail, mailConfigurado, puedeMandarAClientes } = require("./mail");
 const { armarMailCliente, emailCliente } = require("./mail-cliente");
 const { armarGuia, esFalso } = require("./envio");
 const { guardarContacto } = require("./contactos");
+const stockLib = require("./stock");
 const { COLOR, esc, raw, layout, cabecera, seccion, filas, boton, botones, aviso, bloqueTexto, tablaCompra } = require("./plantilla-mail");
 
 // ---------- venta normalizada ----------
@@ -314,8 +315,20 @@ const FASTMAIL_URL = "https://www.fastmail.com.ar";
 const tarjetaFastMail = (av, conBoton) =>
   seccion("🚚 Fast Mail", aviso(av.texto, av.tipo, av.titulo) + (conBoton ? `<div style="margin:14px 0 0">${boton("Abrir Fast Mail", FASTMAIL_URL, COLOR.oscuro)}</div>` : ""));
 
-/** Arma { asunto, html, texto } del aviso de venta. */
-function armarMailVenta(pago, envioRes) {
+/**
+ * Línea "Stock: quedan N packs" del mail de venta + aviso de color si quedan pocos (≤ STOCK_AVISO,
+ * ámbar) o si se vendió de más (< 0, rojo). n = stock que quedó después de la venta; null = no se sabe.
+ */
+function stockMail(n) {
+  if (typeof n !== "number" || !Number.isFinite(n)) return null;
+  const linea = `📦 Stock: ${stockLib.textoQuedan(n)}`;
+  if (n < 0) return { linea, tipo: "error", aviso: "Se vendió más de lo que había: revisá el stock" };
+  if (n <= stockLib.umbralAviso()) return { linea, tipo: "warn", aviso: "Quedan pocos packs: cargá una entrada en la app de Stock" };
+  return { linea, tipo: null, aviso: "" };
+}
+
+/** Arma { asunto, html, texto } del aviso de venta. stock: packs que quedaron después de esta venta (opcional). */
+function armarMailVenta(pago, envioRes, stock) {
   const d = datosPago(pago);
   const { env, cli } = d;
   const total = mon(pago.transaction_amount);
@@ -345,6 +358,7 @@ function armarMailVenta(pago, envioRes) {
     : [];
 
   const av = avisoEnvio(envioRes);
+  const st = stockMail(stock);
   const cliente = tarjetaCliente(d, { novedades: true });
   const asunto = `🟢 Nueva venta BUBA — ${d.pedido} — ${total}`;
 
@@ -354,6 +368,7 @@ function armarMailVenta(pago, envioRes) {
   else t.push(`(sin detalle de productos: mirá el pago en ${nombreProveedor(pago)})`);
   for (const [k, v] of filaEnvio) t.push(`${k}: ${v}`);
   t.push(`TOTAL: ${total}`, `${pagoFrase}.`);
+  if (st) t.push(st.linea + (st.aviso ? ` — ${st.aviso}` : ""));
   t.push(``, `CLIENTE`, ...cliente.texto);
   t.push(``, `ENVÍO`, d.envioNombre + (d.eta ? ` · ${d.eta}` : ""));
   if (env) {
@@ -371,7 +386,9 @@ function armarMailVenta(pago, envioRes) {
   const compra = (items.length || filaEnvio.length
     ? tablaCompra({ items, extras: filaEnvio, total })
     : filas([["Total", raw(`<strong>${esc(total)}</strong>`)]])) +
-    `<div style="margin:14px 0 0;font-size:14px;line-height:20px;color:${COLOR.gris}">${esc(pagoFrase)}</div>`;
+    `<div style="margin:14px 0 0;font-size:14px;line-height:20px;color:${COLOR.gris}">${esc(pagoFrase)}</div>` +
+    (st ? `<div style="margin:10px 0 0;font-size:14px;line-height:20px;color:${COLOR.texto};font-weight:600">${esc(st.linea)}</div>` : "") +
+    (st && st.aviso ? `<div style="margin:10px 0 0">${aviso(st.aviso, st.tipo)}</div>` : "");
 
   const envioHtml = env
     ? `<div style="margin:0 0 12px;font-size:16px;line-height:22px;font-weight:600;color:${COLOR.texto}">${esc(d.envioNombre)}${d.eta ? ` <span style="font-weight:400;color:${COLOR.gris}">· ${esc(d.eta)}</span>` : ""}</div>` +
@@ -416,12 +433,38 @@ async function resolverEnvio(pago) {
   return res;
 }
 
+/**
+ * Paso 1b: descuenta la venta del stock compartido (lib/stock.js). Nunca lanza: un problema con
+ * la base de stock no frena ni la guía ni los mails. → stock que quedó (número) o null si no se sabe.
+ * Es idempotente por pago, así que dos avisos del mismo pago descuentan una sola vez.
+ */
+async function descontarStock(venta) {
+  if (!stockLib.configurado()) return null;
+  try {
+    const md = venta.metadata || {};
+    // lo que se guardó al crear el pago ([{ id, qty }]); si no vino, lo que informa la pasarela
+    const items = Array.isArray(md.items) && md.items.length
+      ? md.items
+      : (venta.items || []).filter((it) => String(it.id || "") !== "envio").map((it) => ({ id: it.id, qty: it.cantidad }));
+    const r = await stockLib.descontarVenta(venta.id, items, venta.pedido);
+    console.log("[BUBA] Stock", { pedido: venta.pedido, hecho: r.hecho, yaDescontado: !!r.yaDescontado, saldos: r.saldos });
+    if (r.hecho) return typeof r.saldos.pack4 === "number" ? r.saldos.pack4 : null;
+    if (r.yaDescontado) { // otro aviso del mismo pago ya lo hizo: se informa lo que hay ahora
+      const st = await stockLib.leerStock(["pack4"]);
+      return st.pack4;
+    }
+  } catch (err) {
+    console.error("[BUBA] Stock: no se pudo descontar la venta:", err.message);
+  }
+  return null;
+}
+
 /** Paso 2: mail de aviso. Nunca lanza. */
-async function avisarVenta(pago, envioRes) {
+async function avisarVenta(pago, envioRes, stock) {
   // segundo aviso del mismo pago: el primero ya mandó el mail
   if (envioRes.estado === "ya_existia" || !mailConfigurado()) return;
   try {
-    const m = armarMailVenta(pago, { ...envioRes, conEtiqueta: !!envioRes.etiqueta });
+    const m = armarMailVenta(pago, { ...envioRes, conEtiqueta: !!envioRes.etiqueta }, stock);
     const r = await enviarMail({
       asunto: m.asunto,
       html: m.html,
@@ -544,6 +587,8 @@ function armarMailDevolucion(pago, tipo, av) {
   const pastilla = tipo === "contracargo" ? "CONTRACARGO" : tipo === "parcial" ? "DEVOLUCIÓN PARCIAL" : "VENTA DEVUELTA";
 
   const cliente = tarjetaCliente(d, { novedades: false });
+  // con la base de stock conectada: recordatorio de cargar la devolución en la app (el stock no se repone solo)
+  const avisoStock = stockLib.configurado() ? "Si el pack vuelve, cargá una Devolución en la app de Stock." : "";
 
   const t = [
     `${pastilla} — ${devuelto}`,
@@ -563,6 +608,7 @@ function armarMailDevolucion(pago, tipo, av) {
     av.texto,
   ];
   if (av.envio) t.push(`Abrir Fast Mail: ${FASTMAIL_URL}`);
+  if (avisoStock) t.push(``, `STOCK`, avisoStock);
   t.push(``, pie, `ID de pago ${sello(pago)} ${pago.id}`);
 
   const html = layout({
@@ -580,6 +626,7 @@ function armarMailDevolucion(pago, tipo, av) {
       ])),
       seccion("👤 Cliente", cliente.html),
       tarjetaFastMail(av, av.envio),
+      ...(avisoStock ? [seccion("📦 Stock", aviso(avisoStock, "info"))] : []),
     ],
     pie: `${pie} · ID de pago ${sello(pago)} ${pago.id}`,
   });
@@ -611,14 +658,16 @@ async function avisarDevolucion(pago, tipo) {
 // ---------- API pública ----------
 
 /**
- * Venta aprobada: guía → mail de venta → mail al cliente → contacto. Nunca lanza.
+ * Venta aprobada: guía → stock → mail de venta → mail al cliente → contacto. Nunca lanza.
  * Es seguro llamarla dos veces por el mismo pago: la segunda detecta que el remito ya existe en Fast Mail
  * y no repite mails ni contacto. → { estado } del paso de envío.
  */
 async function procesarVentaAprobada(venta) {
   const pago = comoPago(venta);
   const envioRes = await resolverEnvio(pago);
-  await avisarVenta(pago, envioRes);
+  // solo el aviso que de verdad procesa la venta descuenta stock (el duplicado detectado por la guía, no)
+  const stock = envioRes.estado !== "ya_existia" ? await descontarStock(venta) : null;
+  await avisarVenta(pago, envioRes, stock);
   await avisarCliente(pago, envioRes);
   // segundo aviso del mismo pago: el contacto ya se guardó con el primero
   if (envioRes.estado !== "ya_existia") await guardarComprador(pago);

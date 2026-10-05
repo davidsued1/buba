@@ -41,6 +41,28 @@ async function resolveStore() {
   return store;
 }
 
+/* ---------- Stock en vivo ----------
+   El stock real vive en el servidor (app de Stock). Si responde, pisa el número de store.json;
+   si no (sin servidor, sin base de stock, sin conexión, más de 3 s), queda lo que dice store.json. */
+async function aplicarStockVivo() {
+  const api = String((STORE.config && STORE.config.apiBase) || "").replace(/\/$/, "");
+  if (!api) return false;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
+  try {
+    const r = await fetch(api + "/api/stock", { signal: ctrl.signal, cache: "no-store" });
+    const d = r.ok ? await r.json() : null;
+    if (!d || d.ok !== true || !d.stock) return false;
+    let hubo = false;
+    (STORE.products || []).forEach((p) => {
+      const n = d.stock[p.id];
+      if (typeof n === "number" && Number.isFinite(n)) { p.stock = Math.max(0, Math.floor(n)); hubo = true; }
+    });
+    return hubo;
+  } catch { return false; /* sin respuesta: se queda con store.json */ }
+  finally { clearTimeout(timer); }
+}
+
 // merge superficial por sección: cada bloque del panel reemplaza al default
 function mergeStore(base, over) {
   const out = { ...base };
@@ -791,6 +813,35 @@ function orderWaMessage(order) {
 }
 
 /* ---------- Pago ---------- */
+const packsTxt = (n) => (n === 1 ? "queda 1 pack" : `quedan ${n} packs`);
+
+/* El servidor avisa que el stock no alcanza (409 sin_stock): se cuenta cuánto queda, se actualiza
+   el stock en pantalla y se deja el carrito con lo que hay para que el cliente ajuste la cantidad.
+   Devuelve true si la respuesta era ese aviso (ya quedó todo resuelto). */
+async function manejarSinStock(res, btn, textoBoton) {
+  if (res.status !== 409) return false;
+  const d = await res.json().catch(() => null);
+  if (!d || d.error !== "sin_stock") return false;
+  const n = Math.max(0, Number(d.disponible) || 0);
+  btn.disabled = false;
+  btn.textContent = textoBoton;
+  alert(n > 0 ? `Justo se agotó: ${packsTxt(n)}. Ajustá la cantidad.` : "Justo se agotó: ya no quedan packs.");
+  await aplicarStockVivo();
+  const p = findProduct(d.producto);
+  if (p) {
+    p.stock = n;
+    if ((cart[p.id] || 0) > n) {
+      if (n > 0) cart[p.id] = n; else delete cart[p.id];
+      lsSet("buba-cart", JSON.stringify(cart));
+    }
+  }
+  renderProducts();
+  updateCartUI();
+  closeCheckout();
+  if (cartEntries().length) openCart();
+  return true;
+}
+
 async function payWithMP() {
   const order = buildOrder("mercadopago");
   const api = STORE.config.apiBase;
@@ -808,6 +859,7 @@ async function payWithMP() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order }),
     });
+    if (await manejarSinStock(res, btn, "Pagar con Mercado Pago")) return;
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     persistOrder(order);
@@ -835,6 +887,7 @@ async function payWithPagoTIC() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ order }),
     });
+    if (await manejarSinStock(res, btn, "Pagar con Pago TIC")) return;
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (!data.form_url) throw new Error("sin link de pago");
@@ -897,6 +950,7 @@ function setupCheckout() {
 window.addEventListener("storage", async (e) => {
   if (e.key !== "buba-store") return;
   STORE = await resolveStore();
+  await aplicarStockVivo();
   applyTexts();
   applyImages();
   renderProducts();
@@ -1031,6 +1085,7 @@ async function checkPaymentReturn() {
 
 document.addEventListener("DOMContentLoaded", async () => {
   STORE = await resolveStore();
+  await aplicarStockVivo();
 
   applyTexts();
   const abierta = setupCurtain();

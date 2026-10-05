@@ -55,6 +55,24 @@
     return store;
   }
 
+  /* Stock en vivo (igual que la home): si el servidor responde, pisa el de store.json. */
+  async function aplicarStockVivo() {
+    const api = String((STORE.config && STORE.config.apiBase) || "").replace(/\/$/, "");
+    if (!api) return;
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 3000);
+    try {
+      const r = await fetch(api + "/api/stock", { signal: ctrl.signal, cache: "no-store" });
+      const d = r.ok ? await r.json() : null;
+      if (!d || d.ok !== true || !d.stock) return;
+      (STORE.products || []).forEach((p) => {
+        const n = d.stock[p.id];
+        if (typeof n === "number" && Number.isFinite(n)) p.stock = Math.max(0, Math.floor(n));
+      });
+    } catch { /* sin respuesta: queda store.json */ }
+    finally { clearTimeout(timer); }
+  }
+
   /* Ficha por producto (doc 07 módulo 1). Los productos nuevos que se creen
      desde el panel usan la ficha genérica. */
   const DETAILS = {
@@ -185,6 +203,7 @@
 
   document.addEventListener("DOMContentLoaded", async () => {
     STORE = await resolveStore();
+    await aplicarStockVivo();
     // si la web está cerrada al público, mandamos a la portada (ahí está la pantalla de espera)
     const codigo = String(STORE.config.codigoAcceso || "");
     if (STORE.config.privado && lsGet("buba-acceso") !== codigo) {

@@ -49,6 +49,7 @@ transferencia, efectivo (Rapipago / Pago Fácil) y hasta 12 cuotas.
 | `/api/create-preference` | La usa la web al tocar "Pagar con Mercado Pago" |
 | `/api/mp-webhook` | Mercado Pago avisa acá cuando se confirma un pago |
 | `/api/suscribir` | La usa el formulario "Avisame" de la web para anotar un mail (ver "Contactos para novedades") |
+| `/api/stock`, `/api/stock-movimiento`, `/api/stock-movimientos` | Stock compartido y app de Stock (ver "Stock compartido") |
 
 ## Envíos con Fast Mail
 
@@ -164,6 +165,36 @@ ves todos los contactos y podés exportarlos a CSV. Para mandar una novedad a to
 *Broadcasts → Create broadcast*, elegí la audiencia "Clientes BUBA" (o el segmento),
 escribí el mail y enviá. Resend agrega solo el link para darse de baja y respeta
 a los desuscriptos. Para mandar broadcasts desde tu dominio, verificalo antes en Resend.
+
+## Stock compartido (Upstash Redis)
+
+Una sola fuente de verdad para el stock del pack: la web, el panel, los mails de venta y la **app de Stock**
+(`/stock/` en el sitio) leen y escriben en una base Upstash Redis (vía REST, sin dependencias). Guía completa
+para el dueño: `docs/12_Stock.md`.
+
+1. Vercel → proyecto `buba-pagos` → **Storage** → **Create Database** → **Upstash for Redis** → conectarla al proyecto
+   (para Production, Preview y Development). Vercel carga solo `KV_REST_API_URL` y `KV_REST_API_TOKEN`.
+2. Settings → Environment Variables → agregá `STOCK_CLAVE` (la clave de la app de Stock) y **Redeploy**.
+3. Abrí la app de Stock, entrá con la clave y cargá el número real con **Ajustar conteo**.
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `KV_REST_API_URL` y `KV_REST_API_TOKEN` (o `UPSTASH_REDIS_REST_URL` y `UPSTASH_REDIS_REST_TOKEN`) | Sí, para usar stock | Conexión a la base (las pone Vercel al conectar Upstash) |
+| `STOCK_CLAVE` | Sí, para usar la app | Clave que pide la app de Stock. Sin ella los endpoints de escritura/lectura de movimientos contestan 503 |
+| `STOCK_AVISO` | No | Con cuántos packs (o menos) el mail de venta avisa "Quedan pocos packs". Por defecto 10 |
+| `STOCK_PRODUCTOS` | No | Ids de producto con stock, separados por coma. Por defecto `pack4` |
+
+| Dirección | Para qué |
+|---|---|
+| `GET /api/stock` | Pública. `{ ok, stock: { pack4: n } }` (la web la usa para mostrar "Sin stock" / "Últimas N"). `{ ok: false }` si no hay base conectada |
+| `POST /api/stock-movimiento` | Carga una entrada, salida o ajuste. Header `X-Stock-Clave` |
+| `GET /api/stock-movimientos` | Stock + últimos 300 movimientos (header `X-Stock-Clave`). Con `?formato=csv&clave=…` baja `stock-buba.csv` |
+
+Cómo se engancha con las ventas: `create-preference` y `pagotic-crear` devuelven **409** `{ error: "sin_stock", producto, disponible }`
+si piden más de lo que hay (si Redis falla, la venta sigue) y guardan `metadata.items = [{ id, qty }]`. Cuando el pago se aprueba,
+`lib/venta.js` descuenta el stock una sola vez por pago (marca `stock:venta:<pagoId>`, `SET NX`) y el mail de venta dice
+"Stock: quedan N packs". Una devolución **no** repone stock sola: el mail de devolución recuerda cargarla en la app. Un error de la
+base de stock nunca frena la guía ni los mails. Sin la base conectada, todo funciona como antes.
 
 ## Pago TIC (segunda opción de cobro, en prueba)
 

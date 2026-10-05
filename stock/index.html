@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="es-AR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Stock — BUBA</title>
+  <meta name="robots" content="noindex, nofollow">
+  <meta name="theme-color" content="#ffffff">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="Stock BUBA">
+  <meta name="apple-mobile-web-app-status-bar-style" content="default">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="icon-512.png">
+  <link rel="stylesheet" href="stock.css?v=1">
+</head>
+<body>
+
+  <!-- ============ CONFIGURAR ESTE CELULAR (primera vez) ============ -->
+  <main class="setup" id="setup" hidden>
+    <div class="setup__box">
+      <img class="setup__logo" src="../assets/img/logo-buba.png" alt="BUBA">
+      <h1>Configurar este celular</h1>
+      <p class="lead">Lo hacés una sola vez. Así sabemos quién carga cada movimiento.</p>
+
+      <form id="setup-form" autocomplete="off" novalidate>
+        <p class="label" id="lbl-quien">¿Quién sos?</p>
+        <div class="chips" id="quien-chips" role="radiogroup" aria-labelledby="lbl-quien">
+          <button type="button" class="chip" role="radio" aria-checked="false" data-quien="David">David</button>
+          <button type="button" class="chip" role="radio" aria-checked="false" data-quien="Matías">Matías</button>
+        </div>
+        <input class="field" id="quien-libre" type="text" maxlength="40" placeholder="O escribí tu nombre" aria-label="Tu nombre">
+
+        <label class="label" for="clave">Clave de stock</label>
+        <input class="field" id="clave" type="password" maxlength="100" placeholder="La clave que te pasaron" autocomplete="off" autocapitalize="off" spellcheck="false">
+
+        <p class="error" id="setup-err" role="alert" hidden></p>
+        <button class="btn btn--solid btn--block" id="setup-ok" type="submit">Entrar</button>
+        <p class="center"><button class="linkbtn" id="setup-cancel" type="button" hidden>Volver</button></p>
+      </form>
+    </div>
+  </main>
+
+  <!-- ============ PANTALLA PRINCIPAL ============ -->
+  <div class="app" id="app" hidden>
+    <header class="top">
+      <div class="top__brand">
+        <img class="top__logo" src="../assets/img/logo-buba.png" alt="BUBA">
+        <span class="top__title">Stock</span>
+      </div>
+      <button class="top__user" id="btn-usuario" type="button" aria-label="Cambiar quién usa este celular"><span id="usuario-nombre"></span> · cambiar</button>
+    </header>
+
+    <main class="wrap">
+      <p class="banner" id="banner" role="alert" hidden></p>
+
+      <section class="count" id="count" data-estado="vacio" aria-live="polite">
+        <p class="count__prod">Pack de 4</p>
+        <p class="count__num" id="count-num">—</p>
+        <p class="count__lbl" id="count-lbl">packs disponibles</p>
+        <p class="count__aviso" id="count-aviso" hidden></p>
+      </section>
+
+      <div class="actions">
+        <button class="act act--in" id="btn-entrada" type="button"><span class="act__sign" aria-hidden="true">+</span> Entrada</button>
+        <button class="act act--out" id="btn-salida" type="button"><span class="act__sign" aria-hidden="true">−</span> Salida</button>
+      </div>
+      <p class="center"><button class="linkbtn" id="btn-ajuste" type="button">Ajustar conteo</button></p>
+
+      <section class="hint" id="hint" hidden>
+        <button class="hint__x" id="hint-x" type="button" aria-label="Cerrar">×</button>
+        <p class="hint__title">Agregar a la pantalla de inicio</p>
+        <p class="hint__txt" id="hint-txt"></p>
+      </section>
+
+      <section class="hist">
+        <div class="hist__head">
+          <h2>Movimientos</h2>
+          <a class="linkbtn" id="btn-csv" href="#" target="_blank" rel="noopener">Descargar Excel</a>
+        </div>
+        <ul class="list" id="lista"></ul>
+        <p class="empty" id="lista-vacia" hidden>Todavía no hay movimientos.</p>
+      </section>
+    </main>
+  </div>
+
+  <!-- ============ HOJA DE MOVIMIENTO ============ -->
+  <div class="overlay" id="overlay" hidden></div>
+  <form class="sheet" id="sheet" hidden role="dialog" aria-modal="true" aria-labelledby="sheet-title" novalidate>
+    <div class="sheet__grip" aria-hidden="true"></div>
+    <div class="sheet__head">
+      <h2 id="sheet-title">Entrada</h2>
+      <button class="sheet__x" id="sheet-x" type="button" aria-label="Cerrar">×</button>
+    </div>
+
+    <div id="sheet-mov">
+      <div class="seg" id="seg" role="radiogroup" aria-label="Tipo de movimiento">
+        <button type="button" role="radio" aria-checked="true" data-tipo="entrada">Entrada</button>
+        <button type="button" role="radio" aria-checked="false" data-tipo="salida">Salida</button>
+      </div>
+      <p class="label">Motivo</p>
+      <div class="chips" id="motivo-chips" role="radiogroup" aria-label="Motivo"></div>
+
+      <p class="label">Cantidad</p>
+      <div class="stepper">
+        <button class="stepper__btn" id="cant-menos" type="button" aria-label="Menos uno">−</button>
+        <input class="stepper__val" id="cant" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="5" value="1" aria-label="Cantidad de packs">
+        <button class="stepper__btn" id="cant-mas" type="button" aria-label="Más uno">+</button>
+      </div>
+    </div>
+
+    <div id="sheet-ajuste" hidden>
+      <p class="lead lead--sm">Contá los packs que hay de verdad y poné el número. El stock queda exactamente en ese número.</p>
+      <label class="label" for="conteo">Contaste</label>
+      <div class="conteo">
+        <input class="field field--big" id="conteo" type="text" inputmode="numeric" pattern="[0-9]*" maxlength="6" placeholder="0" aria-label="Packs contados">
+        <span class="conteo__suf">packs</span>
+      </div>
+      <p class="hint-small" id="conteo-ahora"></p>
+    </div>
+
+    <label class="label" for="nota">Nota (opcional)</label>
+    <input class="field" id="nota" type="text" maxlength="200" placeholder="Por ejemplo: tanda 3, regalo a Lucas…" autocomplete="off">
+
+    <p class="error" id="sheet-err" role="alert" hidden></p>
+    <button class="btn btn--solid btn--block" id="sheet-ok" type="submit">Guardar</button>
+  </form>
+
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <script src="stock.js?v=1"></script>
+</body>
+</html>

@@ -12,8 +12,14 @@
  * Opcional:
  *   SITE_URL → dirección de la tienda. Si no se define, se toma sola del
  *              pedido que llega desde la web.
+ *
+ * Stock (si la base está conectada, ver lib/stock.js): si piden más packs de los que hay,
+ * contesta 409 { error: "sin_stock", producto, disponible } y no crea el pago. Si la base
+ * falla, la venta sigue. El pedido viaja en metadata.items ([{ id, qty }]) para que el
+ * webhook descuente el stock cuando el pago se aprueba.
  */
 const { datosEnvio, datosCliente } = require("../lib/envio");
+const { faltaStock, itemsDePedido } = require("../lib/stock");
 
 const cors = (res, origin) => {
   res.setHeader("Access-Control-Allow-Origin", origin || "*");
@@ -38,6 +44,10 @@ module.exports = async (req, res) => {
   try {
     const { order } = req.body || {};
     if (!order?.items?.length) return res.status(400).json({ error: "El pedido llegó vacío" });
+
+    // ¿alcanza el stock? Si la base de stock falla o no está conectada, no se frena la venta.
+    const falta = await faltaStock(itemsDePedido(order));
+    if (falta) return res.status(409).json({ error: "sin_stock", producto: falta.producto, disponible: falta.disponible });
 
     // la tienda: la que se configure, o la que hizo la compra
     const siteUrl = (process.env.SITE_URL || origin || "https://davidsued1.github.io/buba").replace(/\/$/, "");
@@ -97,7 +107,7 @@ module.exports = async (req, res) => {
       },
       auto_return: "approved",
       notification_url: webhookUrl(req),
-      metadata: { pedido: order.code, total: order.total, envio: datosEnvio(order), cliente: datosCliente(order) },
+      metadata: { pedido: order.code, total: order.total, envio: datosEnvio(order), cliente: datosCliente(order), items: itemsDePedido(order) },
     };
     if (!preference.metadata.envio) delete preference.metadata.envio;
     if (!preference.notification_url) delete preference.notification_url;

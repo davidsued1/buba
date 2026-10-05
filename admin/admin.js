@@ -18,6 +18,32 @@ function lsSet(key, v) { try { localStorage.setItem(key, typeof v === "string" ?
 let STORE = null;
 let ORDERS = lsJSON("buba-orders") || [];
 let currentView = "dashboard";
+// Stock real (app de Stock). null = el servidor no respondió: se usa el número de store.json.
+let LIVE_STOCK = null;
+
+/** Lee el stock en vivo del servidor (3 s de espera). Devuelve true si cambió algo. */
+async function cargarStockVivo() {
+  const api = String((STORE && STORE.config && STORE.config.apiBase) || "").replace(/\/$/, "");
+  if (!api) return false;
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), 3000);
+  let nuevo = null;
+  try {
+    const r = await fetch(api + "/api/stock", { signal: ctrl.signal, cache: "no-store" });
+    const d = r.ok ? await r.json() : null;
+    if (d && d.ok === true && d.stock) {
+      nuevo = {};
+      for (const [id, n] of Object.entries(d.stock)) if (typeof n === "number" && Number.isFinite(n)) nuevo[id] = Math.floor(n);
+      if (!Object.keys(nuevo).length) nuevo = null;
+    }
+  } catch { /* sin respuesta: queda store.json */ }
+  finally { clearTimeout(timer); }
+  const cambio = JSON.stringify(nuevo) !== JSON.stringify(LIVE_STOCK);
+  LIVE_STOCK = nuevo;
+  return cambio;
+}
+const stockVivo = (p) => (LIVE_STOCK && typeof LIVE_STOCK[p.id] === "number" ? LIVE_STOCK[p.id] : null);
+const stockDe = (p) => { const v = stockVivo(p); return v != null ? v : (p.stock ?? 0); };
 
 function mergeStore(base, over) {
   const out = { ...base };
@@ -158,13 +184,13 @@ function renderDashboard(box) {
   const ventas = valid.reduce((s, o) => s + (o.total || 0), 0);
   const pendientes = ORDERS.filter((o) => o.status === "pendiente").length;
   const pack = STORE.products[0] || {};
-  const lowStock = STORE.products.filter((p) => p.active !== false && p.prueba !== true && (p.stock ?? 0) <= 10);
+  const lowStock = STORE.products.filter((p) => p.active !== false && p.prueba !== true && stockDe(p) <= 10);
 
   box.innerHTML = `
     <div class="cards">
       <div class="stat"><div class="stat__label">Ventas registradas</div><div class="stat__value">${money(ventas)}</div><div class="stat__hint">${valid.length} pedidos</div></div>
       <div class="stat"><div class="stat__label">Pedidos pendientes</div><div class="stat__value">${pendientes}</div><div class="stat__hint">por gestionar</div></div>
-      <div class="stat"><div class="stat__label">Pack x4</div><div class="stat__value">${money(pack.price || 0)}</div><div class="stat__hint">${pack.active === false ? "oculto · " : ""}stock: ${pack.stock ?? 0}</div></div>
+      <div class="stat"><div class="stat__label">Pack x4</div><div class="stat__value">${money(pack.price || 0)}</div><div class="stat__hint">${pack.active === false ? "oculto · " : ""}stock: ${stockDe(pack)}${stockVivo(pack) != null ? " · en vivo" : ""}</div></div>
       <div class="stat"><div class="stat__label">Stock bajo</div><div class="stat__value">${lowStock.length}</div><div class="stat__hint">≤ 10 unidades</div></div>
     </div>
     <div class="panel">
@@ -176,7 +202,7 @@ function renderDashboard(box) {
       <h3>⚠️ Reponer stock</h3>
       <div class="table-scroll"><table>
         <tr><th>Producto</th><th class="num">Stock</th></tr>
-        ${lowStock.map((p) => `<tr><td>${esc(p.name)}</td><td class="num"><span class="pill pill--low">${p.stock}</span></td></tr>`).join("")}
+        ${lowStock.map((p) => `<tr><td>${esc(p.name)}</td><td class="num"><span class="pill pill--low">${stockDe(p)}</span></td></tr>`).join("")}
       </table></div>
     </div>` : ""}
     <div class="note">Los pedidos de este panel se registran en este navegador (modo local). Cuando conectemos el backend de pagos, los pedidos de todos los clientes van a llegar acá automáticamente.</div>
@@ -270,7 +296,9 @@ function renderProducts(box) {
             <td>${p.img ? `<img class="thumb" src="${absImg(p.img)}" alt="">` : '<span class="thumb thumb--empty">?</span>'}</td>
             <td><strong>${esc(p.name)}</strong>${p.prueba === true ? ' <span class="pill pill--off">🧪 PRUEBA</span>' : ""}<br><span class="hint">${esc(p.desc)}</span></td>
             <td class="num"><input class="inline inline--num" type="number" value="${p.price}" data-price="${i}"></td>
-            <td class="num"><input class="inline inline--num" type="number" value="${p.stock ?? 0}" data-stock="${i}"></td>
+            <td class="num">${stockVivo(p) != null
+              ? `<strong>${stockVivo(p)}</strong><br><span class="hint">en vivo</span>`
+              : `<input class="inline inline--num" type="number" value="${p.stock ?? 0}" data-stock="${i}">`}</td>
             <td>${p.active !== false ? '<span class="pill pill--pagado">activo</span>' : '<span class="pill pill--off">oculto</span>'}</td>
             <td class="row-actions">
               <button class="btn btn--outline" data-edit="${i}">Editar</button>
@@ -279,6 +307,10 @@ function renderProducts(box) {
             </td>
           </tr>`).join("")}
       </table></div>
+      ${STORE.products.some((p) => stockVivo(p) != null) ? `<div class="note stock-note">
+        <p>El stock se maneja desde la app de Stock: ahí se cargan las entradas, las salidas y los ajustes, y la web lo toma solo.</p>
+        <a class="btn btn--solid btn--sm" id="open-stock" href="../stock/">Abrir app de Stock</a>
+      </div>` : ""}
       ${STORE.products.some((p) => p.prueba === true) ? '<p class="hint">El producto de prueba solo se ve mientras la web está cerrada con código. Desactivalo o borralo cuando termines de probar.</p>' : ""}
     </div>
     <div class="panel">
@@ -399,7 +431,9 @@ function editProduct(index) {
       <label class="span-2">Nombre<input id="p-name" value="${esc(p.name)}"></label>
       <label class="span-2">Descripción<input id="p-desc" value="${esc(p.desc)}"></label>
       <label>Precio ($)<input id="p-price" type="number" value="${p.price}"></label>
-      <label>Stock<input id="p-stock" type="number" value="${p.stock ?? 0}"></label>
+      ${stockVivo(p) != null
+        ? `<label>Stock<input id="p-stock" type="number" value="${stockVivo(p)}" disabled><span class="hint">Se maneja desde la app de Stock</span></label>`
+        : `<label>Stock<input id="p-stock" type="number" value="${p.stock ?? 0}"></label>`}
       <div class="span-2">
         <p class="hint" style="margin-bottom:8px">Foto del producto</p>
         ${imageBox(p.img, "p-img")}
@@ -426,7 +460,7 @@ function editProduct(index) {
     p.name = $("p-name").value.trim();
     p.desc = $("p-desc").value.trim();
     p.price = Number($("p-price").value) || 0;
-    p.stock = Math.max(0, Number($("p-stock").value) || 0);
+    if (!$("p-stock").disabled) p.stock = Math.max(0, Number($("p-stock").value) || 0);
     p.active = $("p-active").checked;
     p.img = imgData;
     if (!p.name) { alert("Poné un nombre."); return; }
@@ -1356,6 +1390,10 @@ document.addEventListener("DOMContentLoaded", async () => {
   setupLogin();
   renderView();
 
+  // stock en vivo: se pide aparte (no demora el panel) y, si llega, se redibuja Inicio / Productos
+  const conStock = () => currentView === "dashboard" || currentView === "products";
+  cargarStockVivo().then((cambio) => { if (cambio && conStock() && !$("app").hidden && $("modal").hidden) renderView(); });
+
   // navegación: menú lateral y barra inferior
   const goto = (e) => {
     const btn = e.target.closest("[data-view]");
@@ -1363,6 +1401,7 @@ document.addEventListener("DOMContentLoaded", async () => {
     currentView = btn.dataset.view;
     syncNav();
     renderView();
+    if (conStock()) cargarStockVivo().then((cambio) => { if (cambio && conStock()) renderView(); });
     closeSidebar();
     document.querySelector(".main").scrollTo({ top: 0 });
   };

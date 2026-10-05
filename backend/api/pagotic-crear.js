@@ -18,6 +18,7 @@
  */
 const { datosEnvio, datosCliente } = require("../lib/envio");
 const { configurado, faltantes, crearPago, collectorId, limpiar } = require("../lib/pagotic");
+const { faltaStock, itemsDePedido } = require("../lib/stock");
 
 const MARCA = "BUBA Drinks";
 // plazo para pagar: las transferencias y los cupones de pago en efectivo pueden tardar horas o días
@@ -104,7 +105,7 @@ function armarPago(order, { host, siteUrl, ahora = Date.now() }) {
       email: String((order.customer && order.customer.email) || "").trim(),
       external_reference: String((order.customer && order.customer.email) || code).trim().toLowerCase(),
     },
-    metadata: { pedido: code, cliente: datosCliente(order), envio: datosEnvio(order) },
+    metadata: { pedido: code, cliente: datosCliente(order), envio: datosEnvio(order), items: itemsDePedido(order) },
   };
   if (!pago.metadata.envio) delete pago.metadata.envio;
   if (host && !/localhost|127\.0\.0\.1/.test(host)) pago.notification_url = `https://${host}/api/pagotic-webhook`;
@@ -133,6 +134,9 @@ module.exports = async (req, res) => {
     if (!order.items.every((it) => Number(it.qty) > 0 && Number(it.price) >= 0)) {
       return res.status(400).json({ error: "El pedido tiene productos con cantidad o precio inválido" });
     }
+    // ¿alcanza el stock? (igual que en create-preference; si la base falla, no se frena la venta)
+    const falta = await faltaStock(itemsDePedido(order));
+    if (falta) return res.status(409).json({ error: "sin_stock", producto: falta.producto, disponible: falta.disponible });
     const host = hostDe(req);
     if (!host) return res.status(500).json({ error: "No se pudo saber la dirección del servidor de pagos" });
     const siteUrl = (process.env.SITE_URL || origin || "https://bubadrinks.com.ar").replace(/\/$/, "");
