@@ -10,6 +10,8 @@
  *   FASTMAIL_SUCURSAL  → código de sucursal (ej. APP003)
  *   FASTMAIL_CP        → código postal de retiro (ej. 1425)
  *
+ * Consultas extra (solo lectura): ?seguimiento=<remito> y ?cotizar=<CP>.
+ *
  * Especificación de la API: docs/10_API_Presis.md
  */
 const { presis } = require("../lib/presis");
@@ -39,6 +41,24 @@ module.exports = async (req, res) => {
         respuesta: prueba.data ? (prueba.data.message || prueba.data) : (prueba.texto || "sin respuesta"),
         http: prueba.http,
       });
+    }
+
+    // Consultas de solo lectura para probar sin crear envíos:
+    //   ?seguimiento=123456 → qué responde Fast Mail por ese número de remito
+    //   ?cotizar=1414       → precio de 1 pack (1 bulto, 1 kg, 15×15×7,5) a ese CP
+    const q = req.query || {};
+    const remito = String(q.seguimiento || "").replace(/\D/g, "").slice(0, 20);
+    if (remito) {
+      const s = await presis("api/v2/seguimiento.json", { remito });
+      return res.status(200).json({ ok: true, consulta: "seguimiento", remito, http: s.http, respuesta: s.data ?? s.texto ?? null });
+    }
+    const cp = String(q.cotizar || "").replace(/\D/g, "").slice(0, 4);
+    if (cp.length === 4) {
+      const c = await presis("api/v2/precio-servicio.json", {
+        tiempo: "", cp_destino: cp, is_urgente: false, valor_declarado: 0,
+        productos: [{ id: 1, bultos: 1, peso: 1, dimensiones: { alto: 8, largo: 15, profundidad: 15 } }],
+      });
+      return res.status(200).json({ ok: true, consulta: "cotizar", cp, http: c.http, respuesta: c.data ?? c.texto ?? null });
     }
 
     const serv = await presis("api/v2/servicios-cliente.json");
