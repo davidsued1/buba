@@ -101,6 +101,34 @@ devoluciones parciales no se vuelve a crear la guía ni a mandar el mail de vent
 También sale una sola vez por devolución (log: `[BUBA] Mail de devolución`). Los
 pagos cancelados o rechazados no mandan nada.
 
+## Mail al cliente
+
+Con cada pago aprobado, además del aviso para vos, el comprador recibe un **mail de
+confirmación de pedido** con la marca de BUBA: lo que compró, el total, cuándo sale
+y llega (primer día hábil siguiente a la compra, más 24 hs hábiles de Fast Mail), la
+dirección, el número de seguimiento si la guía se creó sola y botones de WhatsApp e
+Instagram. En retiro en persona avisa que lo contactan por WhatsApp.
+
+Para que salga hace falta:
+
+1. **Verificar el dominio** `bubadrinks.com.ar` en Resend (Domains). Sin dominio verificado,
+   Resend solo deja escribirle al dueño de la cuenta, no a clientes.
+2. Cargar `MAIL_FROM` en Vercel con ese dominio, por ejemplo `BUBA Drinks <hola@bubadrinks.com.ar>`.
+   **Si `MAIL_FROM` no está, el mail al cliente no se manda** (el aviso de venta sigue saliendo).
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `MAIL_FROM` | Sí, para que salga | Remitente con el dominio verificado |
+| `MAIL_REPLY_TO` | No | A dónde le llegan las respuestas del cliente. Por defecto `bubadrinks0@gmail.com` |
+| `SITE_URL` | No | Dirección del sitio, de donde se carga el logo. Por defecto `https://bubadrinks.com.ar` |
+
+- Para ver exactamente qué recibe un cliente, abrí `/api/mail-prueba?cliente=1`: manda el mail
+  con datos de ejemplo (1 pack, envío a CABA, guía creada) a la casilla de `MAIL_AVISOS`
+  (como mucho uno por hora).
+- Sale una sola vez por pago, aunque Mercado Pago avise dos veces. Log: `[BUBA] Mail al cliente`
+  (solo muestra el dominio del mail, no la dirección).
+- En tu aviso de venta, **Responder** le escribe directo al cliente.
+
 ## Contactos para novedades (Resend)
 
 Cada vez que se aprueba una compra, el mail del comprador se guarda en los

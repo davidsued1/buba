@@ -2,7 +2,7 @@
  * BUBA — Bloques para armar mails HTML (sin red, sin dependencias)
  *
  * HTML "a prueba de clientes de mail": tablas anidadas, estilos en línea,
- * ancho máximo 560 px, sin CSS externo ni imágenes. Pensado para leerse en el
+ * ancho máximo 560 px, sin CSS externo (solo el logo en los mails al cliente). Pensado para leerse en el
  * celular (Gmail en iPhone). Todo valor dinámico se escapa acá; para pasar HTML
  * ya armado (y ya escapado) hay que envolverlo con raw().
  */
@@ -21,6 +21,9 @@ const COLOR = {
   oscuro: "#1d1d1f",
   whatsapp: "#25a244",
 };
+
+/** Colores de los 4 sabores de BUBA (firma de marca en los mails al cliente). */
+const SABORES = ["#1c6fd6", "#f0922e", "#e5568f", "#d7191f"]; // Blueberry Limeade, Golden Peach, Pink Lemonade, Strawberry Ice
 
 const AVISOS = {
   ok: { fondo: "#e8f6ed", color: "#1f7a3d" },
@@ -130,6 +133,24 @@ function tablaCompra({ items = [], extras = [], total }) {
   );
 }
 
+/** Logo de BUBA centrado (PNG publicado en el sitio). site: URL base sin barra final. */
+function logoCabecera(site) {
+  return (
+    `<div style="text-align:center;padding:4px 0 0"><img src="${esc(String(site).replace(/\/$/, ""))}/assets/img/logo-full.png" width="180" alt="BUBA Ready Cocktails" style="display:block;border:0;height:auto;margin:0 auto"></div>`
+  );
+}
+
+/** Franja finita con los 4 colores de los sabores (4 celdas de 25 %, 6 px de alto). */
+function franjaColores() {
+  const celdas = SABORES.map((c) => `<td width="25%" height="6" bgcolor="${c}" style="background:${c};height:6px;line-height:6px;font-size:1px">&nbsp;</td>`).join("");
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="border-collapse:collapse"><tr>${celdas}</tr></table>`;
+}
+
+/** Botones uno debajo del otro, a todo el ancho (mejor en el celular que dos botones con texto largo). */
+function botonesApilados(lista) {
+  return (lista || []).filter(Boolean).map((b, i) => `<div style="margin:${i ? 10 : 0}px 0 0">${b}</div>`).join("");
+}
+
 /** Cabecera: marca, pastilla de estado, monto grande y una línea de detalle. */
 function cabecera({ marca = "BUBA DRINKS", pastilla, colorPastilla = COLOR.verde, monto, detalle = "", nota = "" }) {
   return (
@@ -147,7 +168,7 @@ function cabecera({ marca = "BUBA DRINKS", pastilla, colorPastilla = COLOR.verde
  *  titulo:    <title> del documento
  *  cabecera:  HTML de cabecera() (va en la primera tarjeta)
  *  secciones: HTML de seccion() (cada una es una tarjeta)
- *  pie:       texto chico gris al final
+ *  pie:       texto chico gris al final (texto, o raw(html) para varias líneas)
  */
 function layout({ preheader = "", titulo = "BUBA Drinks", cabecera: cab = "", secciones = [], pie = "" }) {
   const relleno = "&zwnj;&nbsp;".repeat(40); // evita que el cuerpo se cuele en la vista previa
@@ -161,8 +182,8 @@ function layout({ preheader = "", titulo = "BUBA Drinks", cabecera: cab = "", se
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="${COLOR.fondo}" style="background:${COLOR.fondo}"><tr><td align="center" style="padding:16px 12px 32px">
 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="max-width:560px;width:100%">
 ${filasTarjetas}
-${pie ? `<tr><td style="padding:8px 12px 0;font-family:${FUENTE};font-size:12px;line-height:18px;color:${COLOR.grisClaro};text-align:center">${esc(pie)}</td></tr>` : ""}
+${pie ? `<tr><td style="padding:8px 12px 0;font-family:${FUENTE};font-size:12px;line-height:18px;color:${COLOR.grisClaro};text-align:center">${val(pie)}</td></tr>` : ""}
 </table></td></tr></table></body></html>`;
 }
 
-module.exports = { COLOR, esc, raw, layout, cabecera, seccion, filas, boton, botones, aviso, bloqueTexto, tablaCompra };
+module.exports = { COLOR, SABORES, logoCabecera, franjaColores, botonesApilados, esc, raw, layout, cabecera, seccion, filas, boton, botones, aviso, bloqueTexto, tablaCompra };

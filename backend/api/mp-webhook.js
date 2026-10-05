@@ -11,6 +11,9 @@
  * Además avisa por mail (Resend) de cada venta aprobada, con la etiqueta de
  * Fast Mail adjunta si se creó la guía. Ver backend/lib/mail.js.
  *
+ * Si hay un dominio verificado en Resend (MAIL_FROM), también le manda al comprador
+ * un mail de confirmación de pedido. Ver backend/lib/mail-cliente.js.
+ *
  * Con cada venta aprobada también guarda el mail del comprador en los contactos
  * de Resend (para novedades). Ver backend/lib/contactos.js.
  *
@@ -19,7 +22,8 @@
  * nada solo. Los pagos cancelados o rechazados no hacen nada (nunca se aprobaron).
  */
 const { presis, etiqueta, configurado } = require("../lib/presis");
-const { enviarMail, mailConfigurado } = require("../lib/mail");
+const { enviarMail, mailConfigurado, puedeMandarAClientes } = require("../lib/mail");
+const { armarMailCliente, emailCliente } = require("../lib/mail-cliente");
 const { armarGuia, esFalso } = require("../lib/envio");
 const { guardarContacto } = require("../lib/contactos");
 const { COLOR, esc, raw, layout, cabecera, seccion, filas, boton, botones, aviso, bloqueTexto, tablaCompra } = require("../lib/plantilla-mail");
@@ -301,10 +305,33 @@ async function avisarVenta(pago, envioRes) {
       texto: m.texto,
       adjuntos: envioRes.etiqueta ? [envioRes.etiqueta] : [],
       idempotencia: "venta-" + pago.id,
+      responderA: emailCliente(pago) || undefined, // "Responder" en el mail de venta le escribe al cliente
     });
     console.log("[BUBA] Mail de venta", { ok: r.ok, id: r.id, error: r.error });
   } catch (err) {
     console.error("[BUBA] Error armando el mail de venta:", err.message);
+  }
+}
+
+/** Paso 2b: mail de confirmación al comprador. Nunca lanza. */
+async function avisarCliente(pago, envioRes) {
+  if (envioRes.estado === "ya_existia" || !puedeMandarAClientes()) return;
+  const email = emailCliente(pago);
+  if (!email) { console.log("[BUBA] Mail al cliente", { ok: false, motivo: "la compra no trae un mail válido" }); return; }
+  const dominio = email.split("@").pop(); // en los logs, solo el dominio
+  try {
+    const m = armarMailCliente(pago, envioRes);
+    const r = await enviarMail({
+      para: email,
+      responderA: process.env.MAIL_REPLY_TO || "bubadrinks0@gmail.com",
+      asunto: m.asunto,
+      html: m.html,
+      texto: m.texto,
+      idempotencia: "cliente-" + pago.id,
+    });
+    console.log("[BUBA] Mail al cliente", { ok: r.ok, id: r.id, error: r.error && String(r.error).split(email).join("***"), dominio });
+  } catch (err) {
+    console.error("[BUBA] Error armando el mail al cliente:", err.message);
   }
 }
 
@@ -482,6 +509,7 @@ module.exports = async (req, res) => {
         } else if (pago.status === "approved") {
           const envioRes = await resolverEnvio(pago);
           await avisarVenta(pago, envioRes);
+          await avisarCliente(pago, envioRes);
           // segundo aviso del mismo pago: el contacto ya se guardó con el primero
           if (envioRes.estado !== "ya_existia") await guardarComprador(pago);
         } else if (pago.status === "cancelled" || pago.status === "rejected") {
