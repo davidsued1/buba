@@ -67,18 +67,22 @@ async function estadoPagoTIC(req, res) {
   }
 
   try {
-    let pagos;
+    const email = String(req.query?.email || "").trim();
+    let pagos = [];
+    let fallo = null;
     if (idValido) {
       const r = await P.obtenerPago(id);
-      if (!r.pago && r.http !== 404) return res.status(200).json({ ok: false, mensaje: "Pago TIC respondió " + r.http });
-      pagos = r.pago ? [r.pago] : [];
-    } else {
-      const filtros = [{ campo: "external_transaction_id", valor: pedido }];
-      if (P.collectorId()) filtros.push({ campo: "collector_id", valor: P.collectorId() });
-      const r = await P.buscarPagos(filtros);
-      if (r.http < 200 || r.http >= 300) return res.status(200).json({ ok: false, mensaje: "Pago TIC respondió " + r.http });
-      // la consulta es por igualdad; igual se descarta lo que no sea de este pedido
-      pagos = r.pagos.filter((p) => !p.external_transaction_id || String(p.external_transaction_id).toLowerCase() === pedido.toLowerCase());
+      if (r.pago) pagos = [r.pago];
+      else if (r.http !== 404) fallo = r;
+    }
+    // sin id (o sin resultado por id): búsqueda por pedido con las combinaciones que acepta la API
+    if (!pagos.length && /^BUBA-[A-Z0-9-]{3,40}$/i.test(pedido)) {
+      const r = await P.buscarPorPedido(pedido, email);
+      if (r.http >= 200 && r.http < 300) { pagos = r.pagos; fallo = null; }
+      else fallo = fallo || r;
+    }
+    if (!pagos.length && fallo) {
+      return res.status(200).json({ ok: false, mensaje: "Pago TIC respondió " + (fallo.http || "sin respuesta"), detalle: P.limpiar(fallo.texto || "", 200) });
     }
     // si el pedido tuvo varios intentos, vale el aprobado; si no, el primero que devuelve la API
     const elegido = pagos.find((p) => P.estadoComoMP(p.status) === "approved") || pagos[0];

@@ -834,6 +834,12 @@ async function payWithPagoTIC() {
     if (!res.ok) throw new Error("HTTP " + res.status);
     const data = await res.json();
     if (!data.form_url) throw new Error("sin link de pago");
+    // para verificar el pago a la vuelta: el id de Pago TIC y el mail del pagador
+    try {
+      const guardados = JSON.parse(localStorage.getItem("buba-pagotic") || "{}");
+      guardados[order.code] = { id: data.id || "", email: (order.customer && order.customer.email) || "" };
+      localStorage.setItem("buba-pagotic", JSON.stringify(guardados));
+    } catch {}
     persistOrder(order);
     window.location.href = data.form_url;
   } catch (err) {
@@ -1002,8 +1008,12 @@ async function checkPaymentReturn() {
 
   showPaymentResult("verificando", pedido, prov);
   try {
+    let ticGuardado = {};
+    if (pagotic) { try { ticGuardado = (JSON.parse(localStorage.getItem("buba-pagotic") || "{}"))[pedido] || {}; } catch {} }
     const params = pagotic
-      ? "proveedor=pagotic&pedido=" + encodeURIComponent(pedido)
+      ? "proveedor=pagotic&pedido=" + encodeURIComponent(pedido) +
+        (ticGuardado.id ? "&id=" + encodeURIComponent(ticGuardado.id) : "") +
+        (ticGuardado.email ? "&email=" + encodeURIComponent(ticGuardado.email) : "")
       : paymentId && /^\d+$/.test(paymentId) ? "id=" + paymentId : "pedido=" + encodeURIComponent(pedido);
     const r = await fetch(`${api}/api/estado-pago?${params}`, { cache: "no-store" });
     const data = r.ok ? await r.json() : null;

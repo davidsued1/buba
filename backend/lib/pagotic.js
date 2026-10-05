@@ -137,11 +137,39 @@ async function api(metodo, ruta, body) {
 /** POST /pagos → { http, data, texto }. data.form_url es adonde se manda al cliente. */
 const crearPago = (body) => api("POST", "/pagos", body);
 
-/** Arma la query de filtros de la API de consulta: [{campo, valor}] → "filters[0][field]=…". */
+/** Arma la query de filtros de la API de consulta: [{campo, valor, op?}] → "filters[0][field]=…" (op por defecto EQUAL). */
 function queryFiltros(filtros) {
   return filtros
-    .map((f, i) => `filters[${i}][field]=${encodeURIComponent(f.campo)}&filters[${i}][operation]=EQUAL&filters[${i}][value]=${encodeURIComponent(f.valor)}`)
+    .map((f, i) => `filters[${i}][field]=${encodeURIComponent(f.campo)}&filters[${i}][operation]=${encodeURIComponent(f.op || "EQUAL")}&filters[${i}][value]=${encodeURIComponent(f.valor)}`)
     .join("&");
+}
+
+/** Fecha en el formato de los filtros de Pago TIC (yyyyMMddTHHmmssSSSZ, hora argentina): hace `dias` días a las 00:00. */
+function fechaFiltro(dias = 7, ahora = new Date()) {
+  const ar = new Date(ahora.getTime() - 3 * 3600 * 1000 - dias * 86400 * 1000); // corrido a UTC-3
+  const p = (n, l = 2) => String(n).padStart(l, "0");
+  return `${ar.getUTCFullYear()}${p(ar.getUTCMonth() + 1)}${p(ar.getUTCDate())}T000000000-0300`;
+}
+
+/**
+ * Pagos de un pedido. La API exige combinaciones mínimas de filtros (no alcanza con el número de
+ * pedido solo): se usa número de cobrador + fecha si está PAGOTIC_COLLECTOR_ID, y si no,
+ * mail del pagador + fecha. → { http, pagos:[…] (solo los de ese pedido), texto }
+ */
+async function buscarPorPedido(pedido, email) {
+  const desde = { campo: "request_date", op: "GREATER_THAN", valor: fechaFiltro(7) };
+  const intentos = [];
+  if (collectorId()) intentos.push([{ campo: "collector_id", valor: collectorId() }, desde]);
+  if (email) intentos.push([{ campo: "payer.email", valor: String(email).trim().toLowerCase() }, desde]);
+  if (!intentos.length) return { http: 0, pagos: [], texto: "falta el mail del pagador para consultar" };
+  let ultimo = { http: 0, pagos: [], texto: "" };
+  for (const filtros of intentos) {
+    const r = await buscarPagos(filtros);
+    const deEste = r.pagos.filter((p) => String(p.external_transaction_id || "").toLowerCase() === String(pedido).toLowerCase());
+    if (r.http >= 200 && r.http < 300) return { http: r.http, pagos: deEste, texto: "" };
+    ultimo = { http: r.http, pagos: [], texto: r.texto };
+  }
+  return ultimo;
 }
 
 /** Saca la lista de pagos de una respuesta de consulta ({ data:[…] } o directamente […]). */
@@ -175,10 +203,21 @@ async function obtenerPago(id) {
   }
   if (r.http !== 404 && r.http !== 405) return { http: r.http, pago: null, texto: r.texto };
 
-  // plan B (el endpoint por id puede no existir en todas las cuentas)
-  const b = await buscarPagos([{ campo: "id", valor: buscado }]);
-  const p = b.pagos.find(igual) || null; // se exige el mismo id: un filtro ignorado no puede colar otro pago
-  return { http: p ? b.http : b.http || r.http, pago: p, texto: p ? "" : b.texto || r.texto };
+  // plan B (el endpoint por id puede no existir en todas las cuentas): filtros por id,
+  // con el número de cobrador si lo tenemos (la API pide combinaciones mínimas)
+  const planes = [];
+  if (collectorId()) {
+    planes.push([{ campo: "collector_id", valor: collectorId() }, { campo: "id", valor: buscado }]);
+    planes.push([{ campo: "collector_id", valor: collectorId() }, { campo: "payment_id", valor: buscado }]);
+  }
+  planes.push([{ campo: "id", valor: buscado }]);
+  let b = { http: 0, pagos: [], texto: "" };
+  for (const filtros of planes) {
+    b = await buscarPagos(filtros);
+    const p = b.pagos.find(igual); // se exige el mismo id: un filtro ignorado no puede colar otro pago
+    if (p) return { http: b.http, pago: p, texto: "" };
+  }
+  return { http: b.http || r.http, pago: null, texto: b.texto || r.texto };
 }
 
 /** Estado de Pago TIC → el nombre que ya entiende la web (los de Mercado Pago). Desconocido: tal cual. */
@@ -195,6 +234,6 @@ function estadoComoMP(status) {
 const _olvidarToken = () => { cache = { token: null, vence: 0 }; };
 
 module.exports = {
-  configurado, faltantes, token, api, crearPago, obtenerPago, buscarPagos, estadoComoMP, apiUrl, collectorId, limpiar, _olvidarToken,
+  configurado, faltantes, token, api, crearPago, obtenerPago, buscarPagos, buscarPorPedido, fechaFiltro, estadoComoMP, apiUrl, collectorId, limpiar, _olvidarToken,
   AUTH_URL_DEFECTO, API_URL_DEFECTO,
 };
