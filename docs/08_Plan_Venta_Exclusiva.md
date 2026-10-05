@@ -101,10 +101,22 @@ Cómo va a quedar:
    número de guía y la etiqueta, y avisa a los socios con todo listo.
 4. El cliente recibe los avisos de seguimiento de Fast Mail.
 
-**Falta:** el link real de la documentación de Presis (el mail lo trae
-vacío), las credenciales de Presis tras el alta comercial, qué servicios
-quedan habilitados (en el día / día siguiente / interior), y medidas y
-peso de la caja del pack.
+Datos del paquete (uno por pack):
+- Caja de **15 × 15 × 7,5 cm**.
+- Peso real con las 4 latas: **0,9 kg**. Se declara **1 kg** para no quedar
+  por debajo del real (Fast Mail cotiza por peso y medidas).
+- Si se compran 2 packs, van 2 bultos.
+
+Despacho: los pedidos se arman la noche anterior y salen al **día hábil
+siguiente** a la compra. Lo de viernes a domingo sale el lunes. Los
+feriados se cargan en el panel → Envíos.
+
+La API de Presis está documentada a partir del plugin oficial de Fast Mail
+(`docs/referencia/wp-woo-fastmail`, ficha en `docs/10_API_Presis.md`).
+
+**Falta:** las credenciales de Presis tras el alta comercial y confirmar
+con Fast Mail qué servicio corresponde para que el cliente reciba al día
+siguiente del despacho.
 
 ## Orden sugerido
 1. Fase 1 → cargar precio, stock y fotos desde el panel (hoy).
