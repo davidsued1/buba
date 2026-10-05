@@ -21,6 +21,7 @@
 
       <form class="curtain__news" id="curtain-news">
         <input type="email" placeholder="tu@email.com" required aria-label="Tu email">
+        <input type="text" name="sitio" tabindex="-1" autocomplete="off" class="hp" aria-hidden="true">
         <button type="submit" class="btn btn--solid">Avisame</button>
       </form>
       <p class="curtain__ok" id="curtain-ok" hidden>¡Listo! Te avisamos cuando abrimos.</p>
@@ -178,6 +179,7 @@
           <label>Email<input type="email" id="f-email" required autocomplete="email"></label>
           <label>Teléfono (WhatsApp)<input type="tel" id="f-phone" required autocomplete="tel" placeholder="11 2233 4455"></label>
         </div>
+        <label class="check-novedades"><input type="checkbox" id="f-marketing" checked> Quiero recibir novedades, lanzamientos y promos de BUBA por mail. Me puedo dar de baja cuando quiera.</label>
         <h3>¿A dónde lo enviamos?</h3>
         <div class="form-grid">
           <label class="span-2">Calle y número<input type="text" id="f-street" required autocomplete="street-address"></label>

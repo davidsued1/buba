@@ -11,13 +11,18 @@
  * Además avisa por mail (Resend) de cada venta aprobada, con la etiqueta de
  * Fast Mail adjunta si se creó la guía. Ver backend/lib/mail.js.
  *
+ * Con cada venta aprobada también guarda el mail del comprador en los contactos
+ * de Resend (para novedades). Ver backend/lib/contactos.js.
+ *
  * Si la plata vuelve (reembolso total, parcial o contracargo) manda un segundo
  * mail de recordatorio para dar de baja la guía de Fast Mail a mano. No anula
  * nada solo. Los pagos cancelados o rechazados no hacen nada (nunca se aprobaron).
  */
 const { presis, etiqueta, configurado } = require("../lib/presis");
 const { enviarMail, mailConfigurado } = require("../lib/mail");
-const { armarGuia } = require("../lib/envio");
+const { armarGuia, esFalso } = require("../lib/envio");
+const { guardarContacto } = require("../lib/contactos");
+const { COLOR, esc, raw, layout, cabecera, seccion, filas, boton, botones, aviso, bloqueTexto, tablaCompra } = require("../lib/plantilla-mail");
 
 /** Id del pago según la forma del aviso. null si no es un aviso de pago. */
 function pagoDelAviso(req) {
@@ -81,10 +86,8 @@ async function crearGuia(pago) {
 
 // ---------- mail de venta ----------
 
-const esc = (v) =>
-  String(v == null ? "" : v).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
-
 const pesos = (n) => Number(n || 0).toLocaleString("es-AR", { maximumFractionDigits: 2 });
+const mon = (n) => `$${pesos(n)}`;
 
 function fechaAR(pago) {
   const d = new Date(pago.date_approved || pago.date_created || Date.now());
@@ -93,7 +96,7 @@ function fechaAR(pago) {
     timeZone: "America/Argentina/Buenos_Aires",
     day: "2-digit", month: "2-digit", year: "numeric",
     hour: "2-digit", minute: "2-digit", hour12: false,
-  }) + " hs";
+  }).replace(", ", " ") + "\u00a0hs";
 }
 
 /** Link de WhatsApp si el número parece un celular argentino; si no, null. */
@@ -110,103 +113,160 @@ function linkWhatsapp(tel) {
   return d.length === 10 ? `https://wa.me/549${d}` : null;
 }
 
-/** Cuadro "Fast Mail" según cómo salió el envío → { titulo, texto } */
-function avisoEnvio(envioRes) {
-  switch (envioRes.estado) {
-    case "creada":
-      return { color: "#1f7a3d", fondo: "#e8f6ed", texto: `Guía Nº ${envioRes.guia}` + (envioRes.conEtiqueta ? " — etiqueta adjunta, imprimila y pegala en la caja." : ". No pudimos adjuntar la etiqueta: bajala desde fastmail.com.ar.") };
-    case "apagada":
-      return { color: "#9a6700", fondo: "#fff6df", texto: "La guía automática está apagada: cargá el envío a mano en fastmail.com.ar." };
-    case "error":
-      return { color: "#b42318", fondo: "#fdecea", texto: `Fast Mail no creó la guía (${envioRes.motivo || "motivo desconocido"}). Cargalo a mano en fastmail.com.ar.` };
-    case "retiro":
-      return { color: "#1d1d1f", fondo: "#f2f2f4", texto: "Retiro en persona: coordiná con el cliente por WhatsApp." };
-    default:
-      return { color: "#9a6700", fondo: "#fff6df", texto: "Fast Mail no está configurado en el servidor: cargá el envío a mano en fastmail.com.ar." };
-  }
-}
+const MEDIOS = {
+  visa: "Visa", master: "Mastercard", amex: "American Express", debvisa: "Visa débito", debmaster: "Mastercard débito",
+  account_money: "Dinero en Mercado Pago", naranja: "Naranja", cabal: "Cabal", maestro: "Maestro",
+  rapipago: "Rapipago", pagofacil: "Pago Fácil",
+};
+/** "visa" → "Visa". Si no lo conocemos, el id tal cual. */
+const medioLegible = (id) => MEDIOS[String(id || "").toLowerCase()] || String(id || "") || "medio no informado";
 
-/** Arma { asunto, html, texto } del aviso de venta. */
-function armarMailVenta(pago, envioRes) {
+/** Datos del pedido y del cliente, con respaldo en los datos del pagador de Mercado Pago. */
+function datosPago(pago) {
   const md = pago.metadata || {};
   const env = md.envio || null;
   const cli = md.cliente || {};
   const payer = pago.payer || {};
   const payerNombre = [payer.first_name, payer.last_name].filter(Boolean).join(" ");
   const payerTel = payer.phone && (payer.phone.number ? `${payer.phone.area_code || ""}${payer.phone.number}` : "");
-
-  const pedido = pago.external_reference || cli.pedido || (env && env.pedido) || `pago ${pago.id}`;
-  const monto = pesos(pago.transaction_amount);
-  const nombre = cli.nombre || (env && env.nombre) || payerNombre || "";
-  const email = cli.email || (env && env.email) || payer.email || "";
   const telefono = cli.telefono || (env && env.telefono) || payerTel || "";
-  const wa = linkWhatsapp(telefono);
-  const cuotas = Number(pago.installments) || 1;
-  const medio = `${pago.payment_method_id || "—"} · ${cuotas} cuota${cuotas === 1 ? "" : "s"}`;
-  const items = (pago.additional_info && Array.isArray(pago.additional_info.items) ? pago.additional_info.items : [])
-    .map((it) => `${it.title || it.id || "Producto"} × ${it.quantity || 1} — $${pesos(it.unit_price)}`);
+  return {
+    env, cli,
+    pedido: pago.external_reference || cli.pedido || (env && env.pedido) || `pago ${pago.id}`,
+    nombre: cli.nombre || (env && env.nombre) || payerNombre || "",
+    email: cli.email || (env && env.email) || payer.email || "",
+    telefono,
+    wa: linkWhatsapp(telefono),
+    envioNombre: cli.envio_nombre || cli.metodo_envio || (env ? "Envío a domicilio" : "Retiro en persona"),
+    eta: cli.envio_eta || "",
+    novedades: !esFalso(cli.marketing),
+  };
+}
 
-  const envioLinea = cli.envio_nombre || cli.metodo_envio
-    ? `${cli.envio_nombre || cli.metodo_envio}${Number(cli.envio_precio) > 0 ? ` — $${pesos(cli.envio_precio)}` : Number(cli.envio_precio) === 0 ? " — sin costo" : ""}`
-    : (env ? "Envío a domicilio" : "Retiro en persona");
-  const direccion = env
-    ? [
-        ["Calle", env.calle], ["Piso/Depto", env.piso_depto], ["Ciudad", env.ciudad],
-        ["Provincia", env.provincia], ["CP", env.cp], ["Notas", env.notas || cli.notas],
-        ["Bultos", env.bultos],
-      ].filter(([, v]) => v !== "" && v != null)
+/** Tarjeta "Cliente": nombre, botones de WhatsApp y mail, y datos de contacto. Devuelve { html, texto }. */
+function tarjetaCliente(d, { novedades }) {
+  const mensaje = `¡Hola${d.nombre ? " " + d.nombre : ""}! Te escribimos de BUBA por tu pedido ${d.pedido}.`;
+  const bWa = d.wa ? boton("WhatsApp", `${d.wa}?text=${encodeURIComponent(mensaje)}`, COLOR.whatsapp) : "";
+  const bMail = d.email ? boton("Mail", `mailto:${encodeURI(d.email)}?subject=${encodeURIComponent("Tu pedido BUBA " + d.pedido)}`, COLOR.oscuro) : "";
+  const botonesHtml = botones([bWa, bMail]);
+  const rows = [
+    ["Email", d.email ? raw(`<a href="mailto:${esc(encodeURI(d.email))}" style="color:#0066cc;text-decoration:none">${esc(d.email)}</a>`) : "—"],
+    ["Teléfono", d.telefono || "—"],
+  ];
+  if (novedades) rows.push(["Novedades por mail", d.novedades ? "Sí, quiere recibir" : "No"]);
+  const html =
+    `<div style="margin:0 0 ${botonesHtml ? 14 : 8}px;font-size:18px;line-height:24px;font-weight:700;color:${COLOR.texto}">${esc(d.nombre || "—")}</div>` +
+    (botonesHtml ? `<div style="margin:0 0 10px">${botonesHtml}</div>` : "") +
+    filas(rows);
+  const texto = [d.nombre || "—", `Email: ${d.email || "—"}`, `Teléfono: ${d.telefono || "—"}`];
+  if (d.wa) texto.push(`WhatsApp: ${d.wa}`);
+  if (novedades) texto.push(`Novedades por mail: ${d.novedades ? "Sí, quiere recibir" : "No"}`);
+  return { html, texto };
+}
+
+/** Cuadro "Fast Mail" según cómo salió el envío → { tipo, titulo, texto } */
+function avisoEnvio(envioRes) {
+  switch (envioRes.estado) {
+    case "creada":
+      return {
+        tipo: "ok", titulo: "Guía creada",
+        texto: `Guía Nº ${envioRes.guia} · ` + (envioRes.conEtiqueta ? "Etiqueta adjunta: imprimila y pegala en la caja." : "No pudimos adjuntar la etiqueta: bajala desde fastmail.com.ar."),
+      };
+    case "apagada":
+      return { tipo: "warn", titulo: "Guía automática apagada", texto: "La guía automática está apagada. Cargá el envío a mano en fastmail.com.ar." };
+    case "error":
+      return { tipo: "error", titulo: "No se pudo crear la guía", texto: `Fast Mail no creó la guía (${envioRes.motivo || "motivo desconocido"}). Cargalo a mano en fastmail.com.ar.` };
+    case "retiro":
+      return { tipo: "info", titulo: "Sin envío", texto: "Retiro en persona: coordiná con el cliente por WhatsApp." };
+    default:
+      return { tipo: "warn", titulo: "Fast Mail sin configurar", texto: "Fast Mail no está configurado en el servidor. Cargá el envío a mano en fastmail.com.ar." };
+  }
+}
+
+const FASTMAIL_URL = "https://www.fastmail.com.ar";
+/** Tarjeta "Fast Mail": cuadro de color y, si hay envío, botón para abrir Fast Mail. */
+const tarjetaFastMail = (av, conBoton) =>
+  seccion("🚚 Fast Mail", aviso(av.texto, av.tipo, av.titulo) + (conBoton ? `<div style="margin:14px 0 0">${boton("Abrir Fast Mail", FASTMAIL_URL, COLOR.oscuro)}</div>` : ""));
+
+/** Arma { asunto, html, texto } del aviso de venta. */
+function armarMailVenta(pago, envioRes) {
+  const d = datosPago(pago);
+  const { env, cli } = d;
+  const total = mon(pago.transaction_amount);
+  const fecha = fechaAR(pago);
+  const cuotas = Number(pago.installments) || 1;
+  const pagoFrase = `Pagó con ${medioLegible(pago.payment_method_id)} en ${cuotas} cuota${cuotas === 1 ? "" : "s"}`;
+
+  // productos (el envío, si vino como ítem, va en su propia fila)
+  const todos = pago.additional_info && Array.isArray(pago.additional_info.items) ? pago.additional_info.items : [];
+  const esEnvio = (it) => String(it.id || "") === "envio" || /env[ií]o/i.test(String(it.title || ""));
+  const subtotal = (it) => (Number(it.quantity) || 1) * (Number(it.unit_price) || 0);
+  const items = todos.filter((it) => !esEnvio(it)).map((it) => ({
+    nombre: String(it.title || it.id || "Producto").replace(/^BUBA Drinks\s*·\s*(?=\S)/i, ""),
+    cant: Number(it.quantity) || 1,
+    subtotal: mon(subtotal(it)),
+  }));
+  const itemsEnvio = todos.filter(esEnvio);
+  const precioEnvio = itemsEnvio.length ? itemsEnvio.reduce((n, it) => n + subtotal(it), 0) : Number(cli.envio_precio);
+  const hayPrecioEnvio = itemsEnvio.length > 0 || cli.envio_precio != null || !env;
+  const filaEnvio = hayPrecioEnvio ? [["Envío", precioEnvio > 0 ? mon(precioEnvio) : "Sin costo"]] : [];
+
+  const bultos = env && env.bultos ? `${env.bultos} (cajas de 15×15×7,5 cm)` : "";
+  const notas = env ? env.notas || cli.notas || "" : "";
+  const lineasDir = env
+    ? [env.calle, env.piso_depto ? `Piso/Depto: ${env.piso_depto}` : "", env.ciudad, env.provincia, env.cp ? `CP ${env.cp}` : ""].filter(Boolean)
     : [];
 
-  const aviso = avisoEnvio(envioRes);
-  const asunto = `🟢 Nueva venta BUBA — ${pedido} — $${monto}`;
+  const av = avisoEnvio(envioRes);
+  const cliente = tarjetaCliente(d, { novedades: true });
+  const asunto = `🟢 Nueva venta BUBA — ${d.pedido} — ${total}`;
 
-  // texto plano
-  const t = [
-    `NUEVA VENTA BUBA`,
-    ``,
-    `Pedido: ${pedido}`,
-    `Fecha: ${fechaAR(pago)}`,
-    `Total: $${monto}`,
-    `Medio de pago: ${medio}`,
-    `ID de pago de Mercado Pago: ${pago.id}`,
-  ];
-  if (items.length) t.push(``, `PRODUCTOS`, ...items.map((i) => `- ${i}`));
-  t.push(``, `CLIENTE`, `Nombre: ${nombre || "—"}`, `Email: ${email || "—"}`, `Teléfono: ${telefono || "—"}`);
-  if (wa) t.push(`WhatsApp: ${wa}`);
-  t.push(``, `ENVÍO`, envioLinea);
-  for (const [k, v] of direccion) t.push(`${k}: ${v}`);
-  t.push(``, `FAST MAIL`, aviso.texto, ``, `Despacho: día hábil siguiente a la compra.`);
+  // ----- texto plano
+  const t = [`VENTA APROBADA — ${total}`, `Pedido ${d.pedido} · ${fecha}`, ``, `QUÉ COMPRÓ`];
+  if (items.length) for (const it of items) t.push(`- ${it.nombre} × ${it.cant} — ${it.subtotal}`);
+  else t.push(`(sin detalle de productos: mirá el pago en Mercado Pago)`);
+  for (const [k, v] of filaEnvio) t.push(`${k}: ${v}`);
+  t.push(`TOTAL: ${total}`, `${pagoFrase}.`);
+  t.push(``, `CLIENTE`, ...cliente.texto);
+  t.push(``, `ENVÍO`, d.envioNombre + (d.eta ? ` · ${d.eta}` : ""));
+  if (env) {
+    t.push(...lineasDir);
+    if (notas) t.push(`Notas: ${notas}`);
+    if (bultos) t.push(`Bultos: ${bultos}`);
+  } else {
+    t.push(`Retiro en persona — coordiná día y hora por WhatsApp.`);
+  }
+  t.push(``, `FAST MAIL`, av.titulo, av.texto);
+  if (env) t.push(`Abrir Fast Mail: ${FASTMAIL_URL}`);
+  t.push(``, `Despacho: día hábil siguiente a la compra · ID de pago MP ${pago.id}`);
 
-  // html
-  const fila = (k, v) => `<tr><td style="padding:4px 12px 4px 0;color:#6e6e73;vertical-align:top">${esc(k)}</td><td style="padding:4px 0;color:#1d1d1f">${v}</td></tr>`;
-  const h2 = (x) => `<h2 style="margin:22px 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#6e6e73">${x}</h2>`;
-  const tabla = (filas) => `<table role="presentation" style="border-collapse:collapse;font-size:15px;width:100%">${filas.join("")}</table>`;
-  const h = `<!doctype html><html lang="es"><body style="margin:0;padding:0;background:#f5f5f7">
-<div style="max-width:560px;margin:0 auto;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-<div style="background:#ffffff;border-radius:14px;padding:20px">
-<h1 style="margin:0 0 4px;font-size:20px;color:#1d1d1f">🟢 Nueva venta BUBA</h1>
-<p style="margin:0 0 12px;font-size:28px;font-weight:700;color:#1d1d1f">$${esc(monto)}</p>
-${tabla([
-  fila("Pedido", `<strong>${esc(pedido)}</strong>`),
-  fila("Fecha", esc(fechaAR(pago))),
-  fila("Medio de pago", esc(medio)),
-  fila("ID de pago MP", esc(pago.id)),
-])}
-${items.length ? h2("Productos") + `<ul style="margin:0;padding-left:18px;font-size:15px;color:#1d1d1f">${items.map((i) => `<li style="margin:2px 0">${esc(i)}</li>`).join("")}</ul>` : ""}
-${h2("Cliente")}
-${tabla([
-  fila("Nombre", esc(nombre || "—")),
-  fila("Email", email ? `<a href="mailto:${esc(email)}" style="color:#0066cc">${esc(email)}</a>` : "—"),
-  fila("Teléfono", wa ? `<a href="${esc(wa)}" style="color:#0066cc">${esc(telefono)}</a> (WhatsApp)` : esc(telefono || "—")),
-])}
-${h2("Envío")}
-${tabla([fila("Método", esc(envioLinea)), ...direccion.map(([k, v]) => fila(k, esc(v)))])}
-${h2("Fast Mail")}
-<div style="background:${aviso.fondo};color:${aviso.color};border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.4">${esc(aviso.texto)}</div>
-<p style="margin:20px 0 0;font-size:13px;color:#6e6e73">Despacho: día hábil siguiente a la compra.</p>
-</div></div></body></html>`;
+  // ----- html
+  const compra = (items.length || filaEnvio.length
+    ? tablaCompra({ items, extras: filaEnvio, total })
+    : filas([["Total", raw(`<strong>${esc(total)}</strong>`)]])) +
+    `<div style="margin:14px 0 0;font-size:14px;line-height:20px;color:${COLOR.gris}">${esc(pagoFrase)}</div>`;
 
-  return { asunto, html: h, texto: t.join("\n") };
+  const envioHtml = env
+    ? `<div style="margin:0 0 12px;font-size:16px;line-height:22px;font-weight:600;color:${COLOR.texto}">${esc(d.envioNombre)}${d.eta ? ` <span style="font-weight:400;color:${COLOR.gris}">· ${esc(d.eta)}</span>` : ""}</div>` +
+      bloqueTexto(lineasDir) +
+      `<div style="margin:8px 0 0">${filas([["Notas", notas], ["Bultos", bultos]])}</div>`
+    : `<div style="font-size:16px;line-height:22px;font-weight:600;color:${COLOR.texto}">Retiro en persona</div>` +
+      `<div style="margin:4px 0 0;font-size:15px;line-height:21px;color:${COLOR.gris}">Coordiná día y hora por WhatsApp.</div>`;
+
+  const html = layout({
+    titulo: `Nueva venta BUBA ${d.pedido}`,
+    preheader: [d.pedido, total, d.nombre, d.envioNombre].filter(Boolean).join(" · "),
+    cabecera: cabecera({ pastilla: "VENTA APROBADA", colorPastilla: COLOR.verde, monto: total, detalle: `Pedido ${d.pedido} · ${fecha}` }),
+    secciones: [
+      seccion("🛒 Qué compró", compra),
+      seccion("👤 Cliente", cliente.html),
+      seccion("📦 Envío", envioHtml),
+      tarjetaFastMail(av, !!env),
+    ],
+    pie: `Despacho: día hábil siguiente a la compra · ID de pago MP ${pago.id}`,
+  });
+
+  return { asunto, html, texto: t.join("\n") };
 }
 
 /** Paso 1: guía de Fast Mail. Nunca lanza. { estado, guia?, motivo?, etiqueta? } */
@@ -248,6 +308,19 @@ async function avisarVenta(pago, envioRes) {
   }
 }
 
+/** Paso 3: guarda al comprador en los contactos de Resend. Nunca lanza ni frena nada. */
+async function guardarComprador(pago) {
+  if (!process.env.RESEND_API_KEY) return;
+  try {
+    const d = datosPago(pago);
+    if (!d.email) { console.log("[BUBA] Contacto", { ok: false, motivo: "la compra no trae mail" }); return; }
+    const r = await guardarContacto({ email: d.email, nombre: d.nombre, origen: "compra", quiereNovedades: d.novedades });
+    console.log("[BUBA] Contacto", { ok: r.ok, motivo: r.motivo });
+  } catch (err) {
+    console.error("[BUBA] Error guardando el contacto:", err.message);
+  }
+}
+
 // ---------- mail de devolución ----------
 
 /** "total" | "contracargo" | "parcial" si el pago devolvió la plata; null si no. */
@@ -272,13 +345,13 @@ function numeroGuia(data) {
   return deItem(data) || deItem(data && data.guia);
 }
 
-/** Cuadro "Fast Mail" del mail de devolución. Nunca lanza. { color, fondo, texto } */
+/** Cuadro "Fast Mail" del mail de devolución. Nunca lanza. { tipo, titulo, texto, envio } */
 async function avisoDevolucionEnvio(pago) {
   const remito = String(pago.id);
   const md = pago.metadata || {};
   const pedido = pago.external_reference || md.pedido || (md.envio && md.envio.pedido) || `pago ${pago.id}`;
   if (!md.envio) {
-    return { color: "#1d1d1f", fondo: "#f2f2f4", texto: "Era retiro en persona: no hay envío para anular." };
+    return { tipo: "info", titulo: "Sin envío", texto: "Era retiro en persona: no hay envío para anular.", envio: false };
   }
   let guia = null;
   if (configurado()) {
@@ -290,98 +363,78 @@ async function avisoDevolucionEnvio(pago) {
     }
   }
   if (guia) {
-    return { color: "#b42318", fondo: "#fdecea", texto: `Este pedido tenía envío con Fast Mail. Entrá a fastmail.com.ar y dá de baja la guía Nº ${guia} (remito ${remito}).` };
+    return { tipo: "error", titulo: "Dar de baja la guía", envio: true, texto: `Este pedido tenía envío con Fast Mail. Entrá a fastmail.com.ar y dá de baja la guía Nº ${guia} (remito ${remito}).` };
   }
   return {
-    color: "#9a6700", fondo: "#fff6df",
+    tipo: "warn", titulo: "Revisar la guía", envio: true,
     texto: `Este pedido tenía envío a domicilio. Si se había creado la guía en Fast Mail, buscala por el remito ${remito} o por el pedido ${pedido} y dala de baja. Si la guía automática estaba apagada, no hay nada que anular.`,
   };
 }
 
 /** Arma { asunto, html, texto } del aviso de devolución. tipo: "total" | "contracargo" | "parcial" */
-function armarMailDevolucion(pago, tipo, aviso) {
-  const md = pago.metadata || {};
-  const env = md.envio || null;
-  const cli = md.cliente || {};
-  const payer = pago.payer || {};
-  const payerNombre = [payer.first_name, payer.last_name].filter(Boolean).join(" ");
-  const payerTel = payer.phone && (payer.phone.number ? `${payer.phone.area_code || ""}${payer.phone.number}` : "");
-
-  const pedido = pago.external_reference || cli.pedido || (env && env.pedido) || `pago ${pago.id}`;
-  const monto = pesos(pago.transaction_amount);
+function armarMailDevolucion(pago, tipo, av) {
+  const d = datosPago(pago);
+  const monto = mon(pago.transaction_amount);
   const devueltoNum = pago.transaction_amount_refunded != null && pago.transaction_amount_refunded !== ""
     ? Number(pago.transaction_amount_refunded)
     : (tipo === "parcial" ? 0 : Number(pago.transaction_amount));
-  const devuelto = pesos(devueltoNum);
-  const nombre = cli.nombre || (env && env.nombre) || payerNombre || "";
-  const email = cli.email || (env && env.email) || payer.email || "";
-  const telefono = cli.telefono || (env && env.telefono) || payerTel || "";
-  const envioLinea = cli.envio_nombre || cli.metodo_envio || (env ? "Envío a domicilio" : "Retiro en persona");
+  const devuelto = mon(devueltoNum);
+  const fecha = fechaAR(pago);
 
   const titulo = tipo === "contracargo" ? "🔴 Contracargo BUBA" : tipo === "parcial" ? "🟠 Devolución parcial BUBA" : "🔴 Venta devuelta BUBA";
   const asunto = tipo === "parcial"
-    ? `${titulo} — ${pedido} — $${devuelto} de $${monto}`
-    : `${titulo} — ${pedido} — $${monto}`;
+    ? `${titulo} — ${d.pedido} — ${devuelto} de ${monto}`
+    : `${titulo} — ${d.pedido} — ${monto}`;
   const intro = tipo === "contracargo"
     ? "El cliente desconoció el pago (contracargo)."
     : tipo === "parcial"
       ? "Se devolvió una parte del pago."
       : "Se devolvió el pago completo.";
   const pie = "La devolución de la plata ya figura en Mercado Pago. Este mail es solo un recordatorio.";
+  const pastilla = tipo === "contracargo" ? "CONTRACARGO" : tipo === "parcial" ? "DEVOLUCIÓN PARCIAL" : "VENTA DEVUELTA";
+
+  const cliente = tarjetaCliente(d, { novedades: false });
 
   const t = [
-    titulo.replace(/^\S+\s/, "").toUpperCase(),
+    `${pastilla} — ${devuelto}`,
     intro,
+    `Pedido ${d.pedido} · Venta del ${fecha}`,
     ``,
-    `Pedido: ${pedido}`,
-    `Fecha de la venta: ${fechaAR(pago)}`,
-    `Monto: $${monto}`,
-    `Monto devuelto: $${devuelto}`,
-    `ID de pago de Mercado Pago: ${pago.id}`,
+    `DEVOLUCIÓN`,
+    `Venta: ${monto}`,
+    `Monto devuelto: ${devuelto}`,
+    `Envío: ${d.envioNombre}`,
     ``,
     `CLIENTE`,
-    `Nombre: ${nombre || "—"}`,
-    `Email: ${email || "—"}`,
-    `Teléfono: ${telefono || "—"}`,
-    ``,
-    `ENVÍO`,
-    envioLinea,
+    ...cliente.texto,
     ``,
     `FAST MAIL`,
-    aviso.texto,
-    ``,
-    pie,
+    av.titulo,
+    av.texto,
   ];
+  if (av.envio) t.push(`Abrir Fast Mail: ${FASTMAIL_URL}`);
+  t.push(``, pie, `ID de pago MP ${pago.id}`);
 
-  const fila = (k, v) => `<tr><td style="padding:4px 12px 4px 0;color:#6e6e73;vertical-align:top">${esc(k)}</td><td style="padding:4px 0;color:#1d1d1f">${v}</td></tr>`;
-  const h2 = (x) => `<h2 style="margin:22px 0 6px;font-size:13px;letter-spacing:.06em;text-transform:uppercase;color:#6e6e73">${x}</h2>`;
-  const tabla = (filas) => `<table role="presentation" style="border-collapse:collapse;font-size:15px;width:100%">${filas.join("")}</table>`;
-  const h = `<!doctype html><html lang="es"><body style="margin:0;padding:0;background:#f5f5f7">
-<div style="max-width:560px;margin:0 auto;padding:16px;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif">
-<div style="background:#ffffff;border-radius:14px;padding:20px">
-<h1 style="margin:0 0 4px;font-size:20px;color:#1d1d1f">${esc(titulo)}</h1>
-<p style="margin:0 0 12px;font-size:15px;color:#6e6e73">${esc(intro)}</p>
-${tabla([
-  fila("Pedido", `<strong>${esc(pedido)}</strong>`),
-  fila("Fecha de la venta", esc(fechaAR(pago))),
-  fila("Monto", `$${esc(monto)}`),
-  fila("Monto devuelto", `<strong>$${esc(devuelto)}</strong>`),
-  fila("ID de pago MP", esc(pago.id)),
-])}
-${h2("Cliente")}
-${tabla([
-  fila("Nombre", esc(nombre || "—")),
-  fila("Email", email ? `<a href="mailto:${esc(email)}" style="color:#0066cc">${esc(email)}</a>` : "—"),
-  fila("Teléfono", esc(telefono || "—")),
-])}
-${h2("Envío")}
-${tabla([fila("Método", esc(envioLinea))])}
-${h2("Fast Mail")}
-<div style="background:${aviso.fondo};color:${aviso.color};border-radius:10px;padding:12px 14px;font-size:15px;line-height:1.4">${esc(aviso.texto)}</div>
-<p style="margin:20px 0 0;font-size:13px;color:#6e6e73">${esc(pie)}</p>
-</div></div></body></html>`;
+  const html = layout({
+    titulo: `${pastilla} BUBA ${d.pedido}`,
+    preheader: [pastilla, d.pedido, devuelto, d.nombre].filter(Boolean).join(" · "),
+    cabecera: cabecera({
+      pastilla, colorPastilla: tipo === "parcial" ? COLOR.naranja : COLOR.rojo, monto: devuelto,
+      detalle: `Pedido ${d.pedido} · Venta del ${fecha}`, nota: intro,
+    }),
+    secciones: [
+      seccion("💸 Devolución", filas([
+        ["Venta", monto],
+        ["Monto devuelto", raw(`<strong>${esc(devuelto)}</strong>`)],
+        ["Envío", d.envioNombre],
+      ])),
+      seccion("👤 Cliente", cliente.html),
+      tarjetaFastMail(av, av.envio),
+    ],
+    pie: `${pie} · ID de pago MP ${pago.id}`,
+  });
 
-  return { asunto, html: h, texto: t.join("\n") };
+  return { asunto, html, texto: t.join("\n") };
 }
 
 /** Mail de aviso de devolución / contracargo. Nunca lanza. */
@@ -429,6 +482,8 @@ module.exports = async (req, res) => {
         } else if (pago.status === "approved") {
           const envioRes = await resolverEnvio(pago);
           await avisarVenta(pago, envioRes);
+          // segundo aviso del mismo pago: el contacto ya se guardó con el primero
+          if (envioRes.estado !== "ya_existia") await guardarComprador(pago);
         } else if (pago.status === "cancelled" || pago.status === "rejected") {
           console.log("[BUBA] Pago no aprobado, no se hace nada", pago.external_reference, pago.status);
         }

@@ -154,10 +154,58 @@ function setupCurtain() {
       $("curtain-err").hidden = false;
     }
   });
-  $("curtain-news").addEventListener("submit", (e) => {
-    e.preventDefault();
-    $("curtain-news").hidden = true;
+  const news = $("curtain-news");
+  const showOk = () => {
+    news.hidden = true;
     $("curtain-ok").hidden = false;
+    const er = $("curtain-news-err");
+    if (er) er.hidden = true;
+  };
+  if (lsGet("buba-avisame") === "1") showOk();
+  news.addEventListener("submit", async (e) => {
+    e.preventDefault();
+    const apiBase = STORE.config.apiBase;
+    if (!apiBase) { showOk(); return; }
+    const btn = news.querySelector("button[type=submit]");
+    const label = btn.textContent;
+    let err = $("curtain-news-err");
+    if (!err) {
+      err = document.createElement("p");
+      err.className = "curtain__err";
+      err.id = "curtain-news-err";
+      err.setAttribute("role", "alert");
+      err.textContent = "No pudimos anotarte. Probá de nuevo en un rato.";
+      news.insertAdjacentElement("afterend", err);
+    }
+    err.hidden = true;
+    btn.disabled = true;
+    btn.textContent = "Enviando…";
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 8000);
+    let ok = false;
+    try {
+      const res = await fetch(apiBase + "/api/suscribir", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          email: news.querySelector("input[type=email]").value.trim(),
+          origen: "pre-lanzamiento",
+          sitio: news.querySelector("input[name=sitio]").value,
+        }),
+        signal: ctrl.signal,
+      });
+      const data = await res.json().catch(() => ({}));
+      ok = res.ok && data && data.ok === true;
+    } catch (_) { ok = false; }
+    clearTimeout(timer);
+    if (ok) {
+      lsSet("buba-avisame", "1");
+      showOk();
+    } else {
+      btn.disabled = false;
+      btn.textContent = label;
+      err.hidden = false;
+    }
   });
   return false;
 }
@@ -490,6 +538,7 @@ function collectCustomer() {
     name: $("f-name").value.trim(),
     email: $("f-email").value.trim(),
     phone: $("f-phone").value.trim(),
+    marketing: $("f-marketing") ? $("f-marketing").checked : true,
     address: {
       street: $("f-street").value.trim(),
       apt: $("f-apt").value.trim(),

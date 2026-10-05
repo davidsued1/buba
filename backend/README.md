@@ -48,6 +48,7 @@ transferencia, efectivo (Rapipago / Pago Fácil) y hasta 12 cuotas.
 | `/api/estado` | Dice si la conexión con Mercado Pago está bien (abrila en el navegador) |
 | `/api/create-preference` | La usa la web al tocar "Pagar con Mercado Pago" |
 | `/api/mp-webhook` | Mercado Pago avisa acá cuando se confirma un pago |
+| `/api/suscribir` | La usa el formulario "Avisame" de la web para anotar un mail (ver "Contactos para novedades") |
 
 ## Envíos con Fast Mail
 
@@ -70,8 +71,9 @@ Pago, el backend puede crear solo la guía en Fast Mail (e-Presis).
 
 ## Avisos por mail
 
-Cada vez que se aprueba un pago, el backend te manda un mail con el pedido,
-los productos, los datos del cliente, el envío y, si la guía de Fast Mail se
+Cada vez que se aprueba un pago, el backend te manda un mail (pensado para leerlo
+en el celular) con el total, lo que compró, el cliente con botones de WhatsApp y
+mail, el envío con la dirección lista para copiar y, si la guía de Fast Mail se
 creó sola, **la etiqueta adjunta** lista para imprimir. Usa [Resend](https://resend.com).
 
 1. Creá una cuenta en <https://resend.com> y generá una **API key**.
@@ -98,6 +100,42 @@ guía por el remito). **No anula nada solo**: es solo un recordatorio, y en las
 devoluciones parciales no se vuelve a crear la guía ni a mandar el mail de venta.
 También sale una sola vez por devolución (log: `[BUBA] Mail de devolución`). Los
 pagos cancelados o rechazados no mandan nada.
+
+## Contactos para novedades (Resend)
+
+Cada vez que se aprueba una compra, el mail del comprador se guarda en los
+**Contactos de Resend** (en cuentas viejas, en la Audience **"Clientes BUBA"**,
+que se crea sola si no existe). Así tenés la lista armada para mandar novedades
+por mail más adelante. Va después del aviso de venta y nunca lo frena: el
+resultado queda en los logs de Vercel (`[BUBA] Contacto`).
+
+- Si el cliente destildó "quiero recibir novedades" en el checkout, se guarda
+  igual pero como **desuscripto**: no le llega ningún broadcast. Si no hay dato, se asume que sí quiere.
+- A quien ya estaba cargado no se lo vuelve a suscribir nunca; solo se lo da de baja si lo pidió.
+- Las devoluciones, los pagos cancelados y los segundos avisos del mismo pago no guardan nada.
+
+**Importante: la API key de Resend tiene que ser "Full access".** Las claves
+creadas solo con permiso de *Sending access* mandan mails pero **no pueden
+tocar contactos**; en ese caso el log dice "La clave de Resend no tiene permiso
+para contactos". Creá una nueva en Resend → API Keys → *Full access* y
+reemplazala en `RESEND_API_KEY`.
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `RESEND_AUDIENCE_ID` | No | Id de la audiencia a usar (solo cuentas con Audiences). Si falta, se busca o crea "Clientes BUBA" |
+
+**Formulario "Avisame" (`/api/suscribir`).** Recibe `POST` con JSON
+`{ "email": "...", "origen": "pre-lanzamiento" }` (`origen` puede ser
+`pre-lanzamiento` o `web`; por defecto `web`). Responde `{ "ok": true }` aunque
+el mail ya estuviera anotado. Si falta la clave de Resend o no tiene permiso,
+responde `{ "ok": false }` y el motivo queda en los logs. El campo `sitio` es una
+trampa para robots: tiene que ir vacío.
+
+**Ver, exportar y mandar novedades.** En <https://resend.com/audience> (o *Contacts*)
+ves todos los contactos y podés exportarlos a CSV. Para mandar una novedad a todos:
+*Broadcasts → Create broadcast*, elegí la audiencia "Clientes BUBA" (o el segmento),
+escribí el mail y enviá. Resend agrega solo el link para darse de baja y respeta
+a los desuscriptos. Para mandar broadcasts desde tu dominio, verificalo antes en Resend.
 
 ## Probar sin cobrar de verdad
 

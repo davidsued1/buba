@@ -513,6 +513,7 @@ body.is-locked { overflow: hidden; }
 .curtain__link:hover { color: var(--ink); }
 .curtain__code { display: flex; flex-direction: column; gap: 10px; max-width: 260px; margin: 0 auto; }
 .curtain__err { color: #8a1b1b; font-size: 0.9rem; font-weight: 600; margin-top: 10px; }
+.hp { position: absolute; left: -9999px; width: 1px; height: 1px; opacity: 0; }
 .curtain__legal { margin-top: 28px; font-size: 0.75rem; color: var(--gray-400); }
 
 /* ---------- Carrito (hoja a pantalla completa en el celular) ---------- */
@@ -663,6 +664,8 @@ body.is-locked { overflow: hidden; }
   color: var(--gray-600);
 }
 .form-grid .span-2 { grid-column: span 1; }
+.check-novedades { display: flex; gap: 10px; align-items: flex-start; font-size: 0.92rem; color: var(--gray-600); margin: 6px 0 14px; cursor: pointer; }
+.check-novedades input { width: 20px; height: 20px; accent-color: var(--ink); flex-shrink: 0; margin: 0; }
 .form-grid input, .form-grid select, .label-block textarea, .promo-row input {
   min-height: 50px;
   padding: 12px 14px;

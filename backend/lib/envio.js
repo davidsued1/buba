@@ -32,6 +32,9 @@ function datosEnvio(order) {
   };
 }
 
+/** true si el valor significa "no": false, 0, "false", "0", "no". Faltante o cualquier otra cosa → false. */
+const esFalso = (v) => v === false || v === 0 || (typeof v === "string" && /^\s*(false|0|no)\s*$/i.test(v));
+
 /** Datos del cliente y del pedido para el aviso de venta. Siempre viaja, haya envío o retiro. */
 function datosCliente(order) {
   const o = order || {};
@@ -45,6 +48,9 @@ function datosCliente(order) {
     metodo_envio: txt(s.id),
     envio_nombre: txt(s.name),
     envio_precio: Number(s.price) || 0,
+    envio_eta: txt(s.eta),
+    // quiere recibir novedades por mail (Resend Contacts). Si falta, se asume que sí
+    marketing: !esFalso(c.marketing),
     notas: txt((c.address && c.address.notes) || ""),
   };
 }
@@ -236,4 +242,4 @@ function armarGuia(envio, { remito, codigoServicio, cpOrigen, sucursal } = {}) {
   };
 }
 
-module.exports = { datosEnvio, datosCliente, separarCalle, separarPisoDepto, provinciaPresis, armarGuia };
+module.exports = { datosEnvio, datosCliente, esFalso, separarCalle, separarPisoDepto, provinciaPresis, armarGuia };
