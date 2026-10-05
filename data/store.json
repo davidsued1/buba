@@ -7,7 +7,7 @@
     "emailGeneral": "bubadrinks0@gmail.com",
     "emailMayoristas": "bubadrinks0@gmail.com",
     "apiBase": "https://buba-pagos.vercel.app",
-    "pagotic": false,
+    "pagotic": true,
     "freeShippingFrom": 0,
     "envioNoCubierto": "Por ahora enviamos a CABA y GBA. Para otras zonas escribinos por WhatsApp y lo vemos.",
     "adminPin": "buba2026",
