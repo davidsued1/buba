@@ -118,6 +118,22 @@ La API de Presis está documentada a partir del plugin oficial de Fast Mail
 con Fast Mail qué servicio corresponde para que el cliente reciba al día
 siguiente del despacho.
 
+### Estado al 5/10/2026
+- **Servidor de pagos (Vercel, proyecto buba-pagos):** la rama de producción
+  es `claude/buba-web-minimal-design-5k85u5`; cada push sale oficial solo.
+- **Variables en Vercel** (los valores nunca van al repositorio ni al chat):
+  `MP_ACCESS_TOKEN`, `FASTMAIL_TOKEN`, `FASTMAIL_SUCURSAL`, `FASTMAIL_CP`,
+  `RESEND_API_KEY`, `MAIL_AVISOS`. Opcionales: `FASTMAIL_SERVICIO` (24 por
+  defecto), `FASTMAIL_AUTO` ("si" prende la guía automática), `MAIL_FROM`.
+- **Fast Mail:** conectado (`/api/fastmail-estado` → ok). Servicio a usar:
+  **24** (Servicio 24hs). Guía automática programada y **apagada** hasta que
+  Fast Mail confirme si hay ambiente de pruebas o cómo anular una guía.
+- **Avisos por mail (Resend):** un mail por cada venta aprobada con todos
+  los datos, y la etiqueta adjunta cuando la guía automática esté prendida.
+  Prueba: `/api/mail-prueba`. Hoy sale desde `onboarding@resend.dev`; si
+  cae en spam o se quiere sumar al socio, verificar el dominio
+  bubadrinks.com.ar en Resend y cargar `MAIL_FROM` (ver backend/README.md).
+
 ## Orden sugerido
 1. Fase 1 → cargar precio, stock y fotos desde el panel (hoy).
 2. Fase 2 → planilla compartida (próxima sesión, no depende de nadie).
