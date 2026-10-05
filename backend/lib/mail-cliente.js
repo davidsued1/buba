@@ -21,9 +21,10 @@ const MEDIOS = {
   visa: "Visa", master: "Mastercard", amex: "American Express", debvisa: "Visa débito", debmaster: "Mastercard débito",
   account_money: "Dinero en Mercado Pago", naranja: "Naranja", cabal: "Cabal", maestro: "Maestro",
   rapipago: "Rapipago", pagofacil: "Pago Fácil",
+  pagotic: "Pago TIC", // Pago TIC sin medio informado: solo se nombra la pasarela
 };
 // medios donde "en 1 cuota" suena raro: se omite cuando es una sola
-const SIN_CUOTAS = new Set(["debvisa", "debmaster", "maestro", "account_money", "rapipago", "pagofacil"]);
+const SIN_CUOTAS = new Set(["debvisa", "debmaster", "maestro", "account_money", "rapipago", "pagofacil", "pagotic"]);
 const medioLegible = (id) => MEDIOS[String(id || "").toLowerCase()] || String(id || "") || "medio no informado";
 
 const DIAS = ["domingo", "lunes", "martes", "miércoles", "jueves", "viernes", "sábado"];
@@ -67,7 +68,7 @@ function armarMailCliente(pago, envioRes = {}) {
   const medioId = String(pago.payment_method_id || "").toLowerCase();
   const pagoFrase =
     `Pagaste con ${medioLegible(pago.payment_method_id)}` +
-    (cuotas > 1 || !SIN_CUOTAS.has(medioId) ? ` en ${cuotas} cuota${cuotas === 1 ? "" : "s"}` : "");
+    (cuotas > 1 || (!SIN_CUOTAS.has(medioId) && pago.proveedor !== "pagotic") ? ` en ${cuotas} cuota${cuotas === 1 ? "" : "s"}` : "");
 
   // ----- productos (el envío, si vino como ítem, va en su propia fila)
   const todos = pago.additional_info && Array.isArray(pago.additional_info.items) ? pago.additional_info.items : [];

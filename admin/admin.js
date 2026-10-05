@@ -792,6 +792,14 @@ function renderSettings(box) {
       <p class="wiz-status" id="mp-status"></p>
     </div>
     <div class="panel">
+      <h3>💳 Pago TIC (prueba)</h3>
+      <p class="hint">Segunda forma de pagar, al lado de Mercado Pago: tarjeta, transferencia y otros medios. Está <strong>oculta</strong> hasta que la actives acá y guardes. Las claves de Pago TIC se cargan en Vercel (ver <em>backend/README.md</em>), nunca en el panel.</p>
+      <label class="check-row"><input type="checkbox" id="c-pagotic" ${STORE.config.pagotic ? "checked" : ""}>
+        Mostrar el botón de Pago TIC en el checkout</label>
+      <button class="btn btn--outline btn--block" id="btn-pagotic-test" style="margin-top:10px">Probar conexión</button>
+      <p class="wiz-status" id="pagotic-status"></p>
+    </div>
+    <div class="panel">
       <h3>Analytics</h3>
       <div class="form-grid">
         <label>Google Analytics 4 (G-…)<input id="c-ga4" value="${esc(STORE.config.ga4Id || "")}" placeholder="G-XXXXXXXXXX"></label>
@@ -848,6 +856,7 @@ function renderSettings(box) {
     STORE.config.emailGeneral = $("c-email").value.trim();
     STORE.config.emailMayoristas = $("c-email").value.trim();
     STORE.config.apiBase = $("c-api").value.trim();
+    STORE.config.pagotic = $("c-pagotic").checked;
     STORE.config.ga4Id = $("c-ga4").value.trim();
     STORE.config.metaPixelId = $("c-meta").value.trim();
     STORE.config.tiktokPixelId = $("c-tiktok").value.trim();
@@ -874,6 +883,22 @@ function renderSettings(box) {
     st.className = "wiz-status " + (r.ok ? "ok" : "err");
     st.textContent = r.texto;
     if (r.ok) { STORE.config.apiBase = base; saveLocal(true); }
+  });
+  $("btn-pagotic-test").addEventListener("click", async () => {
+    const st = $("pagotic-status");
+    const base = $("c-api").value.trim().replace(/\/$/, "");
+    if (!base) { st.className = "wiz-status err"; st.textContent = "Primero conectá Mercado Pago con el botón de arriba: el servicio de pagos es el mismo."; return; }
+    st.className = "wiz-status"; st.textContent = "Probando…";
+    try {
+      const r = await fetch(base + "/api/pagotic-estado", { cache: "no-store" });
+      if (!r.ok) throw new Error("HTTP " + r.status);
+      const d = await r.json();
+      st.className = "wiz-status " + (d.ok ? "ok" : "err");
+      st.textContent = (d.ok ? "✓ " : "") + (d.mensaje || "Sin respuesta") + (!d.ok && d.detalle ? " (" + d.detalle + ")" : "");
+    } catch (e) {
+      st.className = "wiz-status err";
+      st.textContent = "No se pudo llegar al servicio de pagos (" + e.message + "). Revisá que esté publicado con la última versión.";
+    }
   });
   if ($("btn-check")) $("btn-check").addEventListener("click", async () => {
     const st = $("check-status");

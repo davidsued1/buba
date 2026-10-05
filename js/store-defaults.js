@@ -17,6 +17,7 @@ window.BUBA_DEFAULTS = {
     emailGeneral: "bubadrinks0@gmail.com",
     emailMayoristas: "bubadrinks0@gmail.com",
     apiBase: "",                  // URL del backend (Mercado Pago). Vacío = modo demo
+    pagotic: false,               // mostrar el botón de Pago TIC en el checkout (segunda pasarela, en prueba)
     freeShippingFrom: 0,          // envío gratis desde este subtotal (0 = nunca)
     envioNoCubierto: "Por ahora enviamos a CABA y GBA. Para otras zonas escribinos por WhatsApp y lo vemos.",
     adminPin: "buba2026",         // PIN de acceso al panel

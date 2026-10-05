@@ -732,6 +732,7 @@ body.is-locked { overflow: hidden; }
 .promo-status.err { color: #8a1b1b; }
 
 .pay-actions { display: flex; flex-direction: column; gap: 6px; margin-top: 10px; }
+.pay-actions .cart__note { margin: 0 0 4px; }
 
 .checkout__done { text-align: center; padding: 26px 0; }
 .done-icon {

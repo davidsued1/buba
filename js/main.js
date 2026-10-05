@@ -692,6 +692,10 @@ function orderTotal() {
 function renderSummary() {
   // el botón de Mercado Pago solo aparece si el servidor de pagos está conectado
   if ($("pay-mp")) $("pay-mp").hidden = !STORE.config.apiBase;
+  // Pago TIC (segunda pasarela): oculto hasta que se active desde el panel
+  const conPagoTIC = !!(STORE.config.pagotic && STORE.config.apiBase);
+  if ($("pay-pagotic")) $("pay-pagotic").hidden = !conPagoTIC;
+  if ($("pay-pagotic-note")) $("pay-pagotic-note").hidden = !conPagoTIC;
   const rows = cartEntries().map(({ product: p, qty }) =>
     `<div class="summary__row"><span>${qty} × ${esc(p.name)}</span><strong>${money(p.price * qty)}</strong></div>`);
   rows.push(`<div class="summary__row"><span>Subtotal</span><strong>${money(cartSubtotal())}</strong></div>`);
@@ -811,6 +815,34 @@ async function payWithMP() {
   }
 }
 
+async function payWithPagoTIC() {
+  const order = buildOrder("pagotic");
+  const api = STORE.config.apiBase;
+  if (!api) {
+    alert("El pago con Pago TIC no está disponible en este momento. Podés coordinar el pago por WhatsApp.");
+    return;
+  }
+  const btn = $("pay-pagotic");
+  btn.disabled = true;
+  btn.textContent = "Conectando con Pago TIC…";
+  try {
+    const res = await fetch(api.replace(/\/$/, "") + "/api/pagotic-crear", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ order }),
+    });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const data = await res.json();
+    if (!data.form_url) throw new Error("sin link de pago");
+    persistOrder(order);
+    window.location.href = data.form_url;
+  } catch (err) {
+    btn.disabled = false;
+    btn.textContent = "Pagar con Pago TIC";
+    alert("No pudimos conectar con Pago TIC (" + err.message + "). Probá de nuevo, pagá con Mercado Pago o coordiná por WhatsApp.");
+  }
+}
+
 function payWithWhatsApp() {
   const order = buildOrder("whatsapp");
   const url = waLink(orderWaMessage(order));
@@ -839,6 +871,7 @@ function setupCheckout() {
   $("next-3").addEventListener("click", () => gotoStep(3));
   $("back-2").addEventListener("click", () => gotoStep(2));
   $("pay-mp").addEventListener("click", payWithMP);
+  if ($("pay-pagotic")) $("pay-pagotic").addEventListener("click", payWithPagoTIC);
   $("pay-wa").addEventListener("click", payWithWhatsApp);
   $("done-close").addEventListener("click", closeCheckout);
   setupGeo();
@@ -925,8 +958,14 @@ const estadoDesdeMP = (s) =>
   : (s === "rejected" || s === "cancelled" || s === "null") ? "error"
   : null;
 
-function showPaymentResult(estado, pedido) {
-  const textos = PAGO_TEXTOS[estado];
+// con Pago TIC los textos que nombran a la pasarela cambian (transferencias y cupones pueden tardar)
+const PAGO_TEXTOS_PAGOTIC = {
+  pendiente: ["Tu pago está en proceso", "Cuando Pago TIC lo confirme te avisamos. Si pagaste por transferencia o con un cupón de pago, puede tardar unas horas."],
+  verificando: ["Verificando tu pago…", "Estamos confirmando el pago con Pago TIC. Un momento."],
+};
+
+function showPaymentResult(estado, pedido, proveedor) {
+  const textos = (proveedor === "pagotic" && PAGO_TEXTOS_PAGOTIC[estado]) || PAGO_TEXTOS[estado];
   if (!textos) return;
   if (estado === "ok" && pedido) {
     const orders = lsJSON("buba-orders") || [];
@@ -950,24 +989,30 @@ async function checkPaymentReturn() {
   const vuelta = q.get("pago");
   if (!vuelta) return;
   const pedido = q.get("pedido") || q.get("external_reference") || "";
-  const paymentId = q.get("payment_id") || q.get("collection_id") || "";
+  const pagotic = String(q.get("proveedor") || "").toLowerCase() === "pagotic";
+  const prov = pagotic ? "pagotic" : "";
+  const paymentId = pagotic ? "" : q.get("payment_id") || q.get("collection_id") || "";
   // lo que dice Mercado Pago en la propia dirección de vuelta, si lo trae
   let estado = estadoDesdeMP(q.get("collection_status") || q.get("status")) || vuelta;
   history.replaceState(null, "", location.pathname);
 
   const api = String(STORE.config.apiBase || "").replace(/\/$/, "");
-  if (!api || (!pedido && !paymentId) || estado === "ok") { showPaymentResult(estado, pedido); return; }
+  // Pago TIC vuelve por POST y su "ok" no es prueba de nada: siempre se verifica con el servidor
+  if (!api || (!pedido && !paymentId) || (estado === "ok" && !pagotic)) { showPaymentResult(estado, pedido, prov); return; }
 
-  showPaymentResult("verificando", pedido);
+  showPaymentResult("verificando", pedido, prov);
   try {
-    const params = paymentId && /^\d+$/.test(paymentId) ? "id=" + paymentId : "pedido=" + encodeURIComponent(pedido);
+    const params = pagotic
+      ? "proveedor=pagotic&pedido=" + encodeURIComponent(pedido)
+      : paymentId && /^\d+$/.test(paymentId) ? "id=" + paymentId : "pedido=" + encodeURIComponent(pedido);
     const r = await fetch(`${api}/api/estado-pago?${params}`, { cache: "no-store" });
     const data = r.ok ? await r.json() : null;
     const real = data && data.ok ? estadoDesdeMP(data.estado) : null;
     if (real) estado = real;
     else if (data && data.ok && data.estado === "sin_pago" && estado !== "pendiente") estado = "error";
-  } catch { /* sin respuesta: queda lo que dijo la vuelta */ }
-  showPaymentResult(estado, pedido);
+    else if (pagotic && estado === "ok") estado = "pendiente";
+  } catch { if (pagotic && estado === "ok") estado = "pendiente"; /* sin respuesta: queda lo que dijo la vuelta */ }
+  showPaymentResult(estado, pedido, prov);
 }
 
 document.addEventListener("DOMContentLoaded", async () => {

@@ -1,6 +1,7 @@
 {
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "functions": {
-    "api/mp-webhook.js": { "maxDuration": 60 }
+    "api/mp-webhook.js": { "maxDuration": 60 },
+    "api/pagotic-webhook.js": { "maxDuration": 60 }
   }
 }

@@ -39,7 +39,7 @@ transferencia, efectivo (Rapipago / Pago Fácil) y hasta 12 cuotas.
 | Variable | Obligatoria | Para qué |
 |---|---|---|
 | `MP_ACCESS_TOKEN` | Sí | La clave de tu cuenta de Mercado Pago |
-| `SITE_URL` | No | Dirección de la tienda. Si falta, se deduce sola |
+| `SITE_URL` | No | Dirección de la tienda. Si falta, se deduce sola (Pago TIC: `https://bubadrinks.com.ar`) |
 
 ## Direcciones que expone
 
@@ -164,6 +164,50 @@ ves todos los contactos y podés exportarlos a CSV. Para mandar una novedad a to
 *Broadcasts → Create broadcast*, elegí la audiencia "Clientes BUBA" (o el segmento),
 escribí el mail y enviá. Resend agrega solo el link para darse de baja y respeta
 a los desuscriptos. Para mandar broadcasts desde tu dominio, verificalo antes en Resend.
+
+## Pago TIC (segunda opción de cobro, en prueba)
+
+Pago TIC (antes "Pay per TIC") se suma como **segundo botón** al lado de Mercado Pago, con todos los
+medios que tenga habilitados la cuenta: tarjeta, transferencia, DEBIN, cupón de pago en efectivo, etc.
+Queda **oculto** hasta que lo actives. Mercado Pago no cambia en nada. Detalle del contrato y dudas
+abiertas: `docs/11_Pago_TIC.md`.
+
+| Variable | Obligatoria | Para qué |
+|---|---|---|
+| `PAGOTIC_USERNAME` | Sí | Usuario de la API |
+| `PAGOTIC_PASSWORD` | Sí | Contraseña de la API |
+| `PAGOTIC_CLIENT_ID` | Sí | `client_id` de OAuth |
+| `PAGOTIC_CLIENT_SECRET` | Sí | `client_secret` de OAuth |
+| `PAGOTIC_API_URL` | No | Base de la API. Por defecto `https://api.paypertic.com` (producción). Para pruebas, la del sandbox que te pasen |
+| `PAGOTIC_AUTH_URL` | No | URL del token. Por defecto `https://a.paypertic.com/auth/realms/entidades/protocol/openid-connect/token` |
+| `PAGOTIC_COLLECTOR_ID` | No | Si lo definís, se manda como `collector_id` al crear el pago y se usa de filtro al consultar |
+
+Las credenciales viven solo en Vercel (nunca en la web, el panel ni el repositorio). Además se usa
+`SITE_URL` (ver arriba): a ella vuelve el cliente después de pagar, y si falta se usa `https://bubadrinks.com.ar`.
+
+| Dirección | Para qué |
+|---|---|
+| `/api/pagotic-crear` | La web la llama al tocar "Pagar con Pago TIC": crea el pago y devuelve `form_url` (adonde se manda al cliente) |
+| `/api/pagotic-vuelta` | Pago TIC manda acá al cliente (por POST) al terminar; lo redirige (303) a la tienda con `?pago=ok\|pendiente\|error&pedido=…&proveedor=pagotic`. No confirma nada |
+| `/api/pagotic-webhook` | Pago TIC avisa acá cada cambio de estado. El aviso no viene firmado: se consulta el pago a su API y solo se actúa sobre esa respuesta. `approved` → mismo flujo que Mercado Pago (guía de Fast Mail, mail al dueño, mail al cliente, contacto); `refunded` → mail de devolución; el resto, solo log. Siempre responde 200 |
+| `/api/estado-pago?proveedor=pagotic&pedido=BUBA-XXXX` | La web la usa al volver para mostrar el estado real (también acepta `&id=<UUID>`) |
+| `/api/pagotic-estado` | Prueba de conexión: pide un token y dice si las credenciales andan (abrila en el navegador) |
+
+Las transferencias y cupones pueden quedar `pending`/`issued` por horas: la web muestra "Tu pago está en proceso"
+y la venta (guía y mails) se procesa recién cuando el webhook ve `approved`. El remito de Fast Mail sale del UUID
+del pago (primeros 15 caracteres hexadecimales pasados a decimal), así un aviso repetido no duplica nada.
+
+**Cómo probarlo**
+
+1. Cargá las 4 variables `PAGOTIC_*` en Vercel (y `PAGOTIC_API_URL` / `PAGOTIC_AUTH_URL` si es el sandbox) y volvé a deployar.
+2. Abrí `https://<tu-backend>.vercel.app/api/pagotic-estado`: tiene que decir `"Conectado con Pago TIC"`. Si falla, muestra qué variable falta o el error de Pago TIC.
+3. En el panel → **Configuración → Pago TIC (prueba)** tocá **Probar conexión**, tildá **Mostrar el botón de Pago TIC en el checkout**, **Guardar** y **Publicar**.
+4. Hacé una compra de prueba: en el paso 3 aparece **Pagar con Pago TIC**. Pagá con el medio de prueba que te den.
+5. Mirá en Vercel → Logs que llegue `[BUBA] Pago TIC recibido` y, al aprobarse, los mails. Para apagarlo, destildá la casilla y publicá.
+
+**Devoluciones.** Hoy el mail de devolución es solo un recordatorio (igual que con Mercado Pago). Para devolver
+la plata hay que pedirlo a Pago TIC: `POST {API}/pagos/devolucion/{id}` con `{"type":"online"}` y el token
+`Bearer` (todavía no está automatizado). Cuando el pago pasa a `refunded`, el webhook manda el aviso.
 
 ## Probar sin cobrar de verdad
 
