@@ -12,7 +12,11 @@ const txt = (v) => String(v == null ? "" : v).trim().slice(0, MAX);
 /** Datos del envío para guardar en la preferencia de MP. null si es retiro o no hay envío. */
 function datosEnvio(order) {
   const ship = order && order.shipping;
-  if (!ship || !String(ship.cps || "").trim()) return null;
+  // Envío a domicilio = cualquier método que no sea un retiro. Se mira la marca explícita, los
+  // códigos postales y, si faltan, el id (antes la web no mandaba cps y todo parecía retiro).
+  if (!ship) return null;
+  const esRetiro = ship.domicilio === false || /retiro/i.test(String(ship.id || ""));
+  if (esRetiro) return null;
   const c = order.customer || {};
   const a = c.address || {};
   const bultos = (order.items || []).reduce((n, it) => n + (Number(it.qty) || 0), 0);

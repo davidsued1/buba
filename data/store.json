@@ -137,14 +137,6 @@
       "price": 8500,
       "active": true,
       "cps": "1612-1621, 1647-1649, 1660-1669, 1718-1724, 1742-1746, 1759-1778, 1801-1807, 1840-1856, 1876-1894"
-    },
-    {
-      "id": "retiro",
-      "name": "Retiro en persona",
-      "eta": "Coordinamos por WhatsApp",
-      "price": 0,
-      "active": true,
-      "cps": ""
     }
   ],
   "promos": [

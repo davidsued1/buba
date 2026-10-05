@@ -92,7 +92,7 @@ window.BUBA_DEFAULTS = {
   // Envíos con Mandalo Ya (tarifas bonificadas 2026). La zona se detecta por
   // código postal. "cps" acepta rangos y listas: "1000-1499, 1602, 1636-1640".
   // Si un CP cae en dos zonas, gana la primera de la lista.
-  // Una zona sin códigos postales se ofrece siempre (retiro en persona).
+  // No hay retiro en persona: sin cobertura, la web ofrece coordinar por WhatsApp.
   shipping: [
     { id: "caba", name: "Envío a CABA", eta: "24 a 48 hs hábiles", price: 3800, active: true,
       cps: "1000-1499" },
@@ -105,7 +105,6 @@ window.BUBA_DEFAULTS = {
     // Berazategui, Florencio Varela.
     { id: "gba2", name: "Envío a GBA — 2do y 3er cordón", eta: "48 a 96 hs hábiles", price: 8500, active: true,
       cps: "1612-1621, 1647-1649, 1660-1669, 1718-1724, 1742-1746, 1759-1778, 1801-1807, 1840-1856, 1876-1894" },
-    { id: "retiro", name: "Retiro en persona", eta: "Coordinamos por WhatsApp", price: 0, active: true, cps: "" },
   ],
 
   promos: [

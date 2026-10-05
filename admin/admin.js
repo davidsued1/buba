@@ -477,13 +477,13 @@ function renderShipping(box) {
     <p class="hint">Tarifas de Mandalo Ya (bonificadas). Si te cambian el precio, tocá la zona y editalo; después Publicar.</p>
     <div class="panel">
       <div class="panel__head">
-        <h3>Zonas de envío (Mandalo Ya)</h3>
+        <h3>Zonas de envío (Fast Mail)</h3>
         <button class="btn btn--solid btn--sm" id="add-ship">+ Agregar zona</button>
       </div>
-      <p class="lead">Las zonas son CABA, GBA 1er cordón, GBA 2do y 3er cordón y Retiro. Cada una tiene
+      <p class="lead">Las zonas son CABA, GBA 1er cordón y GBA 2do y 3er cordón (no hay retiro en persona). Cada una tiene
       su precio y los códigos postales que cubre. La web detecta la zona sola con el CP del cliente
-      (si un CP cae en dos zonas, gana la primera de la lista). Una zona sin códigos postales se
-      ofrece siempre (retiro en persona).</p>
+      (si un CP cae en dos zonas, gana la primera de la lista). Si un CP no está en ninguna zona,
+      la web le ofrece al cliente coordinar por WhatsApp.</p>
       ${STORE.shipping.map((m, i) => `
         <div class="zone ${m.active === false ? "is-off" : ""}">
           <div class="form-grid">

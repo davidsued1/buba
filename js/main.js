@@ -583,7 +583,7 @@ function shipPrice(method) {
 
 /* Zonas de envío por código postal.
    Cada método de envío tiene "cps": rangos y listas ("1000-1499, 1602").
-   Un método sin códigos postales se ofrece siempre (retiro en persona). */
+   Todos los métodos son envíos a domicilio con Fast Mail (no hay retiro en persona). */
 function cpMatches(cps, cp) {
   const n = parseInt(String(cp).replace(/\D/g, ""), 10);
   if (!n) return false;
@@ -612,8 +612,11 @@ function renderShipOptions() {
     checkoutState.shipping = null;
   }
   const zoneNote = delivery
-    ? `<p class="ship-zone">Enviamos a <strong>${esc(addr.city || "")} (CP ${esc(addr.cp || "")})</strong> con Mandalo Ya.</p>`
-    : `<p class="ship-zone ship-zone--none">${esc(STORE.config.envioNoCubierto || "Por ahora no llegamos a ese código postal.")}</p>`;
+    ? `<p class="ship-zone">Enviamos a <strong>${esc(addr.city || "")} (CP ${esc(addr.cp || "")})</strong> con Fast Mail.</p>`
+    : `<p class="ship-zone ship-zone--none">${esc(STORE.config.envioNoCubierto || "Por ahora no llegamos a ese código postal.")}</p>` +
+      (waLink("¡Hola BUBA! Quiero comprar el pack y mi código postal es " + (addr.cp || "") + ". ¿Me lo pueden enviar?")
+        ? `<a class="btn btn--outline btn--block ship-zone__wa" target="_blank" rel="noopener" href="${esc(waLink("¡Hola BUBA! Quiero comprar el pack y mi código postal es " + (addr.cp || "") + ". ¿Me lo pueden enviar?"))}">Coordinar el envío por WhatsApp</a>`
+        : "");
   const dispatchNote = delivery
     ? `<p class="ship-dispatch">Armamos tu pedido y sale ${esc(textoDespacho(fechaDespacho()))}. Los pedidos de viernes a domingo salen el lunes.</p>`
     : "";
@@ -633,13 +636,14 @@ function renderShipOptions() {
   box.querySelectorAll("input[name=ship]").forEach((input) => {
     input.addEventListener("change", () => {
       const m = methods.find((x) => x.id === input.value);
-      checkoutState.shipping = { id: m.id, name: m.name, eta: m.eta, price: shipPrice(m) };
+      // cps y domicilio viajan al servidor: con eso sabe que tiene que crear la guía en Fast Mail
+      checkoutState.shipping = { id: m.id, name: m.name, eta: m.eta, price: shipPrice(m), cps: m.cps || "", domicilio: !!String(m.cps || "").trim() };
       box.querySelectorAll(".ship-option").forEach((el) => el.classList.remove("is-selected"));
       input.closest(".ship-option").classList.add("is-selected");
       $("next-3").disabled = false;
     });
   });
-  // el envío a domicilio queda preseleccionado; si no hay cobertura, el retiro
+  // el envío a domicilio queda preseleccionado; sin cobertura no hay opción y se ofrece WhatsApp
   if (!checkoutState.shipping) {
     const pre = delivery || methods[0];
     const inp = pre && box.querySelector(`input[name=ship][value="${pre.id}"]`);
