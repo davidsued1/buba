@@ -1,0 +1,656 @@
+# Copyright (C) 2023 Presis Consultores
+# This file is distributed under the GNU General Public License v3.1.
+msgid ""
+msgstr ""
+"Project-Id-Version: WooCommerce Fastmail 4.0\n"
+"Report-Msgid-Bugs-To: https://wordpress.org/support/plugin/wp-woo-demo-lv\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"POT-Creation-Date: 2023-10-23T20:49:22+02:00\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"X-Generator: WP-CLI 2.8.1\n"
+"X-Domain: fastmail\n"
+
+#. Plugin Name of the plugin
+msgid "WooCommerce Fastmail"
+msgstr ""
+
+#. Plugin URI of the plugin
+msgid "https://presisconsultores.com/"
+msgstr ""
+
+#. Description of the plugin
+msgid "Suma envios a traves de Fastmail a tu tienda de WooCommerce. Requiere WooCommerce 4.1."
+msgstr ""
+
+#. Author of the plugin
+msgid "Presis Consultores"
+msgstr ""
+
+#. Author URI of the plugin
+msgid "https://presisconsultores.com"
+msgstr ""
+
+#: includes/admin/attributes/product/product_declared_value.php:10
+msgid "Valor declarado"
+msgstr ""
+
+#: includes/admin/attributes/product/product_free_shipping.php:14
+#: includes/admin/setting-sections/general.php:90
+#: includes/admin/setting-sections/general.php:111
+#: includes/wc/WC_Calculate.php:84
+#: includes/wc/WC_Calculate.php:88
+#: includes/wc/WC_Calculate.php:98
+msgid "Envío gratis"
+msgstr ""
+
+#: includes/admin/attributes/product/product_free_shipping.php:15
+#: includes/admin/setting-sections/general.php:116
+#: includes/wc/WC_Calculate.php:103
+msgid "Puedes elegir un único servicio gratuito o todos son gratuitos."
+msgstr ""
+
+#: includes/admin/attributes/product/product_home_branch.php:12
+msgid "Sucursal local"
+msgstr ""
+
+#: includes/admin/attributes/product/product_home_branch.php:14
+msgid "Si se trata de un pack de productos, especificar cuantas unidades componen el pack."
+msgstr ""
+
+#: includes/admin/attributes/product/product_quantity_for_pack.php:12
+msgid "Pack"
+msgstr ""
+
+#: includes/admin/attributes/product/product_quantity_for_pack.php:14
+msgid "Si se trata de un pack de productos, especificar cuántas unidades componen el pack."
+msgstr ""
+
+#: includes/admin/bulk_actions/send_epresis.php:5
+msgid "Envío Fastmail"
+msgstr ""
+
+#: includes/admin/bulk_actions/send_epresis.php:51
+msgid "Fastmail %s Orden enviada."
+msgid_plural "Fastmail %s Ordenes enviadas. "
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/bulk_actions/send_epresis.php:56
+msgid "Fastmail %s Pedido error con."
+msgid_plural "Fastmail %s Pedidos con error. "
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/bulk_actions/send_epresis.php:61
+msgid "Fastmail %s Orden previamente enviada."
+msgid_plural "Fastmail %s Ordenes previamente enviadas."
+msgstr[0] ""
+msgstr[1] ""
+
+#: includes/admin/bulk_actions/send_label.php:5
+msgid "Etiqueta Fastmail"
+msgstr ""
+
+#: includes/admin/bulk_actions/send_refer.php:5
+msgid "Remito Fastmail"
+msgstr ""
+
+#: includes/admin/orders/shipping.php:57
+msgid "No es posible conectar a Fastmail en este momento."
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:29
+#: includes/admin/orders/shipping_information_external.php:43
+msgid "Servicio seleccionado"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:29
+msgid "N/A"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:32
+#: includes/admin/orders/shipping_information_external_retro.php:32
+#: includes/admin/orders/shipping_information_internal.php:32
+msgid "Enviar a Fastmail"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:32
+#: includes/admin/orders/shipping_information_external.php:123
+#: includes/admin/orders/shipping_information_external_retro.php:32
+#: includes/admin/orders/shipping_information_internal.php:94
+msgid "SI"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:32
+#: includes/admin/orders/shipping_information_external_retro.php:32
+#: includes/admin/orders/shipping_information_internal.php:32
+msgid "NO"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:35
+#: includes/admin/orders/shipping_information_external_retro.php:35
+#: includes/admin/orders/shipping_information_internal.php:35
+msgid "Guía"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:35
+#: includes/admin/orders/shipping_information_external_retro.php:35
+#: includes/admin/orders/shipping_information_internal.php:35
+msgid "No disponible"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:38
+#: includes/admin/orders/shipping_information_external.php:88
+#: includes/admin/orders/shipping_information_external_retro.php:38
+#: includes/admin/orders/shipping_information_external_retro.php:59
+#: includes/admin/orders/shipping_information_internal.php:38
+#: includes/admin/orders/shipping_information_internal.php:66
+msgid "Remito"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:41
+msgid "Seleccionar servicio de Fastmail "
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:85
+#: includes/admin/orders/shipping_information_external_retro.php:54
+#: includes/admin/orders/shipping_information_internal.php:63
+msgid "Etiqueta"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:91
+#: includes/admin/orders/shipping_information_internal.php:69
+msgid "Impacto"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external.php:105
+msgid "Tienes que elegir un servicio para impactar el pedido en Fastmail"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_external_retro.php:29
+msgid "Servicios seleccionado"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_internal.php:29
+msgid "Servicio Seleccionado"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_internal.php:32
+msgid "YES"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_internal.php:41
+msgid "Cambiar Servicio"
+msgstr ""
+
+#: includes/admin/orders/shipping_information_internal.php:43
+msgid "Sin cambio"
+msgstr ""
+
+#: includes/admin/orders_list/result_shipping.php:9
+msgid "Guía Fastmail"
+msgstr ""
+
+#: includes/admin/sections.php:20
+msgid "Fastmail"
+msgstr ""
+
+#: includes/admin/setting-sections/alias-branches.php:10
+msgid "Alias ​​de sucursal"
+msgstr ""
+
+#: includes/admin/setting-sections/alias-branches.php:10
+msgid "Muestra los nombres de las sucursales de forma personalizada."
+msgstr ""
+
+#: includes/admin/setting-sections/alias-services.php:9
+msgid "Alias ​​de servicio"
+msgstr ""
+
+#: includes/admin/setting-sections/alias-services.php:9
+msgid "Mostrar nombres de servicios de forma personalizada"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:2
+msgid "Asignación de campos de facturación"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:2
+msgid "Si el cliente no llena el campo de envío, se tomará el mapeo de facturación."
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:18
+#: includes/admin/setting-sections/field-mapping.php:10
+msgid "No mapear"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:21
+#: includes/admin/setting-sections/field-mapping.php:17
+msgid "Calle"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:22
+#: includes/admin/setting-sections/field-mapping.php:18
+msgid "Número (Solo admite números)"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:23
+#: includes/admin/setting-sections/field-mapping.php:19
+msgid "Piso"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:24
+#: includes/admin/setting-sections/field-mapping.php:20
+msgid "Departamento"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:25
+#: includes/admin/setting-sections/field-mapping.php:21
+msgid "Tipo Documento"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:26
+#: includes/admin/setting-sections/field-mapping.php:22
+msgid "Num. Documento"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:27
+#: includes/admin/setting-sections/field-mapping.php:23
+msgid "Horario"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:28
+#: includes/admin/setting-sections/field-mapping.php:24
+msgid "Cuit"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:29
+#: includes/admin/setting-sections/field-mapping.php:25
+msgid "Informacion adicional 1"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:30
+#: includes/admin/setting-sections/field-mapping.php:26
+msgid "Informacion adicional 2"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:31
+#: includes/admin/setting-sections/field-mapping.php:27
+msgid "Informacion adicional 3"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:32
+#: includes/admin/setting-sections/field-mapping.php:28
+msgid "Informacion adicional 4"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:33
+#: includes/admin/setting-sections/field-mapping.php:29
+msgid "Informacion adicional 5"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:34
+#: includes/admin/setting-sections/field-mapping.php:30
+msgid "Número de socio"
+msgstr ""
+
+#: includes/admin/setting-sections/billing-mapping.php:35
+#: includes/admin/setting-sections/field-mapping.php:31
+msgid "Código"
+msgstr ""
+
+#: includes/admin/setting-sections/disable-services-branches.php:5
+msgid "Deshabilitar servicios y sucursales"
+msgstr ""
+
+#: includes/admin/setting-sections/disable-services-branches.php:5
+msgid "Evite que los servicios deshabilitados se muestren en el checkout o consulta de envio."
+msgstr ""
+
+#: includes/admin/setting-sections/disable-services-branches.php:8
+msgid "Habilitado"
+msgstr ""
+
+#: includes/admin/setting-sections/disable-services-branches.php:9
+msgid "Deshabilitado"
+msgstr ""
+
+#: includes/admin/setting-sections/field-mapping.php:2
+msgid "Asignación de campos de envío"
+msgstr ""
+
+#: includes/admin/setting-sections/field-mapping.php:2
+msgid "Puede asignar los atributos personalizados en su pago para enviar a Fastmail."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:3
+msgid "Fastmail Ajustes"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:3
+msgid "Las siguientes opciones se utilizan para configurar Fastmail "
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:7
+msgid "Conectado"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:9
+msgid "No Conectado"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:14
+msgid "Token"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:15
+msgid "Token de conexion para Fastmail"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:18
+msgid "Este token es proporcionado por Fastmail"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:23
+msgid "Codigo Postal"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:26
+msgid "Se utiliza como punto de partida de los productos."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:31
+msgid "Código de sucursal"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:32
+#: includes/admin/setting-sections/general.php:35
+msgid "Código de sucursal en Fastmail"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:41
+msgid "Estado de la orden"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:42
+msgid "Solo aplica para envíos  de LV Demo "
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:46
+msgid "Cualquier pedido en este estado será enviado automáticamente."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:51
+msgid "Si"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:57
+msgid "Antes de un solo producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:58
+msgid "Antes del resumen de un solo producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:59
+msgid "Resumen de un solo producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:60
+msgid "Antes de agregar al formulario de carrito"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:61
+msgid "Miniaturas de productos (puede que no funcionen)"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:62
+msgid "Antes del formulario de variaciones"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:63
+msgid "Antes del botón Agregar al carrito"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:64
+msgid "Antes de la variación única"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:65
+msgid "Variación única"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:66
+msgid "Antes de Añadir la cantidad al carrito"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:67
+msgid "Despues de añadir la cantidad al carrito"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:68
+msgid "Después de una sola variación"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:69
+msgid "Después del botón Agregar al carrito"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:70
+msgid "Después del formulario de variaciones"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:71
+msgid "Después del formulario Agregar al carrito"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:72
+msgid "Meta de inicio del producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:73
+msgid "Final de meta del producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:74
+msgid "Compartir"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:75
+msgid "Después del resumen de un solo producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:76
+msgid "Después de un solo producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:80
+msgid "Verifique el envío en la página del producto"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:81
+msgid "Solo aplica para envíos LV Demo"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:85
+msgid "Puedes deshabilitarlo o seleccionar en qué hook quieres visualizarlo, te recomendamos probar uno a uno para determinar cuál es el más conveniente."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:91
+#: includes/admin/setting-sections/general.php:101
+msgid "Toma el precio de todo el carrito, en caso de hacer una consulta sobre un producto, toma solo el producto."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:95
+msgid "Habilitar la posibilidad de envío gratis."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:100
+msgid "Envío gratis después de"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:104
+#: includes/wc/WC_Calculate.php:95
+msgid "Posibilidad de envío gratuito en tienda teniendo un valor igual o superior al especificado."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:112
+msgid "Si esta opción no está habilitada, hará que Envío gratis después de y Servicios de envío gratis no sean efectivos."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:122
+msgid "Si hay envio gratis"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:123
+msgid "Puede ocultar los otros servicios si hay un servicio gratuito, mostrar siempre el servicio gratuito más barato para la tienda o mostrar siempre todos los servicios."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:127
+msgid "Mostrar todos los servicios"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:128
+msgid "Mostrar solo los servicios de envío gratis más baratos"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:130
+msgid "Qué mostrar en caso de envío gratis."
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:135
+msgid "Texto de envío gratis"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:136
+msgid "Pon el texto que quieras mostrar en los servicios si corresponde envío gratis, por ejemplo: (gratis)"
+msgstr ""
+
+#: includes/admin/setting-sections/general.php:139
+msgid "Texto para mostrar en servicios con envío gratis"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:3
+msgid "Fastmail Settings"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:5
+msgid "General"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:7
+msgid "Alias de Servicios"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:8
+msgid "Alias de Sucursales"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:9
+msgid "Deshabilitar Servicios"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:10
+msgid "Estados"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:11
+msgid "Campos facturación"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:12
+msgid "Campos envío"
+msgstr ""
+
+#: includes/admin/setting-sections/settings-page.php:13
+msgid "Tracking"
+msgstr ""
+
+#: includes/admin/setting-sections/state-mapping.php:2
+msgid "Cambio de estado"
+msgstr ""
+
+#: includes/admin/setting-sections/state-mapping.php:2
+msgid "Puede sincronizar el estado de sus pedidos de WooCommerce con el estado de Fastmail."
+msgstr ""
+
+#: includes/admin/setting-sections/state-mapping.php:18
+msgid "No Mapear"
+msgstr ""
+
+#: includes/helpers/Shipping.php:184
+msgid "Error al impactar envíos"
+msgstr ""
+
+#: includes/hooks/product/consult_delivery_view.php:4
+#: includes/hooks/product/consult_delivery_view.php:10
+msgid "Calcular Envio"
+msgstr ""
+
+#: includes/hooks/product/consult_delivery_view.php:16
+msgid "Calcular"
+msgstr ""
+
+#: includes/hooks/product/route_consult_delivery.php:97
+msgid "Servicio"
+msgstr ""
+
+#: includes/hooks/product/route_consult_delivery.php:100
+msgid "Precio"
+msgstr ""
+
+#: includes/hooks/product/route_consult_delivery.php:120
+msgid "No existen métodos de envío para el cp seleccionado"
+msgstr ""
+
+#: includes/shortcodes/tracking/route_tracking.php:28
+msgid "Información de seguimiento no encontrada."
+msgstr ""
+
+#: includes/shortcodes/tracking/shortcode_tracking_view.php:1
+msgid "Numero de pedido"
+msgstr ""
+
+#: includes/shortcodes/tracking/shortcode_tracking_view.php:6
+msgid "Consultar"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:70
+msgid "Si existe clase"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:76
+msgid "Entonces"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:79
+msgid "Si selecciona Envío Gratis, deberá seleccionar el/los servicio(s) gratuito(s) en la sección Servicio Gratis"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:81
+msgid "No hacer nada"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:82
+msgid "Desactivar método de envío"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:83
+msgid "Activar método de envío"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:92
+msgid "Envío gratis después"
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:93
+msgid "Toma el precio de todo el carrito, en caso de realizar una consulta sobre un producto, tome solo el producto."
+msgstr ""
+
+#: includes/wc/WC_Calculate.php:99
+msgid "Si esta opción no está habilitada, el envío gratuito posterior y los servicios de envío gratuito quedarán ineficaces."
+msgstr ""
