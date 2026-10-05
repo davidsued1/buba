@@ -156,6 +156,13 @@ function remitoYaExiste(data) {
   return conGuia(data);
 }
 
+/** true si el error de Fast Mail dice que el remito/guía ya existe o ya fue usado. */
+function esRemitoRepetido(motivo) {
+  const t = String(motivo || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+  return /(remito|guia|numero|referencia).{0,60}(utilizad|usad|existe|duplicad|registrad|repetid|cargad)/.test(t) ||
+    /(ya (fue|ha sido|esta|existe)|duplicad)/.test(t) && /(remito|guia|numero)/.test(t);
+}
+
 /** Crea la guía en Fast Mail (el remito es pago.remito: ver remitoDeVenta). Devuelve { estado: "creada", guia } | "apagada" | "ya_existia" | "error" (con motivo). */
 async function crearGuia(pago) {
   const envio = pago.metadata.envio;
@@ -191,6 +198,13 @@ async function crearGuia(pago) {
     return { estado: "creada", guia: String(item.guia) };
   }
   const motivo = (item && item.message) || (r.data && r.data.message) || r.texto || "respuesta inesperada";
+  // Mercado Pago avisa dos veces casi juntas (pago creado + actualizado). Si el otro aviso ya creó
+  // la guía, Fast Mail contesta que el remito ya se usó: este aviso es el duplicado y no manda mails
+  // (el otro manda el mail correcto, con la etiqueta).
+  if (esRemitoRepetido(motivo)) {
+    console.log("[BUBA] Guía ya creada por otro aviso del mismo pago, no se duplica", { pedido, remito });
+    return { estado: "ya_existia" };
+  }
   console.error("[BUBA] Fast Mail no creó la guía", { pedido, remito, http: r.http, motivo });
   return { estado: "error", motivo: String(motivo) };
 }
