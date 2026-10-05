@@ -134,6 +134,16 @@ siguiente del despacho.
   cae en spam o se quiere sumar al socio, verificar el dominio
   bubadrinks.com.ar en Resend y cargar `MAIL_FROM` (ver backend/README.md).
 
+### Decisión de cobros (octubre 2026)
+Se cobra **solo con Mercado Pago**, eligiendo en la cuenta el plazo de
+acreditación de **35 días** (comisión más baja: 1,49 % + IVA ≈ 1,8 %).
+Se evaluaron Pago TIC (comisión ~0,9 %, pero incómodo para pagar desde el
+celular salvo con tarjeta, y marca poco conocida), la combinación Mercado
+Pago + Pago TIC y el cobro por alias propio con confirmación manual.
+La integración con Pago TIC quedó programada y probada en conexión, apagada
+(`config.pagotic: false`); se puede prender desde el panel si más adelante
+conviene (ver `docs/11_Pago_TIC.md`).
+
 ## Orden sugerido
 1. Fase 1 → cargar precio, stock y fotos desde el panel (hoy).
 2. Fase 2 → planilla compartida (próxima sesión, no depende de nadie).
