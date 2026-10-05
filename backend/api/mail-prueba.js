@@ -13,13 +13,13 @@ const { enviarMail, mailConfigurado } = require("../lib/mail");
 const { armarMailCliente } = require("../lib/mail-cliente");
 const { datosEnvio, datosCliente } = require("../lib/envio");
 
-/** Pago de ejemplo: 1 pack, envío a CABA, guía creada. */
+/** Pago de ejemplo con los precios reales: 1 pack a $24.000 + envío a CABA $3.800, guía creada. */
 function pagoDeEjemplo() {
   const order = {
-    code: "BUBA-PRUEBA123", total: 11000, subtotal: 9000,
+    code: "BUBA-EJEMPLO1", total: 27800, subtotal: 24000,
     customer: { name: "Sofía Martínez", email: "sofia@ejemplo.com", phone: "11 5555-0000", marketing: true, address: { street: "Av. Santa Fe 1234", apt: "5 B", city: "CABA", province: "Ciudad Autónoma de Buenos Aires", cp: "1059", notes: "" } },
-    shipping: { id: "caba", name: "Envío CABA", price: 2000, cps: "1000-1499", eta: "Llega en 24 a 48 hs hábiles" },
-    items: [{ id: "pack4", name: "Pack de 4", price: 9000, qty: 1 }],
+    shipping: { id: "caba", name: "Envío a CABA", price: 3800, cps: "1000-1499", eta: "24 a 48 hs hábiles", domicilio: true },
+    items: [{ id: "pack4", name: "Pack de 4", price: 24000, qty: 1 }],
   };
   return {
     id: 1234567890, status: "approved", external_reference: order.code, transaction_amount: order.total,
@@ -27,8 +27,8 @@ function pagoDeEjemplo() {
     payer: { email: order.customer.email },
     metadata: { pedido: order.code, total: order.total, cliente: datosCliente(order), envio: datosEnvio(order) },
     additional_info: { items: [
-      { id: "pack4", title: "BUBA Drinks · Pack de 4 sabores surtidos", quantity: "1", unit_price: "9000" },
-      { id: "envio", title: "BUBA Drinks · Envío CABA", quantity: "1", unit_price: "2000" },
+      { id: "pack4", title: "BUBA Drinks · Pack de 4", quantity: "1", unit_price: "24000" },
+      { id: "envio", title: "BUBA Drinks · Envío a CABA", quantity: "1", unit_price: "3800" },
     ] },
   };
 }
@@ -45,7 +45,8 @@ module.exports = async (req, res) => {
   const q = req.query || {};
   if (q.cliente === "1" || q.cliente === "si") {
     const m = armarMailCliente(pagoDeEjemplo(), { estado: "creada", guia: "FM000123456" });
-    const rc = await enviarMail({ asunto: m.asunto, html: m.html, texto: m.texto, idempotencia: "prueba-cliente-" + hora });
+    // va a la casilla de avisos (no a un cliente) y lo dice en el asunto para que no se confunda con una venta
+    const rc = await enviarMail({ asunto: "[Ejemplo] " + m.asunto, html: m.html, texto: m.texto, idempotencia: "prueba-cliente2-" + hora });
     if (rc.ok) return res.status(200).json({ ok: true, mensaje: "Mail de ejemplo del cliente enviado a la casilla de avisos. Revisá tu casilla (y Spam)." });
     return res.status(200).json({ ok: false, mensaje: "Resend no mandó el mail", detalle: rc.error || null });
   }
